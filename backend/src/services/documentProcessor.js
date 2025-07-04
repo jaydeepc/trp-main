@@ -6,6 +6,8 @@ const path = require('path');
 class DocumentProcessor {
   constructor() {
     this.useMockData = process.env.USE_MOCK_DATA === 'true';
+    this.enableGeminiAnalysis = process.env.ENABLE_GEMINI_ANALYSIS === 'true';
+    this.confidenceThreshold = parseInt(process.env.GEMINI_CONFIDENCE_THRESHOLD) || 70;
     this.setupMulter();
   }
 
@@ -72,7 +74,7 @@ class DocumentProcessor {
     return 'unknown';
   }
 
-  // Main document processing function
+  // Main document processing function with smart hybrid approach
   async processDocument(file, analysisType = 'auto') {
     try {
       const fileName = file.originalname;
@@ -82,24 +84,69 @@ class DocumentProcessor {
       console.log(`📄 Processing document: ${fileName} (${fileCategory})`);
       
       let result;
+      let processingMode = 'mock';
+      let geminiAnalysis = null;
+      let confidence = 0;
+      let useRealData = false;
       
-      if (this.useMockData) {
-        console.log('🎭 Using mock data for processing');
-        result = await mockService.processDocument(fileName, fileType, analysisType);
+      // Always try Gemini analysis first if enabled
+      if (this.enableGeminiAnalysis && !this.useMockData) {
+        try {
+          console.log('🤖 Analyzing document with Gemini AI...');
+          geminiAnalysis = await this.analyzeWithGemini(file, fileCategory, analysisType);
+          
+          // Calculate confidence score
+          confidence = this.calculateConfidence(geminiAnalysis, fileCategory);
+          console.log(`📊 Gemini analysis confidence: ${confidence}%`);
+          
+          // Decide whether to use real data or fallback to mock
+          if (confidence >= this.confidenceThreshold) {
+            console.log('✅ High confidence - Using real Gemini data');
+            result = await this.processWithGemini(file, fileCategory, analysisType);
+            processingMode = 'gemini';
+            useRealData = true;
+          } else {
+            console.log('⚠️ Low confidence - Using enhanced mock data');
+            result = await mockService.processDocument(fileName, fileType, analysisType);
+            processingMode = 'mock-enhanced';
+            useRealData = false;
+          }
+        } catch (error) {
+          console.error('Gemini analysis failed:', error);
+          console.log('🔄 Falling back to mock data');
+          result = await mockService.processDocument(fileName, fileType, analysisType);
+          processingMode = 'mock-fallback';
+        }
       } else {
-        console.log('🤖 Using Gemini AI for processing');
-        result = await this.processWithGemini(file, fileCategory, analysisType);
+        console.log('🎭 Using mock data (Gemini disabled or forced mock mode)');
+        result = await mockService.processDocument(fileName, fileType, analysisType);
+        processingMode = 'mock';
       }
       
-      // Enhance result with additional metadata
+      // Enhance result with comprehensive metadata
       result.processingInfo = {
         fileName,
         fileType,
         fileCategory,
         fileSize: file.size,
-        processingMode: this.useMockData ? 'mock' : 'gemini',
-        timestamp: new Date().toISOString()
+        processingMode,
+        useRealData,
+        geminiConfidence: confidence,
+        confidenceThreshold: this.confidenceThreshold,
+        analysisType: analysisType,
+        timestamp: new Date().toISOString(),
+        geminiEnabled: this.enableGeminiAnalysis,
+        mockForced: this.useMockData
       };
+      
+      // Add data source indicators to components
+      if (result.analysis && result.analysis.components) {
+        result.analysis.components = result.analysis.components.map(comp => ({
+          ...comp,
+          dataSource: useRealData ? 'gemini' : 'mock',
+          confidence: useRealData ? confidence : 'N/A'
+        }));
+      }
       
       return result;
       
@@ -107,6 +154,72 @@ class DocumentProcessor {
       console.error('Document processing error:', error);
       throw new Error(`Failed to process document: ${error.message}`);
     }
+  }
+
+  // Analyze document with Gemini to determine confidence
+  async analyzeWithGemini(file, fileCategory, analysisType) {
+    const fileName = file.originalname;
+    const fileType = path.extname(fileName).toLowerCase();
+    
+    try {
+      // Quick analysis to determine data quality
+      const quickAnalysisPrompt = `
+        Analyze this ${fileCategory} file (${fileName}) and determine:
+        1. Can you extract meaningful component data? (yes/no)
+        2. How many components can you identify? (number)
+        3. What's the data quality? (high/medium/low)
+        4. Confidence in extraction (0-100%)
+        
+        Respond in JSON format:
+        {
+          "canExtract": boolean,
+          "componentCount": number,
+          "dataQuality": "high|medium|low",
+          "confidence": number,
+          "reasoning": "string"
+        }
+      `;
+      
+      const analysisText = await geminiService.generateContent(quickAnalysisPrompt, 'bom-extraction');
+      return JSON.parse(analysisText);
+    } catch (error) {
+      console.error('Quick Gemini analysis failed:', error);
+      return {
+        canExtract: false,
+        componentCount: 0,
+        dataQuality: 'low',
+        confidence: 0,
+        reasoning: 'Analysis failed'
+      };
+    }
+  }
+
+  // Calculate confidence score based on Gemini analysis
+  calculateConfidence(analysis, fileCategory) {
+    if (!analysis) return 0;
+    
+    let confidence = analysis.confidence || 0;
+    
+    // Adjust confidence based on file category
+    const categoryMultipliers = {
+      'bom': 1.0,           // BoM files are easiest to process
+      'zbc-report': 0.9,    // ZBC reports are structured
+      'cad': 0.7,           // CAD files are harder
+      'technical-document': 0.6,  // PDFs vary in quality
+      'image-document': 0.5,      // Images are challenging
+      'unknown': 0.3        // Unknown files are risky
+    };
+    
+    const multiplier = categoryMultipliers[fileCategory] || 0.5;
+    confidence = Math.round(confidence * multiplier);
+    
+    // Additional factors
+    if (analysis.componentCount > 5) confidence += 10;
+    if (analysis.dataQuality === 'high') confidence += 15;
+    if (analysis.dataQuality === 'medium') confidence += 5;
+    if (analysis.canExtract === false) confidence = Math.min(confidence, 30);
+    
+    return Math.min(Math.max(confidence, 0), 100);
   }
 
   // Process with Gemini AI
