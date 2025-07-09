@@ -658,250 +658,211 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
           </Card>
         </div>
 
-        {/* Smart BoM Cards */}
-        <div className="space-y-6">
-          {components.map((component) => (
-            <Card key={component.id} className="hover:shadow-lg transition-shadow duration-200">
-              <div className="p-6">
-                {/* Header Section */}
-                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-6">
-                  <div className="flex-1 mb-4 lg:mb-0">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-dark-slate-gray mb-1">
-                          {component.partName}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-3 text-sm text-medium-gray mb-2">
-                          <span className="font-medium">{component.partNumber}</span>
-                          <span>•</span>
-                          <span>{component.material}</span>
-                          <span>•</span>
-                          <span className="font-semibold">Qty: {component.quantity}</span>
+        {/* Smart BoM Table - Redesigned */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900 min-w-[200px]">
+                    <div className="flex items-center space-x-2">
+                      <span>Component</span>
+                      <InfoTooltip
+                        title="Component Information"
+                        description="Part details and specifications"
+                        businessValue="Core component identification"
+                        position="bottom"
+                      />
+                    </div>
+                  </th>
+                  <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-16">Qty</th>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900 min-w-[180px]">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="w-4 h-4 text-blue-600" />
+                      <span>AI Insights</span>
+                    </div>
+                  </th>
+                  <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-24">
+                    <div className="flex items-center justify-center space-x-1">
+                      <span>Status</span>
+                    </div>
+                  </th>
+                  <th className="px-4 py-4 text-right text-sm font-semibold text-gray-900 min-w-[120px]">
+                    <div className="flex items-center justify-end space-x-2">
+                      <TrendingUp className="w-4 h-4 text-green-600" />
+                      <span>Cost Analysis</span>
+                    </div>
+                  </th>
+                  <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-20">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {components.map((component, index) => (
+                  <React.Fragment key={component.id}>
+                    <tr className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
+                      {/* Component Column */}
+                      <td className="px-4 py-4">
+                        <div className="space-y-1">
+                          <div className="font-semibold text-gray-900 text-sm">
+                            {component.partName}
+                          </div>
+                          <div className="text-xs text-gray-500 font-mono">
+                            {component.partNumber}
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            {component.material}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2 ml-4">
-                        <span className={getRiskBadgeClass(component.riskFlag.level)}>
-                          {component.riskFlag.level} Risk
+                      </td>
+
+                      {/* Quantity Column */}
+                      <td className="px-4 py-4 text-center">
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-semibold rounded-full">
+                          {component.quantity}
                         </span>
-                        <div className="flex items-center space-x-1">
-                          {getComplianceIcon(component.complianceStatus)}
-                          <span className="text-xs capitalize text-medium-gray">
-                            {component.complianceStatus}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                      </td>
 
-                {/* Main Content Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                  {/* AI Insights Column */}
-                  <div className="lg:col-span-1">
-                    <div className="bg-blue-50 rounded-lg p-4 h-full">
-                      <div className="flex items-center space-x-2 mb-3">
-                        <Sparkles className="w-5 h-5 text-blue-600" />
-                        <h4 className="font-semibold text-blue-800">AI Insights</h4>
-                        <InfoTooltip
-                          title="AI-Powered Recommendations"
-                          description="Machine learning analysis providing cost optimization and performance improvement suggestions."
-                          businessValue="Identifies opportunities for cost savings and quality improvements."
-                          position="top"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm font-medium text-blue-700 mb-1">Suggested Alternative:</p>
-                          <p className="text-sm text-blue-600">{component.aiSuggestedAlternative}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-blue-700 mb-1">Recommended Region:</p>
-                          <p className="text-sm text-blue-600">{component.aiRecommendedRegion}</p>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-blue-700">Confidence:</span>
+                      {/* AI Insights Column */}
+                      <td className="px-4 py-4">
+                        <div className="space-y-2">
+                          <div className="text-sm text-blue-700 font-medium line-clamp-2">
+                            {component.aiSuggestedAlternative}
+                          </div>
                           <div className="flex items-center space-x-2">
-                            <div className="w-16 bg-blue-200 rounded-full h-2">
-                              <div 
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${component.confidence}%` }}
-                              ></div>
+                            <div className="text-xs text-gray-500">Confidence:</div>
+                            <div className="flex items-center space-x-1">
+                              <div className="w-12 bg-gray-200 rounded-full h-1.5">
+                                <div 
+                                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                                  style={{ width: `${component.confidence}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-xs font-medium text-blue-600">{component.confidence}%</span>
                             </div>
-                            <span className="text-sm font-semibold text-blue-600">{component.confidence}%</span>
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            📍 {component.aiRecommendedRegion}
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  </div>
+                      </td>
 
-                  {/* Cost Analysis Column */}
-                  <div className="lg:col-span-1">
-                    <div className="bg-green-50 rounded-lg p-4 h-full">
-                      <div className="flex items-center space-x-2 mb-3">
-                        <TrendingUp className="w-5 h-5 text-green-600" />
-                        <h4 className="font-semibold text-green-800">Cost Analysis</h4>
-                        <InfoTooltip
-                          title="Zero-Based Costing Analysis"
-                          description="Comparison between market pricing and fundamental cost drivers to identify savings opportunities."
-                          businessValue="Provides negotiation leverage and identifies overpriced components."
-                          position="top"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-green-700">Market Range:</span>
-                          <span className="text-sm font-semibold text-green-600">{component.predictedMarketRange}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-green-700">ZBC Should-Cost:</span>
-                          <span className="text-sm font-bold text-primary-blue">{component.zbcShouldCost}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-green-700">Variance:</span>
-                          <div className={`flex items-center space-x-1 ${getZBCVarianceClass(component.zbcVariance)}`}>
-                            {getZBCVarianceIcon(component.zbcVariance)}
-                            <span className="text-sm font-bold">{component.zbcVariance}</span>
+                      {/* Status Column */}
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col items-center space-y-2">
+                          <div className="flex items-center space-x-1">
+                            {getComplianceIcon(component.complianceStatus)}
                           </div>
-                        </div>
-                        <div className="text-xs text-green-600 mt-2">
-                          Source: {component.zbcSource}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Compliance & Risk Column */}
-                  <div className="lg:col-span-1">
-                    <div className="bg-purple-50 rounded-lg p-4 h-full">
-                      <div className="flex items-center space-x-2 mb-3">
-                        <CheckCircle className="w-5 h-5 text-purple-600" />
-                        <h4 className="font-semibold text-purple-800">Compliance & Risk</h4>
-                        <InfoTooltip
-                          title="Regulatory & Supply Chain Risk"
-                          description="Assessment of compliance status and supply chain risks for informed decision making."
-                          businessValue="Ensures regulatory compliance and helps mitigate supply chain disruptions."
-                          position="top"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm font-medium text-purple-700 mb-2">Certifications:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {component.complianceFlags.map((flag, index) => (
-                              <span 
-                                key={index}
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  flag.type === 'success' ? 'bg-green-100 text-green-800' :
-                                  flag.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-red-100 text-red-800'
-                                }`}
-                              >
-                                <span className="mr-1">{flag.icon}</span>
-                                {flag.text}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-purple-700">Risk Level:</span>
-                          <span className={getRiskBadgeClass(component.riskFlag.level)}>
+                          <span className={`${getRiskBadgeClass(component.riskFlag.level)} text-xs px-2 py-1`}>
                             {component.riskFlag.level}
                           </span>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                      </td>
 
-                {/* Action Bar */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <div className="flex items-center space-x-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleRowExpansion(component.id)}
-                      icon={<Info className="w-4 h-4" />}
-                    >
-                      {expandedRows.has(component.id) ? 'Hide Details' : 'View Details'}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<Edit3 className="w-4 h-4" />}
-                    >
-                      Edit Component
-                    </Button>
-                  </div>
-                  <div className="text-sm text-medium-gray">
-                    Last updated: {new Date().toLocaleDateString()}
-                  </div>
-                </div>
+                      {/* Cost Analysis Column */}
+                      <td className="px-4 py-4 text-right">
+                        <div className="space-y-1">
+                          <div className="text-sm text-gray-600">
+                            Market: <span className="font-medium">{component.predictedMarketRange}</span>
+                          </div>
+                          <div className="text-sm">
+                            ZBC: <span className="font-bold text-primary-blue">{component.zbcShouldCost}</span>
+                          </div>
+                          <div className={`flex items-center justify-end space-x-1 text-sm ${getZBCVarianceClass(component.zbcVariance)}`}>
+                            {getZBCVarianceIcon(component.zbcVariance)}
+                            <span className="font-semibold">{component.zbcVariance}</span>
+                          </div>
+                        </div>
+                      </td>
 
-                {/* Expanded Details */}
-                {expandedRows.has(component.id) && (
-                  <div className="mt-6 pt-6 border-t border-gray-200">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div>
-                        <h5 className="font-semibold text-dark-slate-gray mb-3">Technical Specifications</h5>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-medium-gray">Part Number:</span>
-                            <span className="font-medium">{component.partNumber}</span>
+                      {/* Actions Column */}
+                      <td className="px-4 py-4 text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleRowExpansion(component.id)}
+                          className="text-xs"
+                        >
+                          {expandedRows.has(component.id) ? '▲' : '▼'}
+                        </Button>
+                      </td>
+                    </tr>
+                    
+                    {/* Expanded Row Details */}
+                    {expandedRows.has(component.id) && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-4 bg-gray-50 border-t border-gray-100">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Compliance Details */}
+                            <div>
+                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span>Compliance & Certifications</span>
+                              </h5>
+                              <div className="space-y-2">
+                                {component.complianceFlags.map((flag, index) => (
+                                  <div key={index} className="flex items-center space-x-2">
+                                    <span className="text-sm">{flag.icon}</span>
+                                    <span className="text-sm text-gray-700">{flag.text}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Cost Breakdown */}
+                            <div>
+                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                                <TrendingUp className="w-4 h-4 text-green-600" />
+                                <span>Detailed Cost Analysis</span>
+                              </h5>
+                              <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Market Low:</span>
+                                  <span className="font-medium">{component.predictedMarketRange.split(' - ')[0]}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Market High:</span>
+                                  <span className="font-medium">{component.predictedMarketRange.split(' - ')[1]}</span>
+                                </div>
+                                <div className="flex justify-between border-t pt-2">
+                                  <span className="text-gray-600">ZBC Should-Cost:</span>
+                                  <span className="font-bold text-primary-blue">{component.zbcShouldCost}</span>
+                                </div>
+                                <div className="text-xs text-gray-500 mt-2">
+                                  Source: {component.zbcSource}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* AI Recommendations */}
+                            <div>
+                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                                <Sparkles className="w-4 h-4 text-blue-600" />
+                                <span>AI Recommendations</span>
+                              </h5>
+                              <div className="space-y-2 text-sm">
+                                <div>
+                                  <span className="text-gray-600">Alternative:</span>
+                                  <p className="text-blue-700 font-medium mt-1">{component.aiSuggestedAlternative}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Recommended Region:</span>
+                                  <p className="text-gray-900 font-medium mt-1">{component.aiRecommendedRegion}</p>
+                                </div>
+                                <div className="flex justify-between items-center pt-2 border-t">
+                                  <span className="text-gray-600">AI Confidence:</span>
+                                  <span className="font-semibold text-blue-600">{component.confidence}%</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-medium-gray">Material:</span>
-                            <span className="font-medium">{component.material}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-medium-gray">Quantity:</span>
-                            <span className="font-medium">{component.quantity}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h5 className="font-semibold text-dark-slate-gray mb-3">Cost Breakdown</h5>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-medium-gray">Market Low:</span>
-                            <span className="font-medium">{component.predictedMarketRange.split(' - ')[0]}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-medium-gray">Market High:</span>
-                            <span className="font-medium">{component.predictedMarketRange.split(' - ')[1]}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-medium-gray">Should-Cost:</span>
-                            <span className="font-bold text-primary-blue">{component.zbcShouldCost}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h5 className="font-semibold text-dark-slate-gray mb-3">Supply Chain Intel</h5>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-medium-gray">Recommended Region:</span>
-                            <span className="font-medium">{component.aiRecommendedRegion}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-medium-gray">Risk Assessment:</span>
-                            <span className={getRiskBadgeClass(component.riskFlag.level)}>
-                              {component.riskFlag.level}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-medium-gray">AI Confidence:</span>
-                            <span className="font-medium">{component.confidence}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-          ))}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Supplier Trust Graph Section */}
