@@ -6,6 +6,8 @@ import { useRFQ } from '../../context/RFQContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import SupplierTrustGraph from '../common/SupplierTrustGraph';
+import MobileSmartBOMReview from '../mobile/MobileSmartBOMReview';
+import { useResponsive } from '../../hooks/useResponsive';
 
 interface Step2SmartBOMReviewProps {
   rfq: RFQ;
@@ -19,9 +21,21 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
   onPrevious,
 }) => {
   const { updateStep, loading } = useRFQ();
+  const { isMobile } = useResponsive();
   const [notes, setNotes] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedComponent, setSelectedComponent] = useState<string>('1'); // Default to first component
+
+  // Use mobile component for mobile devices
+  if (isMobile) {
+    return (
+      <MobileSmartBOMReview
+        rfq={rfq}
+        onNext={onNext}
+        onPrevious={onPrevious}
+      />
+    );
+  }
 
   const handleContinue = async () => {
     try {

@@ -6,6 +6,7 @@ interface CardProps {
   size?: 'default' | 'large';
   hover?: boolean;
   padding?: 'none' | 'sm' | 'md' | 'lg';
+  onClick?: () => void;
 }
 
 const Card: React.FC<CardProps> = ({
@@ -14,6 +15,7 @@ const Card: React.FC<CardProps> = ({
   size = 'default',
   hover = false,
   padding = 'md',
+  onClick,
 }) => {
   const baseClasses = 'bg-card-bg rounded-2xl shadow-card';
   
@@ -34,7 +36,7 @@ const Card: React.FC<CardProps> = ({
   const classes = `${baseClasses} ${sizeClasses[size]} ${paddingClasses[padding]} ${hoverClasses} ${className}`;
   
   return (
-    <div className={classes}>
+    <div className={classes} onClick={onClick}>
       {children}
     </div>
   );

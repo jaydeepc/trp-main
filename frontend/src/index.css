@@ -269,7 +269,7 @@
 }
 
 /* Responsive design helpers */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .card {
     @apply p-4;
   }
@@ -284,5 +284,116 @@
   
   h2 {
     @apply text-2xl;
+  }
+
+  /* Mobile-specific utilities */
+  .mobile-safe-area {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Hide desktop-only elements on mobile */
+  .desktop-only {
+    @apply hidden;
+  }
+
+  /* Mobile navigation spacing */
+  .mobile-nav-spacing {
+    padding-top: 4rem; /* Account for fixed mobile header */
+    padding-bottom: 5rem; /* Account for bottom navigation */
+  }
+
+  /* Mobile table improvements */
+  .mobile-table-scroll {
+    @apply overflow-x-auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile form improvements */
+  .mobile-form-input {
+    @apply text-base; /* Prevent zoom on iOS */
+  }
+
+  /* Mobile button improvements */
+  .mobile-button {
+    @apply min-h-[44px]; /* iOS touch target size */
+  }
+
+  /* Mobile card improvements */
+  .mobile-card {
+    @apply mx-4 rounded-xl;
+  }
+
+  /* Mobile spacing */
+  .mobile-spacing {
+    @apply px-4 py-3;
+  }
+
+  /* Mobile text sizing */
+  .mobile-text-sm {
+    @apply text-sm leading-relaxed;
+  }
+
+  .mobile-text-xs {
+    @apply text-xs leading-normal;
+  }
+}
+
+/* Tablet-specific styles */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .tablet-grid {
+    @apply grid-cols-2;
+  }
+
+  .tablet-spacing {
+    @apply px-6 py-4;
+  }
+}
+
+/* Desktop-specific styles */
+@media (min-width: 1024px) {
+  .desktop-grid {
+    @apply grid-cols-3 lg:grid-cols-4;
+  }
+
+  .desktop-spacing {
+    @apply px-8 py-6;
+  }
+
+  /* Show desktop-only elements */
+  .desktop-only {
+    @apply block;
+  }
+
+  /* Hide mobile-only elements on desktop */
+  .mobile-only {
+    @apply hidden;
+  }
+}
+
+/* Mobile-only elements */
+@media (max-width: 767px) {
+  .mobile-only {
+    @apply block;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Increase touch targets */
+  button, .btn, .clickable {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Remove hover effects on touch devices */
+  .hover-effect:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* High DPI display improvements */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .high-dpi-border {
+    border-width: 0.5px;
   }
 }
