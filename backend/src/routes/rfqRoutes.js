@@ -2,10 +2,6 @@ const express = require('express');
 const router = express.Router();
 const RFQ = require('../models/RFQ');
 const documentProcessor = require('../services/documentProcessor');
-const mockRFQService = require('../services/mockRFQService');
-
-// Helper function to determine if we should use mock data
-const useMockData = () => process.env.USE_MOCK_DATA === 'true';
 
 // Middleware for user authentication (simplified for MVP)
 const authenticateUser = (req, res, next) => {
@@ -19,14 +15,6 @@ const authenticateUser = (req, res, next) => {
 router.get('/', authenticateUser, async (req, res) => {
   try {
     const { status, limit = 20, page = 1 } = req.query;
-    
-    if (useMockData()) {
-      const result = mockRFQService.getRFQs(req.userId, status, parseInt(limit), parseInt(page));
-      return res.json({
-        success: true,
-        data: result
-      });
-    }
     
     const rfqs = await RFQ.findByUser(req.userId, status)
       .limit(parseInt(limit))
@@ -62,15 +50,6 @@ router.get('/', authenticateUser, async (req, res) => {
 // POST /api/rfqs - Create new RFQ
 router.post('/', authenticateUser, async (req, res) => {
   try {
-    if (useMockData()) {
-      const rfq = mockRFQService.createRFQ(req.userId);
-      return res.status(201).json({
-        success: true,
-        message: 'RFQ created successfully',
-        data: rfq
-      });
-    }
-    
     const rfq = new RFQ({
       userId: req.userId,
       status: 'draft',
