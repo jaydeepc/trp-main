@@ -36,27 +36,41 @@ if (process.env.FRONTEND_URL) {
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    console.log('CORS request from origin:', origin);
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('Allowed origins:', allowedOrigins);
     
-    // In development, allow all localhost origins
-    if (process.env.NODE_ENV === 'development' && origin && origin.includes('localhost')) {
-      console.log('CORS allowed localhost origin:', origin);
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      console.log('CORS: Allowing request with no origin');
       return callback(null, true);
     }
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log('CORS allowed origin:', origin);
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      console.log('Allowed origins:', allowedOrigins);
-      callback(new Error('Not allowed by CORS'));
+    // Allow all localhost origins for development
+    if (origin && origin.includes('localhost')) {
+      console.log('CORS: Allowing localhost origin:', origin);
+      return callback(null, true);
     }
+    
+    // Allow all vercel.app domains for deployment
+    if (origin && origin.includes('vercel.app')) {
+      console.log('CORS: Allowing vercel.app origin:', origin);
+      return callback(null, true);
+    }
+    
+    // Check against specific allowed origins
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log('CORS: Allowing whitelisted origin:', origin);
+      return callback(null, true);
+    }
+    
+    console.log('CORS: BLOCKING origin:', origin);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 }));
 
 // Body parsing middleware
