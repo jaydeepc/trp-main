@@ -16,6 +16,7 @@
     "NODE_ENV": "production",
     "FRONTEND_URL": "https://trp-main.vercel.app",
     "USE_MOCK_DATA": "true",
+    "MONGODB_URI": "mongodb://localhost:27017/project-robbie-mock",
     "GEMINI_API_KEY": "AIzaSyCdINCKX44TXf4MpDfHdhKI8KJKoARQ_-4",
     "GEMINI_MODEL": "gemini-1.5-flash",
     "GEMINI_MODEL_COMPLEX": "gemini-1.5-pro",
