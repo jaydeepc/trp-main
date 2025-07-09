@@ -13,6 +13,17 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "FRONTEND_URL": "https://trp-main.vercel.app",
+    "USE_MOCK_DATA": "true",
+    "GEMINI_API_KEY": "AIzaSyCdINCKX44TXf4MpDfHdhKI8KJKoARQ_-4",
+    "GEMINI_MODEL": "gemini-1.5-flash",
+    "GEMINI_MODEL_COMPLEX": "gemini-1.5-pro",
+    "GEMINI_THINKING_BUDGET": "0",
+    "GEMINI_MAX_TOKENS": "8192",
+    "GEMINI_TEMPERATURE": "0.1",
+    "ENABLE_GEMINI_ANALYSIS": "true",
+    "GEMINI_CONFIDENCE_THRESHOLD": "70",
+    "MOCK_DELAY_MS": "1500"
   }
 }
