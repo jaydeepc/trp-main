@@ -658,232 +658,250 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
           </Card>
         </div>
 
-        {/* Smart BoM Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="table-header">
-                <th className="table-cell text-left">
-                  <div className="flex items-center space-x-2">
-                    <span>Component</span>
-                    <InfoTooltip
-                      title="Component Information"
-                      description="Part name, number, and material specification extracted from your uploaded document or requirements."
-                      businessValue="Identifies the specific component with its technical specifications for accurate sourcing."
-                      position="bottom"
-                    />
-                  </div>
-                </th>
-                <th className="table-cell text-center">
-                  <div className="flex items-center justify-center space-x-2">
-                    <span>Qty</span>
-                    <InfoTooltip
-                      title="Quantity Required"
-                      description="Number of units needed per assembly or project as specified in your requirements."
-                      businessValue="Determines order volumes, pricing tiers, and inventory planning requirements."
-                      position="bottom"
-                    />
-                  </div>
-                </th>
-                <th className="table-cell text-left">
-                  <div className="flex items-center space-x-2">
-                    <span>AI Suggestion</span>
-                    <InfoTooltip
-                      title="AI-Powered Alternatives"
-                      description="Machine learning recommendations for alternative materials, specifications, or processes that could reduce costs or improve performance."
-                      businessValue="Identifies cost-saving opportunities and performance improvements through intelligent analysis of market data and technical specifications."
-                      position="bottom"
-                    />
-                  </div>
-                </th>
-                <th className="table-cell text-center">
-                  <div className="flex items-center justify-center space-x-2">
-                    <span>Compliance</span>
-                    <InfoTooltip
-                      title="Regulatory Compliance"
-                      description="Status of regulatory certifications and standards compliance (RoHS, REACH, FDA, ISO, etc.) for this component."
-                      businessValue="Ensures legal compliance and reduces regulatory risk in your supply chain and final products."
-                      position="bottom"
-                    />
-                  </div>
-                </th>
-                <th className="table-cell text-center">
-                  <div className="flex items-center justify-center space-x-2">
-                    <span>Risk</span>
-                    <InfoTooltip
-                      title="Supply Chain Risk"
-                      description="Overall risk assessment considering supplier stability, geopolitical factors, material volatility, and market conditions."
-                      businessValue="Helps prioritize risk mitigation strategies and backup supplier planning to ensure continuity of supply."
-                      position="bottom"
-                    />
-                  </div>
-                </th>
-                <th className="table-cell text-left">
-                  <div className="flex items-center space-x-2">
-                    <span>Supplier Region</span>
-                    <InfoTooltip
-                      title="Recommended Sourcing Region"
-                      description="AI-recommended geographical region for sourcing this component based on cost, quality, lead time, and risk factors."
-                      businessValue="Optimizes supply chain geography for cost efficiency while managing geopolitical and logistics risks."
-                      position="bottom"
-                    />
-                  </div>
-                </th>
-                <th className="table-cell text-right">
-                  <div className="flex items-center justify-end space-x-2">
-                    <span>Market Range</span>
-                    <InfoTooltip
-                      title="Market Price Range"
-                      description="Current market price range for this component based on real-time market data, supplier quotes, and historical pricing trends."
-                      businessValue="Provides market context for negotiations and helps identify fair pricing versus potential overcharging."
-                      position="bottom"
-                    />
-                  </div>
-                </th>
-                <th className="table-cell text-right">
-                  <div className="flex items-center justify-end space-x-2">
-                    <span>ZBC Cost</span>
-                    <InfoTooltip
-                      title="Zero-Based Cost (Should-Cost)"
-                      description="AI-calculated 'should-cost' based on material costs, manufacturing processes, labor rates, and reasonable profit margins."
-                      businessValue="Provides negotiation leverage by showing what the component should cost based on fundamental cost drivers rather than market pricing."
-                      position="bottom"
-                    />
-                  </div>
-                </th>
-                <th className="table-cell text-right">
-                  <div className="flex items-center justify-end space-x-2">
-                    <span>Variance</span>
-                    <InfoTooltip
-                      title="Cost Variance Analysis"
-                      description="Percentage difference between market price and should-cost. Positive values indicate potential overpayment, negative values indicate good value."
-                      businessValue="Identifies cost-saving opportunities and helps prioritize negotiation efforts on components with highest variance."
-                      position="bottom"
-                    />
-                  </div>
-                </th>
-                <th className="table-cell text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {components.map((component) => (
-                <React.Fragment key={component.id}>
-                  <tr className="table-row">
-                    <td className="table-cell">
+        {/* Smart BoM Cards */}
+        <div className="space-y-6">
+          {components.map((component) => (
+            <Card key={component.id} className="hover:shadow-lg transition-shadow duration-200">
+              <div className="p-6">
+                {/* Header Section */}
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-6">
+                  <div className="flex-1 mb-4 lg:mb-0">
+                    <div className="flex items-start justify-between">
                       <div>
-                        <div className="font-semibold text-dark-slate-gray">
+                        <h3 className="text-xl font-bold text-dark-slate-gray mb-1">
                           {component.partName}
-                        </div>
-                        <div className="text-sm text-medium-gray">
-                          {component.partNumber}
-                        </div>
-                        <div className="text-xs text-medium-gray">
-                          {component.material}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="table-cell text-center">
-                      <span className="font-medium">{component.quantity}</span>
-                    </td>
-                    <td className="table-cell">
-                      <div className="text-sm">
-                        <div className="text-blue-600 font-medium">
-                          {component.aiSuggestedAlternative}
-                        </div>
-                        <div className="text-xs text-medium-gray mt-1">
-                          Confidence: {component.confidence}%
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-medium-gray mb-2">
+                          <span className="font-medium">{component.partNumber}</span>
+                          <span>•</span>
+                          <span>{component.material}</span>
+                          <span>•</span>
+                          <span className="font-semibold">Qty: {component.quantity}</span>
                         </div>
                       </div>
-                    </td>
-                    <td className="table-cell text-center">
-                      <div className="flex items-center justify-center space-x-1">
-                        {getComplianceIcon(component.complianceStatus)}
-                        <span className="text-xs capitalize">
-                          {component.complianceStatus}
+                      <div className="flex items-center space-x-2 ml-4">
+                        <span className={getRiskBadgeClass(component.riskFlag.level)}>
+                          {component.riskFlag.level} Risk
                         </span>
+                        <div className="flex items-center space-x-1">
+                          {getComplianceIcon(component.complianceStatus)}
+                          <span className="text-xs capitalize text-medium-gray">
+                            {component.complianceStatus}
+                          </span>
+                        </div>
                       </div>
-                    </td>
-                    <td className="table-cell text-center">
-                      <span className={getRiskBadgeClass(component.riskFlag.level)}>
-                        {component.riskFlag.level}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <div className="text-sm font-medium text-dark-slate-gray">
-                        {component.aiRecommendedRegion}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main Content Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                  {/* AI Insights Column */}
+                  <div className="lg:col-span-1">
+                    <div className="bg-blue-50 rounded-lg p-4 h-full">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Sparkles className="w-5 h-5 text-blue-600" />
+                        <h4 className="font-semibold text-blue-800">AI Insights</h4>
+                        <InfoTooltip
+                          title="AI-Powered Recommendations"
+                          description="Machine learning analysis providing cost optimization and performance improvement suggestions."
+                          businessValue="Identifies opportunities for cost savings and quality improvements."
+                          position="top"
+                        />
                       </div>
-                    </td>
-                    <td className="table-cell text-right">
-                      <div className="text-sm font-medium">
-                        {component.predictedMarketRange}
-                      </div>
-                    </td>
-                    <td className="table-cell text-right">
-                      <div className="text-sm font-bold text-primary-blue">
-                        {component.zbcShouldCost}
-                      </div>
-                      <div className="text-xs text-medium-gray">
-                        {component.zbcSource}
-                      </div>
-                    </td>
-                    <td className="table-cell text-right">
-                      <div className={`flex items-center justify-end space-x-1 ${getZBCVarianceClass(component.zbcVariance)}`}>
-                        {getZBCVarianceIcon(component.zbcVariance)}
-                        <span className="font-semibold">
-                          {component.zbcVariance}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="table-cell text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleRowExpansion(component.id)}
-                        icon={<Edit3 className="w-4 h-4" />}
-                      >
-                        Details
-                      </Button>
-                    </td>
-                  </tr>
-                  
-                  {/* Expanded Row Details */}
-                  {expandedRows.has(component.id) && (
-                    <tr>
-                      <td colSpan={10} className="p-0">
-                        <div className="bg-gray-50 p-4 border-t border-gray-200">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <h4 className="font-semibold text-dark-slate-gray mb-2">
-                                Compliance Details
-                              </h4>
-                              <div className="space-y-1">
-                                {component.complianceFlags.map((flag, index) => (
-                                  <div key={index} className="flex items-center space-x-2">
-                                    <span>{flag.icon}</span>
-                                    <span className="text-sm">{flag.text}</span>
-                                  </div>
-                                ))}
-                              </div>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium text-blue-700 mb-1">Suggested Alternative:</p>
+                          <p className="text-sm text-blue-600">{component.aiSuggestedAlternative}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-blue-700 mb-1">Recommended Region:</p>
+                          <p className="text-sm text-blue-600">{component.aiRecommendedRegion}</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-blue-700">Confidence:</span>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-16 bg-blue-200 rounded-full h-2">
+                              <div 
+                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${component.confidence}%` }}
+                              ></div>
                             </div>
-                            <div>
-                              <h4 className="font-semibold text-dark-slate-gray mb-2">
-                                AI Insights
-                              </h4>
-                              <div className="text-sm text-medium-gray">
-                                <p><strong>Alternative:</strong> {component.aiSuggestedAlternative}</p>
-                                <p><strong>Recommended Region:</strong> {component.aiRecommendedRegion}</p>
-                                <p><strong>Risk Level:</strong> {component.riskFlag.level}</p>
-                              </div>
-                            </div>
+                            <span className="text-sm font-semibold text-blue-600">{component.confidence}%</span>
                           </div>
                         </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cost Analysis Column */}
+                  <div className="lg:col-span-1">
+                    <div className="bg-green-50 rounded-lg p-4 h-full">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <TrendingUp className="w-5 h-5 text-green-600" />
+                        <h4 className="font-semibold text-green-800">Cost Analysis</h4>
+                        <InfoTooltip
+                          title="Zero-Based Costing Analysis"
+                          description="Comparison between market pricing and fundamental cost drivers to identify savings opportunities."
+                          businessValue="Provides negotiation leverage and identifies overpriced components."
+                          position="top"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-green-700">Market Range:</span>
+                          <span className="text-sm font-semibold text-green-600">{component.predictedMarketRange}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-green-700">ZBC Should-Cost:</span>
+                          <span className="text-sm font-bold text-primary-blue">{component.zbcShouldCost}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-green-700">Variance:</span>
+                          <div className={`flex items-center space-x-1 ${getZBCVarianceClass(component.zbcVariance)}`}>
+                            {getZBCVarianceIcon(component.zbcVariance)}
+                            <span className="text-sm font-bold">{component.zbcVariance}</span>
+                          </div>
+                        </div>
+                        <div className="text-xs text-green-600 mt-2">
+                          Source: {component.zbcSource}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Compliance & Risk Column */}
+                  <div className="lg:col-span-1">
+                    <div className="bg-purple-50 rounded-lg p-4 h-full">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <CheckCircle className="w-5 h-5 text-purple-600" />
+                        <h4 className="font-semibold text-purple-800">Compliance & Risk</h4>
+                        <InfoTooltip
+                          title="Regulatory & Supply Chain Risk"
+                          description="Assessment of compliance status and supply chain risks for informed decision making."
+                          businessValue="Ensures regulatory compliance and helps mitigate supply chain disruptions."
+                          position="top"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium text-purple-700 mb-2">Certifications:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {component.complianceFlags.map((flag, index) => (
+                              <span 
+                                key={index}
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                  flag.type === 'success' ? 'bg-green-100 text-green-800' :
+                                  flag.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                <span className="mr-1">{flag.icon}</span>
+                                {flag.text}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-purple-700">Risk Level:</span>
+                          <span className={getRiskBadgeClass(component.riskFlag.level)}>
+                            {component.riskFlag.level}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Bar */}
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                  <div className="flex items-center space-x-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleRowExpansion(component.id)}
+                      icon={<Info className="w-4 h-4" />}
+                    >
+                      {expandedRows.has(component.id) ? 'Hide Details' : 'View Details'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Edit3 className="w-4 h-4" />}
+                    >
+                      Edit Component
+                    </Button>
+                  </div>
+                  <div className="text-sm text-medium-gray">
+                    Last updated: {new Date().toLocaleDateString()}
+                  </div>
+                </div>
+
+                {/* Expanded Details */}
+                {expandedRows.has(component.id) && (
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div>
+                        <h5 className="font-semibold text-dark-slate-gray mb-3">Technical Specifications</h5>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-medium-gray">Part Number:</span>
+                            <span className="font-medium">{component.partNumber}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-medium-gray">Material:</span>
+                            <span className="font-medium">{component.material}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-medium-gray">Quantity:</span>
+                            <span className="font-medium">{component.quantity}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h5 className="font-semibold text-dark-slate-gray mb-3">Cost Breakdown</h5>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-medium-gray">Market Low:</span>
+                            <span className="font-medium">{component.predictedMarketRange.split(' - ')[0]}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-medium-gray">Market High:</span>
+                            <span className="font-medium">{component.predictedMarketRange.split(' - ')[1]}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-medium-gray">Should-Cost:</span>
+                            <span className="font-bold text-primary-blue">{component.zbcShouldCost}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h5 className="font-semibold text-dark-slate-gray mb-3">Supply Chain Intel</h5>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-medium-gray">Recommended Region:</span>
+                            <span className="font-medium">{component.aiRecommendedRegion}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-medium-gray">Risk Assessment:</span>
+                            <span className={getRiskBadgeClass(component.riskFlag.level)}>
+                              {component.riskFlag.level}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-medium-gray">AI Confidence:</span>
+                            <span className="font-medium">{component.confidence}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          ))}
         </div>
 
         {/* Supplier Trust Graph Section */}
