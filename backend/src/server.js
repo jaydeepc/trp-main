@@ -25,6 +25,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'https://trp-main-cys8.vercel.app',
+  'https://trp-main.vercel.app', // Your actual frontend domain
   'https://your-frontend-domain.vercel.app', // Add your frontend domain here
 ];
 
