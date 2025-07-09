@@ -41,7 +41,7 @@ A comprehensive procurement platform with AI-powered document analysis, Zero-Bas
    **Backend `.env` (contains sensitive data):**
    ```env
    # Gemini AI Configuration
-   GEMINI_API_KEY=your_gemini_api_key_here
+   GEMINI_API_KEY=your_actual_gemini_api_key_here
    GEMINI_MODEL=gemini-1.5-flash
    GEMINI_MODEL_COMPLEX=gemini-1.5-pro
    GEMINI_THINKING_BUDGET=0
@@ -59,6 +59,8 @@ A comprehensive procurement platform with AI-powered document analysis, Zero-Bas
    PORT=5001
    MONGODB_URI=mongodb://localhost:27017/project-robbie
    ```
+   
+   **⚠️ Important**: Replace `your_actual_gemini_api_key_here` with your real Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey).
 
 4. **Start the development servers**
    ```bash
