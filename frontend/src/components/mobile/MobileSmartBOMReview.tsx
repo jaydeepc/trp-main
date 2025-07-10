@@ -11,7 +11,15 @@ import {
   ChevronUp,
   Eye,
   Filter,
-  Search
+  Search,
+  BarChart3,
+  PieChart,
+  Target,
+  Shield,
+  Award,
+  Zap,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import InfoTooltip from '../common/InfoTooltip';
 import { RFQ, SmartBOMComponent } from '../../types';
@@ -36,6 +44,7 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
   const [expandedComponent, setExpandedComponent] = useState<string | null>(null);
   const [selectedComponent, setSelectedComponent] = useState<string>('1');
   const [viewMode, setViewMode] = useState<'list' | 'details' | 'suppliers'>('list');
+  const [currentGraphIndex, setCurrentGraphIndex] = useState(0);
 
   const handleContinue = async () => {
     try {
@@ -443,7 +452,7 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
     const component = components.find(c => c.id === selectedComponent);
     if (!component) return null;
 
-    // Mock supplier data for demonstration
+    // Extended mock supplier data for better visualization
     const mockSuppliers = [
       {
         id: 'sup-1',
@@ -475,6 +484,370 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
         certifications: ['ISO 9001'],
         riskLevel: 'Medium' as const,
       },
+      {
+        id: 'sup-4',
+        name: 'Precision Alloys Inc',
+        cost: 35600,
+        trustScore: 9.4,
+        category: 'trusted' as const,
+        region: 'Germany',
+        certifications: ['ISO 9001', 'AS9100', 'NADCAP'],
+        riskLevel: 'Low' as const,
+      },
+      {
+        id: 'sup-5',
+        name: 'Budget Aluminum Works',
+        cost: 22100,
+        trustScore: 6.8,
+        category: 'new' as const,
+        region: 'Vietnam',
+        certifications: ['ISO 9001'],
+        riskLevel: 'High' as const,
+      },
+      {
+        id: 'sup-6',
+        name: 'Quality Metal Fabricators',
+        cost: 32500,
+        trustScore: 8.8,
+        category: 'trusted' as const,
+        region: 'India',
+        certifications: ['ISO 9001', 'AS9100'],
+        riskLevel: 'Low' as const,
+      },
+      {
+        id: 'sup-7',
+        name: 'Advanced Materials Co',
+        cost: 29800,
+        trustScore: 8.2,
+        category: 'empanelled' as const,
+        region: 'Thailand',
+        certifications: ['ISO 9001', 'ISO 14001'],
+        riskLevel: 'Low' as const,
+      },
+      {
+        id: 'sup-8',
+        name: 'Reliable Metals Inc',
+        cost: 33400,
+        trustScore: 9.1,
+        category: 'trusted' as const,
+        region: 'India - Karnataka',
+        certifications: ['ISO 9001', 'AS9100', 'IATF 16949'],
+        riskLevel: 'Low' as const,
+      },
+      {
+        id: 'sup-9',
+        name: 'Economy Fabricators',
+        cost: 24600,
+        trustScore: 7.2,
+        category: 'new' as const,
+        region: 'Bangladesh',
+        certifications: ['ISO 9001'],
+        riskLevel: 'Medium' as const,
+      },
+      {
+        id: 'sup-10',
+        name: 'Premium Alloy Solutions',
+        cost: 38200,
+        trustScore: 9.6,
+        category: 'trusted' as const,
+        region: 'Japan',
+        certifications: ['ISO 9001', 'AS9100', 'JIS Q 9100'],
+        riskLevel: 'Low' as const,
+      },
+    ];
+
+    // Calculate stats for graphs
+    const categoryStats = {
+      trusted: mockSuppliers.filter(s => s.category === 'trusted').length,
+      empanelled: mockSuppliers.filter(s => s.category === 'empanelled').length,
+      new: mockSuppliers.filter(s => s.category === 'new').length,
+    };
+
+    const riskStats = {
+      low: mockSuppliers.filter(s => s.riskLevel === 'Low').length,
+      medium: mockSuppliers.filter(s => s.riskLevel === 'Medium').length,
+      high: mockSuppliers.filter(s => s.riskLevel === 'High').length,
+    };
+
+    const avgTrustScore = mockSuppliers.reduce((sum, s) => sum + s.trustScore, 0) / mockSuppliers.length;
+    const avgCost = mockSuppliers.reduce((sum, s) => sum + s.cost, 0) / mockSuppliers.length;
+
+    // Mobile-optimized mini graphs
+    const renderMiniTrustVsCostGraph = () => {
+      // Calculate proper ranges for better visualization
+      const minCost = Math.min(...mockSuppliers.map(s => s.cost));
+      const maxCost = Math.max(...mockSuppliers.map(s => s.cost));
+      const minTrust = Math.min(...mockSuppliers.map(s => s.trustScore));
+      const maxTrust = Math.max(...mockSuppliers.map(s => s.trustScore));
+      
+      // Add padding to ranges
+      const costRange = maxCost - minCost;
+      const trustRange = maxTrust - minTrust;
+      const costPadding = costRange * 0.1;
+      const trustPadding = trustRange * 0.1;
+      
+      const adjustedMinCost = minCost - costPadding;
+      const adjustedMaxCost = maxCost + costPadding;
+      const adjustedMinTrust = minTrust - trustPadding;
+      const adjustedMaxTrust = maxTrust + trustPadding;
+
+      return (
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-semibold text-surface-900 text-sm flex items-center">
+              <Target className="w-4 h-4 mr-2 text-blue-600" />
+              Trust vs Cost
+            </h4>
+            <div className="text-xs text-surface-600">
+              {mockSuppliers.length} suppliers
+            </div>
+          </div>
+          
+          {/* Mini scatter plot */}
+          <div className="relative h-32 bg-white/70 rounded-lg p-3 mb-3">
+            <svg width="100%" height="100%" viewBox="0 0 180 100" className="overflow-visible">
+              {/* Grid lines */}
+              <defs>
+                <pattern id="miniGrid" width="18" height="10" patternUnits="userSpaceOnUse">
+                  <path d="M 18 0 L 0 0 0 10" fill="none" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.4"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#miniGrid)" />
+              
+              {/* Average lines */}
+              <line 
+                x1={((avgCost - adjustedMinCost) / (adjustedMaxCost - adjustedMinCost)) * 180} 
+                y1="0" 
+                x2={((avgCost - adjustedMinCost) / (adjustedMaxCost - adjustedMinCost)) * 180} 
+                y2="100" 
+                stroke="#3b82f6" 
+                strokeWidth="1" 
+                strokeDasharray="3,3" 
+                opacity="0.7"
+              />
+              <line 
+                x1="0" 
+                y1={100 - ((avgTrustScore - adjustedMinTrust) / (adjustedMaxTrust - adjustedMinTrust)) * 100} 
+                x2="180" 
+                y2={100 - ((avgTrustScore - adjustedMinTrust) / (adjustedMaxTrust - adjustedMinTrust)) * 100} 
+                stroke="#10b981" 
+                strokeWidth="1" 
+                strokeDasharray="3,3" 
+                opacity="0.7"
+              />
+              
+              {/* Axes */}
+              <line x1="0" y1="100" x2="180" y2="100" stroke="#94a3b8" strokeWidth="1"/>
+              <line x1="0" y1="0" x2="0" y2="100" stroke="#94a3b8" strokeWidth="1"/>
+              
+              {/* Data points */}
+              {mockSuppliers.map((supplier) => {
+                const x = ((supplier.cost - adjustedMinCost) / (adjustedMaxCost - adjustedMinCost)) * 180;
+                const y = 100 - ((supplier.trustScore - adjustedMinTrust) / (adjustedMaxTrust - adjustedMinTrust)) * 100;
+                const color = supplier.category === 'trusted' ? '#3b82f6' : 
+                             supplier.category === 'empanelled' ? '#10b981' : '#f59e0b';
+                
+                return (
+                  <circle
+                    key={supplier.id}
+                    cx={Math.max(3, Math.min(177, x))}
+                    cy={Math.max(3, Math.min(97, y))}
+                    r="4"
+                    fill={color}
+                    stroke="white"
+                    strokeWidth="1.5"
+                    opacity="0.8"
+                  />
+                );
+              })}
+            </svg>
+            
+            {/* Axis labels */}
+            <div className="absolute bottom-1 left-1 text-xs text-surface-500">
+              ${(adjustedMinCost/1000).toFixed(0)}K
+            </div>
+            <div className="absolute bottom-1 right-1 text-xs text-surface-500">
+              ${(adjustedMaxCost/1000).toFixed(0)}K
+            </div>
+            <div className="absolute top-1 left-1 text-xs text-surface-500">
+              {adjustedMaxTrust.toFixed(1)}
+            </div>
+            <div className="absolute bottom-8 left-1 text-xs text-surface-500">
+              {adjustedMinTrust.toFixed(1)}
+            </div>
+          </div>
+
+          {/* Key insights */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-white/80 p-2 rounded">
+              <div className="font-semibold text-blue-600">{avgTrustScore.toFixed(1)}/10</div>
+              <div className="text-surface-600">Avg Trust</div>
+            </div>
+            <div className="bg-white/80 p-2 rounded">
+              <div className="font-semibold text-green-600">${(avgCost/1000).toFixed(0)}K</div>
+              <div className="text-surface-600">Avg Cost</div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const renderMiniCategoryDistribution = () => (
+      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-semibold text-surface-900 text-sm flex items-center">
+            <PieChart className="w-4 h-4 mr-2 text-green-600" />
+            Category Mix
+          </h4>
+          <div className="text-xs text-surface-600">
+            Distribution
+          </div>
+        </div>
+
+        {/* Mini donut chart representation */}
+        <div className="flex items-center justify-center mb-3">
+          <div className="relative w-20 h-20">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="30" fill="none" stroke="#e5e7eb" strokeWidth="8"/>
+              <circle 
+                cx="40" cy="40" r="30" 
+                fill="none" 
+                stroke="#3b82f6" 
+                strokeWidth="8"
+                strokeDasharray={`${(categoryStats.trusted / mockSuppliers.length) * 188.5} 188.5`}
+                strokeDashoffset="0"
+                transform="rotate(-90 40 40)"
+              />
+              <circle 
+                cx="40" cy="40" r="30" 
+                fill="none" 
+                stroke="#10b981" 
+                strokeWidth="8"
+                strokeDasharray={`${(categoryStats.empanelled / mockSuppliers.length) * 188.5} 188.5`}
+                strokeDashoffset={`-${(categoryStats.trusted / mockSuppliers.length) * 188.5}`}
+                transform="rotate(-90 40 40)"
+              />
+              <circle 
+                cx="40" cy="40" r="30" 
+                fill="none" 
+                stroke="#f59e0b" 
+                strokeWidth="8"
+                strokeDasharray={`${(categoryStats.new / mockSuppliers.length) * 188.5} 188.5`}
+                strokeDashoffset={`-${((categoryStats.trusted + categoryStats.empanelled) / mockSuppliers.length) * 188.5}`}
+                transform="rotate(-90 40 40)"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-lg font-bold text-surface-900">{mockSuppliers.length}</div>
+                <div className="text-xs text-surface-600">Total</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <span>Trusted</span>
+            </div>
+            <span className="font-semibold">{categoryStats.trusted}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span>Empanelled</span>
+            </div>
+            <span className="font-semibold">{categoryStats.empanelled}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+              <span>New</span>
+            </div>
+            <span className="font-semibold">{categoryStats.new}</span>
+          </div>
+        </div>
+      </div>
+    );
+
+    const renderMiniRiskAnalysis = () => (
+      <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-4 border border-orange-100">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-semibold text-surface-900 text-sm flex items-center">
+            <Shield className="w-4 h-4 mr-2 text-orange-600" />
+            Risk Profile
+          </h4>
+          <div className="text-xs text-surface-600">
+            Assessment
+          </div>
+        </div>
+
+        {/* Mini bar chart */}
+        <div className="space-y-2 mb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-xs">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span>Low Risk</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-16 bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full"
+                  style={{ width: `${(riskStats.low / mockSuppliers.length) * 100}%` }}
+                ></div>
+              </div>
+              <span className="text-xs font-semibold w-4">{riskStats.low}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-xs">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <span>Medium</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-16 bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-yellow-500 h-2 rounded-full"
+                  style={{ width: `${(riskStats.medium / mockSuppliers.length) * 100}%` }}
+                ></div>
+              </div>
+              <span className="text-xs font-semibold w-4">{riskStats.medium}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-xs">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span>High Risk</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-16 bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-red-500 h-2 rounded-full"
+                  style={{ width: `${(riskStats.high / mockSuppliers.length) * 100}%` }}
+                ></div>
+              </div>
+              <span className="text-xs font-semibold w-4">{riskStats.high}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Risk insight */}
+        <div className="bg-white/80 p-2 rounded text-xs">
+          <div className="font-semibold text-orange-600">
+            {Math.round((riskStats.low / mockSuppliers.length) * 100)}% Low Risk
+          </div>
+          <div className="text-surface-600">Suppliers available</div>
+        </div>
+      </div>
+    );
+
+    const graphs = [
+      { component: renderMiniTrustVsCostGraph, title: "Trust vs Cost" },
+      { component: renderMiniCategoryDistribution, title: "Category Mix" },
+      { component: renderMiniRiskAnalysis, title: "Risk Profile" }
     ];
 
     return (
@@ -497,6 +870,81 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
           <p className="text-surface-600 text-sm mb-4">
             {mockSuppliers.length} suppliers found matching your requirements
           </p>
+
+          {/* Mobile Supplier Analytics - Swipeable Cards */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-surface-900 flex items-center">
+                <BarChart3 className="w-4 h-4 mr-2 text-primary-600" />
+                Supplier Analytics
+              </h3>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentGraphIndex(Math.max(0, currentGraphIndex - 1))}
+                  disabled={currentGraphIndex === 0}
+                  className="p-1 rounded-full bg-surface-100 disabled:opacity-50"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="flex space-x-1">
+                  {graphs.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-2 h-2 rounded-full ${
+                        index === currentGraphIndex ? 'bg-primary-600' : 'bg-surface-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={() => setCurrentGraphIndex(Math.min(graphs.length - 1, currentGraphIndex + 1))}
+                  disabled={currentGraphIndex === graphs.length - 1}
+                  className="p-1 rounded-full bg-surface-100 disabled:opacity-50"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Current Graph */}
+            <div className="transition-all duration-300">
+              {graphs[currentGraphIndex].component()}
+            </div>
+
+            {/* Graph Navigation Dots */}
+            <div className="flex justify-center mt-3 space-x-2">
+              {graphs.map((graph, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentGraphIndex(index)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    index === currentGraphIndex
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-surface-100 text-surface-600'
+                  }`}
+                >
+                  {graph.title}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* AI Insights */}
+          <Card className="p-4 mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">AI Procurement Insights</h4>
+                <div className="space-y-1 text-sm text-blue-800">
+                  <p>• <strong>Sweet Spot:</strong> 4 suppliers offer optimal trust-cost balance</p>
+                  <p>• <strong>Cost Savings:</strong> Up to 22% savings available with new suppliers</p>
+                  <p>• <strong>Risk Assessment:</strong> {Math.round((riskStats.low / mockSuppliers.length) * 100)}% of suppliers are low-risk</p>
+                </div>
+              </div>
+            </div>
+          </Card>
 
           {/* Supplier Cards */}
           <div className="space-y-3">
