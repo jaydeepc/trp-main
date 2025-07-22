@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { RFQProvider } from './context/RFQContext';
 import Dashboard from './components/pages/Dashboard';
 import RFQWizard from './components/pages/RFQWizard';
+import AvatarLandingPage from './components/pages/AvatarLandingPage';
 import MobileDashboard from './components/mobile/MobileDashboard';
 import MobileRFQWizard from './components/mobile/MobileRFQWizard';
 import MobileNavigation from './components/mobile/MobileNavigation';
@@ -9,7 +10,7 @@ import { useRFQ } from './context/RFQContext';
 import { useResponsive } from './hooks/useResponsive';
 
 // Simple router state management for MVP
-type AppView = 'dashboard' | 'rfq-wizard';
+type AppView = 'avatar-landing' | 'dashboard' | 'rfq-wizard';
 
 interface AppState {
   currentView: AppView;
@@ -18,7 +19,7 @@ interface AppState {
 
 function AppContent() {
   const [appState, setAppState] = useState<AppState>({
-    currentView: 'dashboard'
+    currentView: 'avatar-landing'
   });
   
   const { createRFQ } = useRFQ();
@@ -50,6 +51,16 @@ function AppContent() {
     });
   };
 
+  const handleNavigateToAvatarLanding = () => {
+    setAppState({
+      currentView: 'avatar-landing'
+    });
+  };
+
+  const handleNavigateToRFQ = () => {
+    handleCreateRFQ();
+  };
+
   // Render current view with responsive components
   if (isMobile) {
     return (
@@ -59,7 +70,12 @@ function AppContent() {
           onCreateRFQ={handleCreateRFQ}
           onBackToDashboard={handleBackToDashboard}
         />
-        {appState.currentView === 'dashboard' ? (
+        {appState.currentView === 'avatar-landing' ? (
+          <AvatarLandingPage
+            onNavigateToDashboard={handleBackToDashboard}
+            onNavigateToRFQ={handleNavigateToRFQ}
+          />
+        ) : appState.currentView === 'dashboard' ? (
           <MobileDashboard
             onCreateRFQ={handleCreateRFQ}
             onViewRFQ={handleViewRFQ}
@@ -106,6 +122,14 @@ function AppContent() {
 
   // Desktop view (original components)
   switch (appState.currentView) {
+    case 'avatar-landing':
+      return (
+        <AvatarLandingPage
+          onNavigateToDashboard={handleBackToDashboard}
+          onNavigateToRFQ={handleNavigateToRFQ}
+        />
+      );
+
     case 'dashboard':
       return (
         <Dashboard
