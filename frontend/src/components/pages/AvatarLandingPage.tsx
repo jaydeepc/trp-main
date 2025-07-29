@@ -18,12 +18,12 @@ import { ROBBIE_PERSONALITY } from '../../lib/avatarConstants';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import Step1DefineRequirement from '../forms/Step1DefineRequirement';
- 
+
 interface AvatarLandingPageProps {
   onNavigateToDashboard: () => void;
   onNavigateToRFQ: () => void;
 }
- 
+
 const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
   onNavigateToDashboard,
   onNavigateToRFQ
@@ -45,7 +45,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
     toggleChromaKey,
     clearError
   } = useStreamingAvatar();
- 
+
   const [textInput, setTextInput] = useState('');
   const [isVoiceChatActive, setIsVoiceChatActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -54,13 +54,13 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
   const [showUploadForm, setShowUploadForm] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
- 
+
   useEffect(() => {
     if (stream && videoRef.current) {
       videoRef.current.srcObject = stream;
       videoRef.current.onloadedmetadata = () => {
         videoRef.current!.play();
- 
+
         // Setup chroma key when video is ready
         if (canvasRef.current && isChromaKeyEnabled) {
           setupChromaKeyForVideo(videoRef.current!, canvasRef.current);
@@ -68,7 +68,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
       };
     }
   }, [stream, setupChromaKeyForVideo, isChromaKeyEnabled]);
- 
+
   // Auto-show upload form after avatar greeting
   useEffect(() => {
     if (sessionState === AvatarSessionState.CONNECTED) {
@@ -76,23 +76,23 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
       const timer = setTimeout(() => {
         setShowUploadForm(true);
       }, 8000);
- 
+
       return () => clearTimeout(timer);
     }
   }, [sessionState]);
- 
+
   const handleStartSession = async (withVoice: boolean = false) => {
     try {
       setIsStarting(true);
       clearError();
- 
+
       // Wait for fade animation to complete (1000ms)
       await new Promise(resolve => setTimeout(resolve, 1000));
- 
+
       const token = await avatarService.fetchAccessToken();
       await initAvatar(token);
       await startAvatar();
- 
+
       if (withVoice) {
         await startVoiceChat();
         setIsVoiceChatActive(true);
@@ -103,7 +103,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
       setIsStarting(false);
     }
   };
- 
+
   const handleStopSession = async () => {
     try {
       if (isVoiceChatActive) {
@@ -115,10 +115,10 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
       console.error('Failed to stop avatar session:', err);
     }
   };
- 
+
   const handleSendTextMessage = async () => {
     if (!textInput.trim()) return;
- 
+
     try {
       await sendMessage(textInput);
       setTextInput('');
@@ -126,7 +126,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
       console.error('Failed to send message:', err);
     }
   };
- 
+
   const handleToggleVoiceChat = async () => {
     try {
       if (isVoiceChatActive) {
@@ -140,7 +140,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
       console.error('Failed to toggle voice chat:', err);
     }
   };
- 
+
   const handleQuickAction = async (action: string) => {
     const actionMessages = {
       'create-rfq': "I'd like to create a new RFQ",
@@ -148,7 +148,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
       'find-suppliers': "I need help finding suppliers",
       'view-dashboard': "Show me my procurement dashboard"
     };
- 
+
     const message = actionMessages[action as keyof typeof actionMessages];
     if (message) {
       if (sessionState === AvatarSessionState.CONNECTED) {
@@ -163,7 +163,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
       }
     }
   };
- 
+
   return (
     <div className="min-h-screen bg-surface-900 relative overflow-hidden">
       {/* Header */}
@@ -182,7 +182,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
                 <p className="text-surface-600 text-sm font-medium">AI-Powered Procurement Assistant</p>
               </div>
             </div>
- 
+
             <div className="flex items-center space-x-3">
               <Button
                 onClick={() => setShowClassicMode(!showClassicMode)}
@@ -192,7 +192,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
               >
                 {showClassicMode ? 'Avatar Mode' : 'Classic Mode'}
               </Button>
- 
+
               {showClassicMode && (
                 <Button
                   onClick={onNavigateToDashboard}
@@ -205,7 +205,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
           </div>
         </div>
       </header>
- 
+
       {showClassicMode ? (
         <main className="max-w-7xl mx-auto px-6 py-8">
           {/* Classic Mode - Quick Navigation */}
@@ -218,7 +218,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
                 Your AI-powered procurement intelligence platform. Choose how you'd like to proceed:
               </p>
             </div>
- 
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               <Card className="p-8 hover:shadow-lg transition-all duration-300 cursor-pointer group" onClick={onNavigateToDashboard}>
                 <div className="text-center">
@@ -232,7 +232,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
                   <ArrowRight className="w-5 h-5 text-primary-600 mx-auto group-hover:translate-x-1 transition-transform" />
                 </div>
               </Card>
- 
+
               <Card className="p-8 hover:shadow-lg transition-all duration-300 cursor-pointer group" onClick={onNavigateToRFQ}>
                 <div className="text-center">
                   <div className="w-16 h-16 bg-accent-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-accent-200 transition-colors">
@@ -270,7 +270,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
                     className={`h-full w-auto object-contain ${isChromaKeyEnabled ? 'block' : 'hidden'}`}
                   />
                 </div>
- 
+
               </div>
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-surface-900 via-surface-800 to-primary-900 flex items-center justify-center">
@@ -296,7 +296,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
                     <p className="text-xl text-surface-300 mb-12 leading-relaxed">
                       Your AI-powered procurement assistant is ready to revolutionize your sourcing process with intelligent automation and insights.
                     </p>
- 
+
                     {/* Start Button */}
                     <Button
                       onClick={() => handleStartSession(true)}
@@ -305,8 +305,8 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
                     >
                       Start Experience
                     </Button>
- 
- 
+
+
                     {/* Bottom Horizontal Panels Container */}
                     <div className="mt-10">
                       <div className="flex flex-row gap-6 justify-center items-start max-w-6xl">
@@ -335,7 +335,6 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
                             ))}
                           </div>
                         </div>
- 
                         {/* Help Section */}
                         <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-6 border border-white/20 flex-1 min-w-80 max-w-80">
                           <h3 className="text-lg font-semibold text-surface-900 mb-4 flex items-center space-x-2">
@@ -357,8 +356,8 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
                 )}
               </div>
             )}
- 
- 
+
+
             {/* Error Display */}
             {error && (
               <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 p-4 bg-red-500/90 text-white rounded-xl backdrop-blur-sm shadow-lg z-10 max-w-md">
@@ -366,7 +365,6 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
               </div>
             )}
           </div>
- 
           {/* Audio Controls */}
           {sessionState === AvatarSessionState.CONNECTED && (
             <div className="absolute top-6 right-6 flex space-x-2 z-50">
@@ -376,19 +374,9 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
               >
                 {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
               </button>
-              <button
-                onClick={toggleChromaKey}
-                className={`p-3 rounded-xl transition-colors backdrop-blur-sm shadow-xl border border-white/20 ${isChromaKeyEnabled
-                  ? 'bg-primary-600 hover:bg-primary-700 text-white'
-                  : 'bg-black/70 hover:bg-black/80 text-white'
-                  }`}
-                title={isChromaKeyEnabled ? 'Disable Transparent Background' : 'Enable Transparent Background'}
-              >
-                <Sparkles className="w-5 h-5" />
-              </button>
             </div>
           )}
- 
+
           {/* Listening Indicator */}
           {isListening && (
             <div className="absolute top-6 left-6 flex items-center space-x-3 bg-gray-800/80 text-white px-6 py-3 rounded-full backdrop-blur-sm shadow-lg z-50 border border-gray-600/30">
@@ -396,7 +384,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
               <span className="font-medium">Listening...</span>
             </div>
           )}
- 
+
           {/* Session Controls for Connected State */}
           {sessionState === AvatarSessionState.CONNECTED && (
             <div className="absolute bottom-12 left-8 z-40">
@@ -422,7 +410,7 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
               </div>
             </div>
           )}
- 
+
           {/* Floating Upload Form on Right Side */}
           {showUploadForm && (
             <div className="absolute top-0 right-0 w-1/2 h-full flex items-center justify-center p-8 z-40">
@@ -446,5 +434,5 @@ const AvatarLandingPage: React.FC<AvatarLandingPageProps> = ({
     </div>
   );
 };
- 
+
 export default AvatarLandingPage;
