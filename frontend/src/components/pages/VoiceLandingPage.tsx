@@ -3,21 +3,22 @@ import {
   Brain,
   Mic,
   MicOff,
-  MessageSquare,
   Monitor,
   Sparkles,
   ArrowRight,
-  Volume2,
-  VolumeX,
   Settings,
   FileText,
   Users,
-  TrendingUp
+  TrendingUp,
+  X
 } from 'lucide-react';
 import { useAudioInterface } from '../../hooks/useAudioInterface';
+import { useVoiceFunctions } from '../../hooks/useVoiceFunctions';
 import AudioVisualization from '../common/AudioVisualization';
 import Button from '../common/Button';
 import Card from '../common/Card';
+import FileUpload from '../floating-windows/FileUpload';
+import VoiceInterface from '../common/VoiceInterface';
 
 interface VoiceLandingPageProps {
   onNavigateToDashboard: () => void;
@@ -39,107 +40,98 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
 
   const [showClassicMode, setShowClassicMode] = useState(false);
   const [conversationStarted, setConversationStarted] = useState(false);
-  const [messages, setMessages] = useState<Array<{ type: 'user' | 'ai'; text: string; timestamp: Date }>>([]);
-  const [currentMessage, setCurrentMessage] = useState('');
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // Initialize voice functions
+  const {
+    executeFunction,
+    updateStateFromUI,
+    handleFileUpload,
+    mockGeminiLiveCall,
+    notifications,
+    hasUploadedFiles,
+    conversationState
+  } = useVoiceFunctions({
+    setShowUploadForm,
+    setCurrentStep,
+    onNavigateToDashboard,
+    onNavigateToRFQ
+  });
+
+  // Track if any UI elements should be shown (determines layout)
+  const hasFloatingElements = showUploadForm || hasUploadedFiles;
 
   // Initialize audio on first interaction
   const handleStartConversation = async () => {
     try {
       await initializeAudio();
       setConversationStarted(true);
-      
+
       // AI greeting
       speak("Hello! I'm Robbie, your AI procurement assistant. I can help you create smart RFQs, analyze your BOMs, find suppliers, and optimize your procurement process. What would you like to work on today?", 5000);
-      
-      // Add greeting to messages
-      setMessages([{
-        type: 'ai',
-        text: "Hello! I'm Robbie, your AI procurement assistant. I can help you create smart RFQs, analyze your BOMs, find suppliers, and optimize your procurement process. What would you like to work on today?",
-        timestamp: new Date()
-      }]);
     } catch (error) {
       console.error('Error starting conversation:', error);
     }
   };
 
-  const handleToggleListening = () => {
+  const handleToggleListening = async () => {
     if (audioState.isListening) {
       stopListening();
     } else {
       startListening();
+
+      // For testing - simulate voice input processing
+      setTimeout(async () => {
+        if (audioState.isListening) {
+          stopListening();
+          // Mock voice processing
+          const mockInput = "show upload form";
+          const result = await mockGeminiLiveCall(mockInput);
+          speak(result.response, 3000);
+        }
+      }, 3000);
     }
   };
 
   const handleQuickAction = async (action: string) => {
     const actionMessages = {
-      'create-rfq': "I'd like to create a new smart RFQ",
-      'analyze-bom': "Can you help me analyze my Bill of Materials?",
-      'find-suppliers': "I need help finding qualified suppliers",
-      'view-dashboard': "Show me my procurement dashboard and analytics"
+      'create-rfq': "Perfect! Let's create a new smart RFQ. I'll guide you through the process.",
+      'analyze-bom': "I'd be happy to analyze your Bill of Materials! Please upload your BOM file.",
+      'find-suppliers': "I can help you find the best suppliers from our database of 200+ verified partners.",
+      'view-dashboard': "Let me show you your procurement dashboard with real-time analytics and insights."
     };
 
     const message = actionMessages[action as keyof typeof actionMessages];
     if (message) {
-      // Add user message
-      setMessages(prev => [...prev, {
-        type: 'user',
-        text: message,
-        timestamp: new Date()
-      }]);
+      speak(message, 3000);
 
-      // Simulate AI response based on action
-      let aiResponse = '';
+      // Execute corresponding actions
       switch (action) {
         case 'create-rfq':
-          aiResponse = "Perfect! Let's create a new smart RFQ. I'll guide you through the process. First, do you have any design files, BOMs, or specifications you'd like to upload?";
           setTimeout(() => onNavigateToRFQ(), 2000);
           break;
         case 'analyze-bom':
-          aiResponse = "I'd be happy to analyze your Bill of Materials! Please upload your BOM file and I'll provide insights on component optimization, supplier recommendations, and cost analysis.";
+          // Show upload form via voice function
+          await executeFunction('show_upload_form', { reason: 'User requested BOM analysis' });
           break;
         case 'find-suppliers':
-          aiResponse = "I can help you find the best suppliers from our database of 200+ verified partners. What type of components or materials are you looking to source?";
+          // Could trigger supplier search UI
           break;
         case 'view-dashboard':
-          aiResponse = "Let me show you your procurement dashboard with real-time analytics and insights.";
           setTimeout(() => onNavigateToDashboard(), 2000);
           break;
       }
-
-      // Add AI response
-      setTimeout(() => {
-        setMessages(prev => [...prev, {
-          type: 'ai',
-          text: aiResponse,
-          timestamp: new Date()
-        }]);
-        speak(aiResponse, 4000);
-      }, 1000);
     }
   };
 
-  const handleSendMessage = () => {
-    if (!currentMessage.trim()) return;
-
-    // Add user message
-    setMessages(prev => [...prev, {
-      type: 'user',
-      text: currentMessage,
-      timestamp: new Date()
-    }]);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const response = "I understand your request. Let me help you with that. I'm processing your input and will provide you with the best solution.";
-      setMessages(prev => [...prev, {
-        type: 'ai',
-        text: response,
-        timestamp: new Date()
-      }]);
-      speak(response, 3000);
-    }, 1000);
-
-    setCurrentMessage('');
+  // Handle file upload
+  const onFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files[0]) {
+      const uploadedFile = handleFileUpload(files[0]);
+      speak(`File ${uploadedFile.name} uploaded successfully. I'll analyze it now.`, 3000);
+    }
   };
 
   // Cleanup on unmount
@@ -160,7 +152,6 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                 <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-600 rounded-2xl flex items-center justify-center shadow-lg">
                   <Brain className="w-6 h-6 text-white" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-accent-400 rounded-full animate-pulse"></div>
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">Project Robbie</h1>
@@ -190,6 +181,25 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
           </div>
         </div>
       </header>
+
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <div className="fixed top-20 right-6 z-50 space-y-2">
+          {notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`px-4 py-3 rounded-xl backdrop-blur-sm border ${notification.type === 'error'
+                ? 'bg-red-500/20 border-red-500/40 text-red-100'
+                : notification.type === 'success'
+                  ? 'bg-green-500/20 border-green-500/40 text-green-100'
+                  : 'bg-blue-500/20 border-blue-500/40 text-blue-100'
+                }`}
+            >
+              {notification.message}
+            </div>
+          ))}
+        </div>
+      )}
 
       {showClassicMode ? (
         /* Classic Mode Interface */
@@ -234,23 +244,23 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
           </div>
         </main>
       ) : (
-        /* Voice Mode Interface */
-        <div className="flex flex-col h-full" style={{ minHeight: 'calc(100vh - 85px)' }}>
+        /* Voice Mode Interface - Pure Voice First */
+        <div className="relative" style={{ height: 'calc(100vh - 85px)' }}>
           {!conversationStarted ? (
-            /* Welcome Screen */
-            <div className="flex-1 flex items-center justify-center px-6">
+            /* Welcome Screen - Full Center */
+            <div className="absolute inset-0 flex items-center justify-center px-6">
               <div className="text-center max-w-2xl mx-auto">
                 <div className="mb-8">
                   <AudioVisualization
                     isListening={false}
                     isSpeaking={false}
                     audioLevel={0}
-                    size={200}
+                    size={250}
                     className="mb-6"
                   />
                 </div>
 
-                <h2 className="text-4xl font-bold text-white mb-6 bg-gradient-to-r from-white to-surface-200 bg-clip-text text-transparent">
+                <h2 className="text-5xl font-bold text-white mb-6 bg-gradient-to-r from-white to-surface-200 bg-clip-text text-transparent">
                   Meet Robbie
                 </h2>
                 <p className="text-xl text-surface-300 mb-8 leading-relaxed">
@@ -265,7 +275,7 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                   Start Voice Experience
                 </Button>
 
-                {/* Quick Actions */}
+                {/* Quick Actions - Bottom */}
                 <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { id: 'create-rfq', label: 'Create RFQ', icon: Sparkles },
@@ -286,101 +296,54 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
               </div>
             </div>
           ) : (
-            /* Conversation Interface */
-            <div className="flex-1 flex">
-              {/* Left Side - Audio Visualization */}
-              <div className="w-1/2 flex items-center justify-center p-8">
-                <div className="text-center">
-                  <AudioVisualization
-                    isListening={audioState.isListening}
-                    isSpeaking={audioState.isSpeaking}
-                    audioLevel={audioState.audioLevel}
-                    size={300}
-                    className="mb-6"
+            /* Active Voice Interface - Smooth Transitioning Layout */
+            <div className="flex h-full max-w-7xl mx-auto transition-all duration-700 ease-in-out">
+              {/* Voice Interface Container - Smoothly transitions from center to left */}
+              <div className={`h-full flex items-center justify-center p-6 transition-all duration-700 ease-in-out ${hasFloatingElements
+                ? 'w-1/2'
+                : 'w-full'
+                }`}>
+                <div className={`transition-all duration-700 ease-in-out ${hasFloatingElements ? 'transform-none' : 'transform-none'
+                  }`}>
+                  <VoiceInterface
+                    audioState={audioState}
+                    onToggleListening={handleToggleListening}
+                    executeFunction={executeFunction}
                   />
-                  
-                  {/* Audio Controls */}
-                  <div className="flex items-center justify-center space-x-4">
-                    <Button
-                      onClick={handleToggleListening}
-                      variant={audioState.isListening ? "primary" : "outline"}
-                      className={`${audioState.isListening 
-                        ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                        : "border-white/20 text-white hover:bg-white/10"
-                      }`}
-                      icon={audioState.isListening ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-                    >
-                      {audioState.isListening ? 'Listening...' : 'Click to Talk'}
-                    </Button>
-                  </div>
-
-                  {audioState.error && (
-                    <p className="text-red-400 text-sm mt-4">{audioState.error}</p>
-                  )}
                 </div>
               </div>
 
-              {/* Right Side - Conversation & Quick Actions */}
-              <div className="w-1/2 p-8 bg-black/20 backdrop-blur-sm">
-                <div className="h-full flex flex-col">
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto mb-6 space-y-4">
-                    {messages.map((message, index) => (
-                      <div
-                        key={index}
-                        className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-xs px-4 py-2 rounded-xl ${
-                            message.type === 'user'
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white/10 text-white border border-white/20'
-                          }`}
-                        >
-                          {message.text}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Text Input */}
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={currentMessage}
-                      onChange={(e) => setCurrentMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                      placeholder="Type your message..."
-                      className="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-surface-400 focus:outline-none focus:border-white/40"
-                    />
-                    <Button
-                      onClick={handleSendMessage}
-                      className="bg-primary-600 hover:bg-primary-700 text-white"
-                      icon={<MessageSquare className="w-4 h-4" />}
-                    >
-                      Send
-                    </Button>
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div className="mt-6 grid grid-cols-2 gap-3">
-                    {[
-                      { id: 'create-rfq', label: 'Create RFQ', icon: Sparkles },
-                      { id: 'analyze-bom', label: 'Analyze BOM', icon: FileText },
-                      { id: 'find-suppliers', label: 'Find Suppliers', icon: Users },
-                      { id: 'view-dashboard', label: 'Dashboard', icon: TrendingUp }
-                    ].map((action) => (
+              {/* Floating Windows Container - Slides in from right */}
+              <div className={`h-full flex items-center justify-center p-6 transition-all duration-700 ease-in-out ${hasFloatingElements
+                ? 'w-1/2 opacity-100 translate-x-0'
+                : 'w-0 opacity-0 translate-x-full overflow-hidden'
+                }`}>
+                {showUploadForm && (
+                  <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 w-full max-h-[80vh] overflow-y-auto">
+                    {/* Window Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900">File Upload</h3>
                       <button
-                        key={action.id}
-                        onClick={() => handleQuickAction(action.id)}
-                        className="p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 text-white border border-white/20 hover:border-white/40 text-sm"
+                        onClick={() => executeFunction('hide_upload_form')}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                       >
-                        <action.icon className="w-4 h-4 mx-auto mb-1" />
-                        <span className="font-medium">{action.label}</span>
+                        <X className="w-4 h-4 text-gray-500" />
                       </button>
-                    ))}
+                    </div>
+
+                    {/* Step1DefineRequirement Component */}
+                    <div className="p-6">
+                      <FileUpload
+                        onNext={() => {
+                          // Handle next step
+                          executeFunction('hide_upload_form');
+                          executeFunction('navigate_to', { destination: 'bom-review' });
+                        }}
+                        onCancel={() => executeFunction('hide_upload_form')}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
