@@ -62,25 +62,13 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({
             onClick={() => executeFunction('show_bom_analysis')}
             className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white/70 hover:text-white transition-colors"
           >
-            Analyze BOM
+            "Analyze BOM"
           </button>
           <button
             onClick={() => executeFunction('show_commercial_terms')}
             className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white/70 hover:text-white transition-colors"
           >
-            Commercial Terms
-          </button>
-          <button
-            onClick={() => executeFunction('navigate_to', { destination: 'dashboard' })}
-            className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white/70 hover:text-white transition-colors"
-          >
-            "Show Dashboard"
-          </button>
-          <button
-            onClick={() => executeFunction('get_conversation_context')}
-            className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white/70 hover:text-white transition-colors"
-          >
-            Get Context
+            "Commercial Terms"
           </button>
         </div>
       </div>
