@@ -173,6 +173,33 @@ class VoiceFunctionRegistry {
     });
 
     this.registerFunction({
+      name: 'show_bom_analysis',
+      description: 'Show the BOM analysis interface to review and analyze uploaded files',
+      parameters: {
+        type: 'object',
+        properties: {
+          reason: {
+            type: 'string',
+            description: 'Reason for showing BOM analysis'
+          }
+        },
+        required: []
+      },
+      function: this.showBOMAnalysis.bind(this)
+    });
+
+    this.registerFunction({
+      name: 'hide_bom_analysis',
+      description: 'Hide the BOM analysis interface',
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: []
+      },
+      function: this.hideBOMAnalysis.bind(this)
+    });
+
+    this.registerFunction({
       name: 'navigate_to',
       description: 'Navigate to different sections of the application',
       parameters: {
@@ -283,6 +310,38 @@ class VoiceFunctionRegistry {
       success: true,
       message: 'Upload form hidden',
       action: 'hide_upload_form'
+    };
+  }
+
+  private async showBOMAnalysis(args: { reason?: string }) {
+    if (!this.callbacks) {
+      throw new Error('Callbacks not initialized');
+    }
+
+    // For now, we'll use setCurrentStep to show BOM analysis
+    // This will need to be updated when we add proper BOM analysis state management
+    this.callbacks.setCurrentStep(2);
+
+    return {
+      success: true,
+      message: 'BOM analysis interface displayed',
+      action: 'show_bom_analysis',
+      reason: args.reason || 'User requested BOM analysis'
+    };
+  }
+
+  private async hideBOMAnalysis() {
+    if (!this.callbacks) {
+      throw new Error('Callbacks not initialized');
+    }
+
+    // Reset back to step 1
+    this.callbacks.setCurrentStep(1);
+
+    return {
+      success: true,
+      message: 'BOM analysis interface hidden',
+      action: 'hide_bom_analysis'
     };
   }
 
