@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 interface MobileNavigationProps {
-  currentView: 'avatar-landing' | 'dashboard' | 'rfq-wizard';
+  currentView: 'voice-landing' | 'dashboard' | 'rfq-wizard';
   onCreateRFQ: () => void;
   onBackToDashboard: () => void;
 }

@@ -10,7 +10,7 @@ import { useRFQ } from './context/RFQContext';
 import { useResponsive } from './hooks/useResponsive';
 
 // Simple router state management for MVP
-type AppView = 'avatar-landing' | 'dashboard' | 'rfq-wizard';
+type AppView = 'voice-landing' | 'dashboard' | 'rfq-wizard';
 
 interface AppState {
   currentView: AppView;
@@ -19,7 +19,7 @@ interface AppState {
 
 function AppContent() {
   const [appState, setAppState] = useState<AppState>({
-    currentView: 'avatar-landing'
+    currentView: 'voice-landing'
   });
   
   const { createRFQ } = useRFQ();
@@ -51,9 +51,9 @@ function AppContent() {
     });
   };
 
-  const handleNavigateToAvatarLanding = () => {
+  const handleNavigateToVoiceLanding = () => {
     setAppState({
-      currentView: 'avatar-landing'
+      currentView: 'voice-landing'
     });
   };
 
@@ -70,7 +70,7 @@ function AppContent() {
           onCreateRFQ={handleCreateRFQ}
           onBackToDashboard={handleBackToDashboard}
         />
-        {appState.currentView === 'avatar-landing' ? (
+        {appState.currentView === 'voice-landing' ? (
           <VoiceLandingPage
             onNavigateToDashboard={handleBackToDashboard}
             onNavigateToRFQ={handleNavigateToRFQ}
@@ -122,7 +122,7 @@ function AppContent() {
 
   // Desktop view (original components)
   switch (appState.currentView) {
-    case 'avatar-landing':
+    case 'voice-landing':
       return (
         <VoiceLandingPage
           onNavigateToDashboard={handleBackToDashboard}
