@@ -20,6 +20,7 @@ import Card from '../common/Card';
 import FileUpload from '../floating-windows/FileUpload';
 import BOMAnalysis from '../floating-windows/BOMAnalysis';
 import CommercialTerms from '../floating-windows/CommercialTerms';
+import RFQPreview from '../floating-windows/RFQPreview';
 import VoiceInterface from '../common/VoiceInterface';
 
 interface VoiceLandingPageProps {
@@ -397,6 +398,35 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                           speak("Commercial terms saved! Now showing RFQ preview.", 3000);
                         }}
                         onCancel={() => executeFunction('hide_commercial_terms')}
+                        bomData={conversationState.uploadedFiles}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 4 && (
+                  <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 w-full max-h-[80vh] overflow-y-auto">
+                    {/* Window Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900">RFQ Preview</h3>
+                      <button
+                        onClick={() => setCurrentStep(1)}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4 text-gray-500" />
+                      </button>
+                    </div>
+
+                    {/* RFQ Preview Component */}
+                    <div className="p-6">
+                      <RFQPreview
+                        onNext={() => {
+                          // Navigate to dashboard after successful RFQ send
+                          setCurrentStep(1);
+                          speak("RFQ sent successfully! Redirecting to dashboard.", 3000);
+                          setTimeout(() => onNavigateToDashboard(), 2000);
+                        }}
+                        onCancel={() => setCurrentStep(1)}
                         bomData={conversationState.uploadedFiles}
                       />
                     </div>
