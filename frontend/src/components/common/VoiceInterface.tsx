@@ -52,17 +52,23 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({
       <div className="mt-8 opacity-30 hover:opacity-70 transition-opacity duration-300">
         <p className="text-xs text-white/60 mb-3">Debug: Simulate Voice Commands</p>
         <div className="flex flex-wrap justify-center gap-2">
-          <button
+        <button
             onClick={() => executeFunction('show_upload_form', { reason: 'Debug: User spoke about uploading' })}
             className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white/70 hover:text-white transition-colors"
           >
-            "I need to upload..."
+            "Upload File"
           </button>
           <button
-            onClick={() => executeFunction('navigate_to', { destination: 'bom-review' })}
+            onClick={() => executeFunction('show_bom_analysis')}
             className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white/70 hover:text-white transition-colors"
           >
-            "Analyze BOM"
+            Analyze BOM
+          </button>
+          <button
+            onClick={() => executeFunction('show_commercial_terms')}
+            className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white/70 hover:text-white transition-colors"
+          >
+            Commercial Terms
           </button>
           <button
             onClick={() => executeFunction('navigate_to', { destination: 'dashboard' })}
