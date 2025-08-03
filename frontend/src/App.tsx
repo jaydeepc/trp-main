@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { RFQProvider } from './context/RFQContext';
 import Dashboard from './components/pages/Dashboard';
 import RFQWizard from './components/pages/RFQWizard';
-import AvatarLandingPage from './components/pages/AvatarLandingPage';
+import VoiceLandingPage from './components/pages/VoiceLandingPage';
 import MobileDashboard from './components/mobile/MobileDashboard';
 import MobileRFQWizard from './components/mobile/MobileRFQWizard';
 import MobileNavigation from './components/mobile/MobileNavigation';
@@ -71,7 +71,7 @@ function AppContent() {
           onBackToDashboard={handleBackToDashboard}
         />
         {appState.currentView === 'avatar-landing' ? (
-          <AvatarLandingPage
+          <VoiceLandingPage
             onNavigateToDashboard={handleBackToDashboard}
             onNavigateToRFQ={handleNavigateToRFQ}
           />
@@ -124,7 +124,7 @@ function AppContent() {
   switch (appState.currentView) {
     case 'avatar-landing':
       return (
-        <AvatarLandingPage
+        <VoiceLandingPage
           onNavigateToDashboard={handleBackToDashboard}
           onNavigateToRFQ={handleNavigateToRFQ}
         />
