@@ -19,6 +19,7 @@ import Button from '../common/Button';
 import Card from '../common/Card';
 import FileUpload from '../floating-windows/FileUpload';
 import BOMAnalysis from '../floating-windows/BOMAnalysis';
+import CommercialTerms from '../floating-windows/CommercialTerms';
 import VoiceInterface from '../common/VoiceInterface';
 
 interface VoiceLandingPageProps {
@@ -61,7 +62,7 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
   });
 
   // Track if any UI elements should be shown (determines layout)
-  const hasFloatingElements = showUploadForm || hasUploadedFiles || currentStep === 2;
+  const hasFloatingElements = showUploadForm || hasUploadedFiles || currentStep === 2 || currentStep === 3 || currentStep === 4;
 
   // Initialize audio on first interaction
   const handleStartConversation = async () => {
@@ -369,6 +370,34 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                         }}
                         onCancel={() => executeFunction('hide_bom_analysis')}
                         uploadedFiles={conversationState.uploadedFiles}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 3 && (
+                  <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 w-full max-h-[80vh] overflow-y-auto">
+                    {/* Window Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900">Commercial Terms</h3>
+                      <button
+                        onClick={() => executeFunction('hide_commercial_terms')}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4 text-gray-500" />
+                      </button>
+                    </div>
+
+                    {/* Commercial Terms Component */}
+                    <div className="p-6">
+                      <CommercialTerms
+                        onNext={() => {
+                          // Move to step 4 (Preview) instead of just hiding
+                          setCurrentStep(4);
+                          speak("Commercial terms saved! Now showing RFQ preview.", 3000);
+                        }}
+                        onCancel={() => executeFunction('hide_commercial_terms')}
+                        bomData={conversationState.uploadedFiles}
                       />
                     </div>
                   </div>

@@ -200,6 +200,33 @@ class VoiceFunctionRegistry {
     });
 
     this.registerFunction({
+      name: 'show_commercial_terms',
+      description: 'Show the commercial terms interface to define payment and compliance requirements',
+      parameters: {
+        type: 'object',
+        properties: {
+          reason: {
+            type: 'string',
+            description: 'Reason for showing commercial terms'
+          }
+        },
+        required: []
+      },
+      function: this.showCommercialTerms.bind(this)
+    });
+
+    this.registerFunction({
+      name: 'hide_commercial_terms',
+      description: 'Hide the commercial terms interface',
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: []
+      },
+      function: this.hideCommercialTerms.bind(this)
+    });
+
+    this.registerFunction({
       name: 'navigate_to',
       description: 'Navigate to different sections of the application',
       parameters: {
@@ -342,6 +369,37 @@ class VoiceFunctionRegistry {
       success: true,
       message: 'BOM analysis interface hidden',
       action: 'hide_bom_analysis'
+    };
+  }
+
+  private async showCommercialTerms(args: { reason?: string }) {
+    if (!this.callbacks) {
+      throw new Error('Callbacks not initialized');
+    }
+
+    // Set current step to 3 for commercial terms
+    this.callbacks.setCurrentStep(3);
+
+    return {
+      success: true,
+      message: 'Commercial terms interface displayed',
+      action: 'show_commercial_terms',
+      reason: args.reason || 'User requested commercial terms'
+    };
+  }
+
+  private async hideCommercialTerms() {
+    if (!this.callbacks) {
+      throw new Error('Callbacks not initialized');
+    }
+
+    // Reset back to step 1
+    this.callbacks.setCurrentStep(1);
+
+    return {
+      success: true,
+      message: 'Commercial terms interface hidden',
+      action: 'hide_commercial_terms'
     };
   }
 
