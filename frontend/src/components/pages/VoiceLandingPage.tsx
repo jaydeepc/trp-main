@@ -18,6 +18,7 @@ import AudioVisualization from '../common/AudioVisualization';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import FileUpload from '../floating-windows/FileUpload';
+import BOMAnalysis from '../floating-windows/BOMAnalysis';
 import VoiceInterface from '../common/VoiceInterface';
 
 interface VoiceLandingPageProps {
@@ -60,7 +61,7 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
   });
 
   // Track if any UI elements should be shown (determines layout)
-  const hasFloatingElements = showUploadForm || hasUploadedFiles;
+  const hasFloatingElements = showUploadForm || hasUploadedFiles || currentStep === 2;
 
   // Initialize audio on first interaction
   const handleStartConversation = async () => {
@@ -331,15 +332,43 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                       </button>
                     </div>
 
-                    {/* Step1DefineRequirement Component */}
+                    {/* FileUpload Component */}
                     <div className="p-6">
                       <FileUpload
                         onNext={() => {
-                          // Handle next step
+                          // Just hide upload form, don't auto-show BOM analysis
                           executeFunction('hide_upload_form');
-                          executeFunction('navigate_to', { destination: 'bom-review' });
+                          speak("Files uploaded successfully! Say 'analyze BOM' when you're ready to review them.", 3000);
                         }}
                         onCancel={() => executeFunction('hide_upload_form')}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 2 && (
+                  <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 w-full max-h-[80vh] overflow-y-auto">
+                    {/* Window Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900">BOM Analysis</h3>
+                      <button
+                        onClick={() => executeFunction('hide_bom_analysis')}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4 text-gray-500" />
+                      </button>
+                    </div>
+
+                    {/* BOM Analysis Component */}
+                    <div className="p-6">
+                      <BOMAnalysis
+                        onNext={() => {
+                          // Just hide BOM analysis, don't auto-proceed to commercial terms
+                          executeFunction('hide_bom_analysis');
+                          speak("BOM analysis complete! Say 'commercial terms' when you're ready to proceed to the next step.", 3000);
+                        }}
+                        onCancel={() => executeFunction('hide_bom_analysis')}
+                        uploadedFiles={conversationState.uploadedFiles}
                       />
                     </div>
                   </div>
