@@ -79,12 +79,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
         prev.map(file => ({ ...file, status: 'processing' as const }))
       );
 
-      // Simulate processing time, then proceed to next step
+      // Simulate processing time, then mark as complete but don't auto-proceed
       setTimeout(() => {
         setUploadedFiles(prev =>
           prev.map(file => ({ ...file, status: 'complete' as const }))
         );
-        onNext();
+        // Don't automatically call onNext() - let the user decide what to do next
       }, 2000);
     }
   };
@@ -230,16 +230,29 @@ const FileUpload: React.FC<FileUploadProps> = ({
           Cancel
         </Button>
 
-        <Button
-          onClick={handleProcessFiles}
-          disabled={uploadedFiles.length === 0 || uploadedFiles.some(f => f.status === 'processing')}
-          loading={uploadedFiles.some(f => f.status === 'processing')}
-        >
-          {uploadedFiles.some(f => f.status === 'processing')
-            ? 'Processing Files...'
-            : `Process ${uploadedFiles.length} File${uploadedFiles.length > 1 ? 's' : ''} & Continue`
-          }
-        </Button>
+        <div className="flex space-x-3">
+          {uploadedFiles.length > 0 && !uploadedFiles.some(f => f.status === 'processing') && uploadedFiles.every(f => f.status === 'complete') && (
+            <Button
+              onClick={onNext}
+              variant="primary"
+            >
+              Continue
+            </Button>
+          )}
+          
+          <Button
+            onClick={handleProcessFiles}
+            disabled={uploadedFiles.length === 0 || uploadedFiles.some(f => f.status === 'processing') || uploadedFiles.every(f => f.status === 'complete')}
+            loading={uploadedFiles.some(f => f.status === 'processing')}
+          >
+            {uploadedFiles.some(f => f.status === 'processing')
+              ? 'Processing Files...'
+              : uploadedFiles.every(f => f.status === 'complete')
+                ? 'Files Processed'
+                : `Process ${uploadedFiles.length} File${uploadedFiles.length > 1 ? 's' : ''}`
+            }
+          </Button>
+        </div>
       </div>
     </div>
   );

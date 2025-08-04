@@ -112,7 +112,21 @@ class VoiceFunctionRegistry {
   updateState(action: string, data: any) {
     switch (action) {
       case 'FILE_UPLOADED':
-        this.conversationState.uploadedFiles.push(data);
+        // Check if file already exists, if not add it
+        const existingFileIndex = this.conversationState.uploadedFiles.findIndex(f => f.id === data.id);
+        if (existingFileIndex >= 0) {
+          // Update existing file
+          this.conversationState.uploadedFiles[existingFileIndex] = data;
+        } else {
+          // Add new file
+          this.conversationState.uploadedFiles.push(data);
+        }
+        console.log('Updated uploaded files:', this.conversationState.uploadedFiles);
+        break;
+      case 'FILES_UPDATED':
+        // Replace entire files array
+        this.conversationState.uploadedFiles = data;
+        console.log('Replaced uploaded files:', this.conversationState.uploadedFiles);
         break;
       case 'NAVIGATE_TO':
         this.conversationState.currentView = data.destination;
@@ -345,13 +359,31 @@ class VoiceFunctionRegistry {
       throw new Error('Callbacks not initialized');
     }
 
-    // For now, we'll use setCurrentStep to show BOM analysis
-    // This will need to be updated when we add proper BOM analysis state management
+    console.log('showBOMAnalysis called with args:', args);
+    console.log('Current uploaded files:', this.conversationState.uploadedFiles.length);
+
+    // Check if there are uploaded files first
+    if (this.conversationState.uploadedFiles.length === 0) {
+      // No files uploaded, suggest uploading first
+      this.callbacks.showNotification('Please upload files first before analyzing BOM', 'info');
+      
+      return {
+        success: true,
+        message: 'To analyze a BOM, you need to upload files first. Would you like me to show the upload form?',
+        action: 'show_bom_analysis',
+        reason: args.reason || 'User requested BOM analysis',
+        requiresFiles: true
+      };
+    }
+
+    // Files are available, show BOM analysis
+    console.log('Setting current step to 2');
     this.callbacks.setCurrentStep(2);
+    this.callbacks.showNotification('BOM Analysis interface opened', 'success');
 
     return {
       success: true,
-      message: 'BOM analysis interface displayed',
+      message: 'BOM analysis interface displayed. You can now review your uploaded files.',
       action: 'show_bom_analysis',
       reason: args.reason || 'User requested BOM analysis'
     };

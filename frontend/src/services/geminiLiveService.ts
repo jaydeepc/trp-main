@@ -71,11 +71,12 @@ class GeminiLiveService {
 5. Compliance and risk assessment
 
 IMPORTANT FUNCTION CALLING RULES:
-- When users mention "upload", "file", "document", or "BOM", call show_upload_form
-- When users want to analyze uploaded files, call show_bom_analysis
-- When users mention "commercial terms", "payment", or "terms", call show_commercial_terms
-- When users want to navigate, use navigate_to function
-- Always provide helpful context about what you're doing
+- When users mention "upload", "file", "document", call show_upload_form
+- When users mention "analyze", "analysis", "review", "BOM", "bill of materials", call show_bom_analysis
+- When users mention "commercial terms", "payment", "terms", call show_commercial_terms
+- When users want to navigate to dashboard or RFQ wizard, use navigate_to function
+- Always call the appropriate function AND provide helpful context about what you're doing
+- If user says "analyze BOM" or similar, ALWAYS call show_bom_analysis function
 
 Available functions:
 ${JSON.stringify(voiceFunctionRegistry.getFunctionDefinitions().map(f => ({
@@ -244,15 +245,31 @@ Keep responses conversational, helpful, and focused on procurement tasks. Always
             part.functionCall.args
           );
           
-          // Add function result to conversation
-          this.conversationHistory.push({
-            role: 'model',
-            parts: [{ 
-              text: `I've executed ${part.functionCall.name}. ${result.message || 'Action completed successfully.'}`
-            }]
-          });
-
-          responseText += `I've ${part.functionCall.name.replace(/_/g, ' ')}. ${result.message || 'Action completed successfully.'} `;
+          // Handle special cases based on function result
+          if (result.requiresFiles && part.functionCall.name === 'show_bom_analysis') {
+            // BOM analysis was requested but no files are uploaded
+            responseText += result.message + ' Say "yes" to upload files, or tell me what else you would like to do.';
+            
+            // Add function result to conversation
+            this.conversationHistory.push({
+              role: 'model',
+              parts: [{ 
+                text: responseText
+              }]
+            });
+          } else {
+            // Normal function execution
+            const actionDescription = part.functionCall.name.replace(/_/g, ' ');
+            responseText += `I've ${actionDescription}. ${result.message || 'Action completed successfully.'} `;
+            
+            // Add function result to conversation
+            this.conversationHistory.push({
+              role: 'model',
+              parts: [{ 
+                text: `I've executed ${part.functionCall.name}. ${result.message || 'Action completed successfully.'}`
+              }]
+            });
+          }
           
         } catch (error) {
           console.error('Function execution error:', error);
@@ -264,11 +281,13 @@ Keep responses conversational, helpful, and focused on procurement tasks. Always
     }
 
     if (responseText) {
-      // Add model response to conversation history
-      this.conversationHistory.push({
-        role: 'model',
-        parts: [{ text: responseText }]
-      });
+      // Add model response to conversation history if not already added
+      if (!parts.some(p => p.functionCall && responseText.includes('Say "yes" to upload files'))) {
+        this.conversationHistory.push({
+          role: 'model',
+          parts: [{ text: responseText }]
+        });
+      }
 
       // Speak the response
       this.speak(responseText);
@@ -285,16 +304,27 @@ Keep responses conversational, helpful, and focused on procurement tasks. Always
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
 
-      // Try to use a more natural voice
+      // Try to use a male voice (like the one used during testing)
       const voices = this.synthesis.getVoices();
+      console.log('Available voices:', voices.map(v => ({ name: v.name, lang: v.lang })));
+      
+      // Prefer male voices in English
       const preferredVoice = voices.find(voice => 
-        voice.name.includes('Google') || 
-        voice.name.includes('Microsoft') ||
-        voice.name.includes('Natural')
+        (voice.name.includes('David') || 
+         voice.name.includes('Alex') ||
+         voice.name.includes('Daniel') ||
+         voice.name.includes('Male') ||
+         voice.name.includes('Man')) &&
+        voice.lang.includes('en')
+      ) || voices.find(voice => 
+        voice.lang.includes('en-US') || voice.lang.includes('en')
       );
       
       if (preferredVoice) {
         utterance.voice = preferredVoice;
+        console.log('Selected voice:', preferredVoice.name);
+      } else {
+        console.log('Using default voice');
       }
 
       utterance.onend = () => {
