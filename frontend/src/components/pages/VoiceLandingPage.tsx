@@ -12,7 +12,7 @@ import {
   TrendingUp,
   X
 } from 'lucide-react';
-import { useAudioInterface } from '../../hooks/useAudioInterface';
+import { useGeminiVoice } from '../../hooks/useGeminiVoice';
 import { useVoiceFunctions } from '../../hooks/useVoiceFunctions';
 import AudioVisualization from '../common/AudioVisualization';
 import Button from '../common/Button';
@@ -33,13 +33,16 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
   onNavigateToRFQ
 }) => {
   const {
-    audioState,
-    initializeAudio,
-    startListening,
-    stopListening,
-    speak,
-    cleanup
-  } = useAudioInterface();
+    voiceState,
+    initialize,
+    toggleListening,
+    sendMessage,
+    stopSpeaking
+  } = useGeminiVoice({
+    onError: (error) => console.error('Gemini Voice Error:', error),
+    onTranscript: (transcript) => console.log('Voice Input:', transcript),
+    onResponse: (response) => console.log('AI Response:', response)
+  });
 
   const [showClassicMode, setShowClassicMode] = useState(false);
   const [conversationStarted, setConversationStarted] = useState(false);
@@ -65,61 +68,38 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
   // Track if any UI elements should be shown (determines layout)
   const hasFloatingElements = showUploadForm || hasUploadedFiles || currentStep === 2 || currentStep === 3 || currentStep === 4;
 
-  // Initialize audio on first interaction
+  // Initialize Gemini Voice on first interaction
   const handleStartConversation = async () => {
     try {
-      await initializeAudio();
+      await initialize();
       setConversationStarted(true);
 
-      // AI greeting
-      speak("Hello! I'm Robbie, your AI procurement assistant. I can help you create smart RFQs, analyze your BOMs, find suppliers, and optimize your procurement process. What would you like to work on today?", 5000);
+      // AI greeting via Gemini Live
+      await sendMessage("Hello! I'm ready to help with procurement tasks. Please introduce yourself and explain what you can help with.");
     } catch (error) {
       console.error('Error starting conversation:', error);
     }
   };
 
-  const handleToggleListening = async () => {
-    if (audioState.isListening) {
-      stopListening();
-    } else {
-      startListening();
-
-      // For testing - simulate voice input processing
-      setTimeout(async () => {
-        if (audioState.isListening) {
-          stopListening();
-          // Mock voice processing
-          const mockInput = "show upload form";
-          const result = await mockGeminiLiveCall(mockInput);
-          speak(result.response, 3000);
-        }
-      }, 3000);
-    }
-  };
-
   const handleQuickAction = async (action: string) => {
-    const actionMessages = {
-      'create-rfq': "Perfect! Let's create a new smart RFQ. I'll guide you through the process.",
-      'analyze-bom': "I'd be happy to analyze your Bill of Materials! Please upload your BOM file.",
-      'find-suppliers': "I can help you find the best suppliers from our database of 200+ verified partners.",
-      'view-dashboard': "Let me show you your procurement dashboard with real-time analytics and insights."
+    const actionCommands = {
+      'create-rfq': "I want to create a new RFQ",
+      'analyze-bom': "I need to upload and analyze a BOM file",
+      'find-suppliers': "Help me find suppliers",
+      'view-dashboard': "Show me the dashboard"
     };
 
-    const message = actionMessages[action as keyof typeof actionMessages];
-    if (message) {
-      speak(message, 3000);
+    const command = actionCommands[action as keyof typeof actionCommands];
+    if (command && sendMessage) {
+      await sendMessage(command);
 
-      // Execute corresponding actions
+      // Execute corresponding actions for immediate feedback
       switch (action) {
         case 'create-rfq':
           setTimeout(() => onNavigateToRFQ(), 2000);
           break;
         case 'analyze-bom':
-          // Show upload form via voice function
           await executeFunction('show_upload_form', { reason: 'User requested BOM analysis' });
-          break;
-        case 'find-suppliers':
-          // Could trigger supplier search UI
           break;
         case 'view-dashboard':
           setTimeout(() => onNavigateToDashboard(), 2000);
@@ -133,16 +113,11 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
     const files = event.target.files;
     if (files && files[0]) {
       const uploadedFile = handleFileUpload(files[0]);
-      speak(`File ${uploadedFile.name} uploaded successfully. I'll analyze it now.`, 3000);
+      if (sendMessage) {
+        sendMessage(`I've uploaded a file named ${uploadedFile.name}. Please analyze it.`);
+      }
     }
   };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      cleanup();
-    };
-  }, [cleanup]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-surface-900 via-surface-800 to-primary-900 relative overflow-hidden">
@@ -309,9 +284,11 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                 <div className={`transition-all duration-700 ease-in-out ${hasFloatingElements ? 'transform-none' : 'transform-none'
                   }`}>
                   <VoiceInterface
-                    audioState={audioState}
-                    onToggleListening={handleToggleListening}
+                    audioState={voiceState}
+                    onToggleListening={toggleListening}
                     executeFunction={executeFunction}
+                    onStopSpeaking={stopSpeaking}
+                    sendMessage={sendMessage}
                   />
                 </div>
               </div>
@@ -340,7 +317,9 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                         onNext={() => {
                           // Just hide upload form, don't auto-show BOM analysis
                           executeFunction('hide_upload_form');
-                          speak("Files uploaded successfully! Say 'analyze BOM' when you're ready to review them.", 3000);
+                          if (sendMessage) {
+                            sendMessage("Files uploaded successfully! Say 'analyze BOM' when you're ready to review them.");
+                          }
                         }}
                         onCancel={() => executeFunction('hide_upload_form')}
                       />
@@ -367,7 +346,9 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                         onNext={() => {
                           // Just hide BOM analysis, don't auto-proceed to commercial terms
                           executeFunction('hide_bom_analysis');
-                          speak("BOM analysis complete! Say 'commercial terms' when you're ready to proceed to the next step.", 3000);
+                          if (sendMessage) {
+                            sendMessage("BOM analysis complete! Say 'commercial terms' when you're ready to proceed to the next step.");
+                          }
                         }}
                         onCancel={() => executeFunction('hide_bom_analysis')}
                         uploadedFiles={conversationState.uploadedFiles}
@@ -395,7 +376,9 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                         onNext={() => {
                           // Move to step 4 (Preview) instead of just hiding
                           setCurrentStep(4);
-                          speak("Commercial terms saved! Now showing RFQ preview.", 3000);
+                          if (sendMessage) {
+                            sendMessage("Commercial terms saved! Now showing RFQ preview.");
+                          }
                         }}
                         onCancel={() => executeFunction('hide_commercial_terms')}
                         bomData={conversationState.uploadedFiles}
@@ -423,7 +406,9 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                         onNext={() => {
                           // Navigate to dashboard after successful RFQ send
                           setCurrentStep(1);
-                          speak("RFQ sent successfully! Redirecting to dashboard.", 3000);
+                          if (sendMessage) {
+                            sendMessage("RFQ sent successfully! Redirecting to dashboard.");
+                          }
                           setTimeout(() => onNavigateToDashboard(), 2000);
                         }}
                         onCancel={() => setCurrentStep(1)}
