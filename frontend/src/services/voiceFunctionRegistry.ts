@@ -361,6 +361,7 @@ class VoiceFunctionRegistry {
 
     console.log('showBOMAnalysis called with args:', args);
     console.log('Current uploaded files:', this.conversationState.uploadedFiles.length);
+    console.log('Current conversation state:', this.conversationState);
 
     // Check if there are uploaded files first
     if (this.conversationState.uploadedFiles.length === 0) {
@@ -379,6 +380,11 @@ class VoiceFunctionRegistry {
     // Files are available, show BOM analysis
     console.log('Setting current step to 2');
     this.callbacks.setCurrentStep(2);
+    
+    // Also update internal state
+    this.conversationState.currentStep = 2;
+    this.updateState('STEP_CHANGED', { step: 2 });
+    
     this.callbacks.showNotification('BOM Analysis interface opened', 'success');
 
     return {
@@ -409,8 +415,17 @@ class VoiceFunctionRegistry {
       throw new Error('Callbacks not initialized');
     }
 
+    console.log('showCommercialTerms called with args:', args);
+    console.log('Setting current step to 3');
+
     // Set current step to 3 for commercial terms
     this.callbacks.setCurrentStep(3);
+    
+    // Also update internal state
+    this.conversationState.currentStep = 3;
+    this.updateState('STEP_CHANGED', { step: 3 });
+    
+    this.callbacks.showNotification('Commercial Terms interface opened', 'success');
 
     return {
       success: true,

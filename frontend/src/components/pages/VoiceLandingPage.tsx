@@ -68,6 +68,9 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
   // Track if any UI elements should be shown (determines layout)
   // Only show split layout when forms are actually open, not just when files exist
   const hasFloatingElements = showUploadForm || currentStep === 2 || currentStep === 3 || currentStep === 4;
+  
+  // Debug logging
+  console.log('VoiceLandingPage render - currentStep:', currentStep, 'showUploadForm:', showUploadForm, 'hasFloatingElements:', hasFloatingElements);
 
   // Initialize Gemini Voice on first interaction
   const handleStartConversation = async () => {
@@ -348,7 +351,12 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                     <div className="flex items-center justify-between p-4 border-b border-gray-200">
                       <h3 className="text-lg font-semibold text-gray-900">BOM Analysis</h3>
                       <button
-                        onClick={() => executeFunction('hide_bom_analysis')}
+                        onClick={() => {
+                          executeFunction('hide_bom_analysis');
+                          if (sendMessage) {
+                            sendMessage("I've closed the BOM analysis. What would you like to do next? You can say 'commercial terms' to proceed, 'dashboard' to view analytics, or tell me something else you'd like to do.");
+                          }
+                        }}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                       >
                         <X className="w-4 h-4 text-gray-500" />
@@ -362,10 +370,15 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                           // Just hide BOM analysis, don't auto-proceed to commercial terms
                           executeFunction('hide_bom_analysis');
                           if (sendMessage) {
-                            sendMessage("BOM analysis complete! Say 'commercial terms' when you're ready to proceed to the next step.");
+                            sendMessage("Excellent! I've completed the BOM analysis and identified cost optimization opportunities. What would you like to do next? You can say 'commercial terms' to proceed with defining payment and compliance requirements, 'dashboard' to view analytics, or ask me about any specific component details.");
                           }
                         }}
-                        onCancel={() => executeFunction('hide_bom_analysis')}
+                        onCancel={() => {
+                          executeFunction('hide_bom_analysis');
+                          if (sendMessage) {
+                            sendMessage("I've closed the BOM analysis. What would you like to do next? You can say 'commercial terms' to proceed, 'dashboard' to view analytics, or tell me something else you'd like to do.");
+                          }
+                        }}
                         uploadedFiles={conversationState.uploadedFiles}
                       />
                     </div>
