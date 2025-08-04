@@ -66,7 +66,8 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
   });
 
   // Track if any UI elements should be shown (determines layout)
-  const hasFloatingElements = showUploadForm || hasUploadedFiles || currentStep === 2 || currentStep === 3 || currentStep === 4;
+  // Only show split layout when forms are actually open, not just when files exist
+  const hasFloatingElements = showUploadForm || currentStep === 2 || currentStep === 3 || currentStep === 4;
 
   // Initialize Gemini Voice on first interaction
   const handleStartConversation = async () => {
