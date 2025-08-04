@@ -157,19 +157,26 @@ export const useVoiceFunctions = ({
     // This would be replaced with actual Gemini Live integration
     console.log('Mock Gemini Live Input:', userInput);
     
-    // Simple intent detection for testing
+    // Enhanced intent detection for testing
     const intents = {
       'show upload': { function: 'show_upload_form', params: { reason: 'User requested upload form' } },
       'hide upload': { function: 'hide_upload_form', params: {} },
       'upload form': { function: 'show_upload_form', params: { focus: true } },
+      'upload file': { function: 'show_upload_form', params: { reason: 'User requested file upload' } },
       'analyze bom': { function: 'show_bom_analysis', params: { reason: 'User requested BOM analysis' } },
+      'analyse bom': { function: 'show_bom_analysis', params: { reason: 'User requested BOM analysis' } },
+      'bom analysis': { function: 'show_bom_analysis', params: { reason: 'User requested BOM analysis' } },
+      'bom review': { function: 'show_bom_analysis', params: { reason: 'User requested BOM review' } },
+      'review bom': { function: 'show_bom_analysis', params: { reason: 'User requested BOM review' } },
       'show bom': { function: 'show_bom_analysis', params: { reason: 'User requested BOM analysis' } },
       'hide bom': { function: 'hide_bom_analysis', params: {} },
       'commercial terms': { function: 'show_commercial_terms', params: { reason: 'User requested commercial terms' } },
       'show commercial': { function: 'show_commercial_terms', params: { reason: 'User requested commercial terms' } },
       'hide commercial': { function: 'hide_commercial_terms', params: {} },
       'dashboard': { function: 'navigate_to', params: { destination: 'dashboard' } },
+      'show dashboard': { function: 'navigate_to', params: { destination: 'dashboard' } },
       'rfq wizard': { function: 'navigate_to', params: { destination: 'rfq-wizard' } },
+      'create rfq': { function: 'navigate_to', params: { destination: 'rfq-wizard' } },
       'files': { function: 'get_uploaded_files', params: {} },
       'current view': { function: 'get_current_view', params: {} },
       'context': { function: 'get_conversation_context', params: {} },

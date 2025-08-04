@@ -315,13 +315,27 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                     <div className="p-6">
                       <FileUpload
                         onNext={() => {
-                          // Just hide upload form, don't auto-show BOM analysis
+                          // Hide upload form and provide clear next steps
                           executeFunction('hide_upload_form');
                           if (sendMessage) {
-                            sendMessage("Files uploaded successfully! Say 'analyze BOM' when you're ready to review them.");
+                            sendMessage("Great! Your files have been uploaded and processed. You can now say 'analyze BOM' to review them, or tell me what else you'd like to do.");
                           }
                         }}
                         onCancel={() => executeFunction('hide_upload_form')}
+                        onFilesChange={(files) => {
+                          // Convert FileUpload files to voice function registry format and update state
+                          const voiceFiles = files.map(file => ({
+                            id: file.id,
+                            name: file.name,
+                            type: file.file.type,
+                            size: file.size,
+                            uploadedAt: new Date(),
+                            status: file.status === 'complete' ? 'uploaded' as const : 'uploading' as const
+                          }));
+                          
+                          // Update the voice function registry with the entire files array
+                          updateStateFromUI('FILES_UPDATED', voiceFiles);
+                        }}
                       />
                     </div>
                   </div>
