@@ -5,29 +5,31 @@ import Button from './Button';
 
 interface VoiceInterfaceProps {
   audioState: {
-    isListening: boolean;
-    isSpeaking: boolean;
-    audioLevel: number;
+    isListening?: boolean;
+    isSpeaking?: boolean;
+    audioLevel?: number;
     error: string | null;
     isInitialized?: boolean;
     isProcessing?: boolean;
+    isConnected?: boolean;
+    lastMessage?: string;
   };
-  onToggleListening: () => void;
   executeFunction: (name: string, params?: any) => void;
-  onStopSpeaking?: () => void;
   sendMessage?: (message: string) => void;
+  onToggleListening?: () => void;
+  onStopSpeaking?: () => void;
 }
 
 const VoiceInterface: React.FC<VoiceInterfaceProps> = ({
   audioState,
-  onToggleListening,
   executeFunction,
-  onStopSpeaking,
   sendMessage,
+  onToggleListening,
+  onStopSpeaking,
 }) => {
   const handleVoiceCommand = (command: string) => {
     if (sendMessage) {
-      sendMessage(command);
+      // sendMessage(command);
     } else {
       // Fallback to old function execution
       executeFunction('show_upload_form', { reason: 'Voice command simulation' });
@@ -37,9 +39,9 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({
   return (
     <div className="text-center">
       <AudioVisualization
-        isListening={audioState.isListening}
-        isSpeaking={audioState.isSpeaking}
-        audioLevel={audioState.audioLevel}
+        isListening={audioState.isListening || false}
+        isSpeaking={audioState.isSpeaking || false}
+        audioLevel={audioState.audioLevel || 0}
         size={300}
         className="mb-6 transition-all duration-500"
       />
@@ -56,10 +58,10 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({
           icon={audioState.isListening ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
           disabled={audioState.isProcessing}
         >
-          {audioState.isProcessing 
-            ? 'Processing...' 
-            : audioState.isListening 
-              ? 'Listening...' 
+          {audioState.isProcessing
+            ? 'Processing...'
+            : audioState.isListening
+              ? 'Listening...'
               : 'Click to Talk'
           }
         </Button>

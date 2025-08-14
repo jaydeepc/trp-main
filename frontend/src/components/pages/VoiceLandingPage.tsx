@@ -12,7 +12,7 @@ import {
   TrendingUp,
   X
 } from 'lucide-react';
-import { useGeminiVoice } from '../../hooks/useGeminiVoice';
+import { useGeminiLive } from '../../hooks/useGeminiLive';
 import { useVoiceFunctions } from '../../hooks/useVoiceFunctions';
 import AudioVisualization from '../common/AudioVisualization';
 import Button from '../common/Button';
@@ -22,6 +22,7 @@ import BOMAnalysis from '../floating-windows/BOMAnalysis';
 import CommercialTerms from '../floating-windows/CommercialTerms';
 import RFQPreview from '../floating-windows/RFQPreview';
 import VoiceInterface from '../common/VoiceInterface';
+import { geminiLiveService } from '../../services/geminiLiveService';
 
 interface VoiceLandingPageProps {
   onNavigateToDashboard: () => void;
@@ -33,15 +34,15 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
   onNavigateToRFQ
 }) => {
   const {
-    voiceState,
+    isConnected,
+    error,
+    lastMessage,
+    isSpeaking,
     initialize,
-    toggleListening,
-    sendMessage,
-    stopSpeaking
-  } = useGeminiVoice({
-    onError: (error) => console.error('Gemini Voice Error:', error),
-    onTranscript: (transcript) => console.log('Voice Input:', transcript),
-    onResponse: (response) => console.log('AI Response:', response)
+    sendMessage
+  } = useGeminiLive({
+    onError: (error: string) => console.error('Gemini Live Error:', error),
+    onMessage: (message: string) => console.log('AI Response:', message)
   });
 
   const [showClassicMode, setShowClassicMode] = useState(false);
@@ -65,10 +66,41 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
     onNavigateToRFQ
   });
 
+  // Voice state and handlers (handled by Gemini Live automatically)
+  const voiceState = {
+    isListening: isConnected ? geminiLiveService.getIsListening() : false,
+    isSpeaking: isSpeaking,
+    audioLevel: 0,
+    error: error,
+    isInitialized: isConnected,
+    isProcessing: false,
+    isConnected: isConnected,
+    lastMessage: lastMessage
+  };
+
+  const toggleListening = async () => {
+    try {
+      if (isConnected) {
+        if (geminiLiveService.getIsListening()) {
+          geminiLiveService.stopListening();
+        } else {
+          await geminiLiveService.startListening();
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling listening:', error);
+    }
+  };
+
+  const stopSpeaking = () => {
+    console.log('Stopping AI audio playback...');
+    geminiLiveService.stopSpeaking();
+  };
+
   // Track if any UI elements should be shown (determines layout)
   // Only show split layout when forms are actually open, not just when files exist
   const hasFloatingElements = showUploadForm || currentStep === 2 || currentStep === 3 || currentStep === 4;
-  
+
   // Debug logging
   console.log('VoiceLandingPage render - currentStep:', currentStep, 'showUploadForm:', showUploadForm, 'hasFloatingElements:', hasFloatingElements);
 
@@ -78,8 +110,16 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
       await initialize();
       setConversationStarted(true);
 
+      // Start listening immediately after connection
+      setTimeout(async () => {
+        if (isConnected) {
+          await geminiLiveService.startListening();
+          console.log('🎤 Auto-started listening after voice experience initialization');
+        }
+      }, 1000); // Small delay to ensure connection is fully established
+
       // AI greeting via Gemini Live
-      await sendMessage("Hello! I'm ready to help with procurement tasks. Please introduce yourself and explain what you can help with.");
+      // await sendMessage("Hello! I'm ready to help with procurement tasks. Please introduce yourself and explain what you can help with.");
     } catch (error) {
       console.error('Error starting conversation:', error);
     }
@@ -94,8 +134,8 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
     };
 
     const command = actionCommands[action as keyof typeof actionCommands];
-    if (command && sendMessage) {
-      await sendMessage(command);
+    if (command) {
+      // await sendMessage(command);
 
       // Execute corresponding actions for immediate feedback
       switch (action) {
@@ -336,7 +376,7 @@ const VoiceLandingPage: React.FC<VoiceLandingPageProps> = ({
                             uploadedAt: new Date(),
                             status: file.status === 'complete' ? 'uploaded' as const : 'uploading' as const
                           }));
-                          
+
                           // Update the voice function registry with the entire files array
                           updateStateFromUI('FILES_UPDATED', voiceFiles);
                         }}
