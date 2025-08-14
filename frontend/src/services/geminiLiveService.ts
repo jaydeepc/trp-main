@@ -1,390 +1,324 @@
+import { MultimodalLiveClient } from '../lib/multimodal-live-client';
+import { AudioRecorder } from '../lib/AudioRecorder';
+import { AudioStreamer } from '../lib/AudioStreamer';
 import { voiceFunctionRegistry } from './voiceFunctionRegistry';
+import { isModelTurn } from '../types/multimodal-live-types';
+import { audioContext } from '../lib/utils';
 
-// Web Speech API type declarations
-declare global {
-  interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
-  }
-}
-
-interface GeminiLiveConfig {
-  apiKey: string;
-  model: string;
-  systemInstruction: string;
-}
-
-interface VoiceMessage {
-  role: 'user' | 'model';
-  parts: Array<{
-    text?: string;
-    inlineData?: {
-      mimeType: string;
-      data: string;
-    };
-  }>;
-}
-
-interface GeminiLiveResponse {
-  candidates: Array<{
-    content: {
-      parts: Array<{
-        text?: string;
-        functionCall?: {
-          name: string;
-          args: Record<string, any>;
-        };
-      }>;
-    };
-    finishReason: string;
-  }>;
+interface GeminiLiveServiceCallbacks {
+    onConnected?: () => void;
+    onDisconnected?: (reason?: string) => void;
+    onMessage?: (text: string) => void;
+    onAudio?: (data: ArrayBuffer) => void;
+    onError?: (error: string) => void;
+    onToolCall?: (toolCall: any) => void;
+    onSpeakingStart?: () => void;
+    onSpeakingEnd?: () => void;
 }
 
 class GeminiLiveService {
-  private config: GeminiLiveConfig;
-  private conversationHistory: VoiceMessage[] = [];
-  private isConnected: boolean = false;
-  private mediaRecorder: MediaRecorder | null = null;
-  private audioChunks: Blob[] = [];
-  private recognition: any = null;
-  private synthesis: SpeechSynthesis;
-  private currentUtterance: SpeechSynthesisUtterance | null = null;
+    private client: MultimodalLiveClient | null = null;
+    private isConnected: boolean = false;
+    private audioRecorder: AudioRecorder | null = null;
+    private audioStreamer: AudioStreamer | null = null;
+    private isSpeaking: boolean = false;
+    private callbacks: GeminiLiveServiceCallbacks = {};
+    private apiKey: string = '';
+    private isInitialized: boolean = false;
 
-  constructor() {
-    this.config = {
-      apiKey: process.env.REACT_APP_GEMINI_API_KEY || '',
-      model: 'gemini-1.5-flash',
-      systemInstruction: this.getSystemInstruction()
-    };
-
-    this.synthesis = window.speechSynthesis;
-    this.initializeSpeechRecognition();
-  }
-
-  private getSystemInstruction(): string {
-    return `You are Robbie, an AI-powered procurement assistant. You help users with these CURRENTLY AVAILABLE features:
-
-1. File upload and processing (BOMs, CAD files, specifications)
-2. BOM analysis with cost optimization recommendations
-3. Commercial terms definition
-4. RFQ preview and creation
-5. Navigation to dashboard and other sections
-
-IMPORTANT FUNCTION CALLING RULES:
-- When users mention "upload", "file", "document", call show_upload_form
-- When users mention "analyze", "analysis", "review", "BOM", "bill of materials", call show_bom_analysis
-- When users mention "commercial terms", "payment", "terms", call show_commercial_terms
-- When users want to navigate to dashboard or RFQ wizard, use navigate_to function
-- Always call the appropriate function AND provide helpful context about what you're doing
-- If user says "analyze BOM" or similar, ALWAYS call show_bom_analysis function
-
-ONLY mention features that are currently implemented and working. Do not promise or discuss features that are not yet available.
-
-Available functions:
-${JSON.stringify(voiceFunctionRegistry.getFunctionDefinitions().map(f => ({
-  name: f.name,
-  description: f.description,
-  parameters: f.parameters
-})), null, 2)}
-
-Keep responses conversational, helpful, and focused on currently available procurement tasks. Always explain what actions you're taking.`;
-  }
-
-  private initializeSpeechRecognition() {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      this.recognition = new SpeechRecognition();
-      
-      this.recognition.continuous = false;
-      this.recognition.interimResults = false;
-      this.recognition.lang = 'en-US';
-      
-      this.recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        this.processVoiceInput(transcript);
-      };
-
-      this.recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-      };
+    constructor() {
+        this.apiKey = process.env.REACT_APP_GEMINI_API_KEY || '';
+        console.log('🚀 GeminiLiveService instance created');
     }
-  }
 
-  async initialize(): Promise<boolean> {
-    try {
-      if (!this.config.apiKey) {
-        throw new Error('Gemini API key not configured');
-      }
-
-      // Test API connection
-      await this.testConnection();
-      this.isConnected = true;
-      
-      // Initialize conversation with system instruction
-      this.conversationHistory = [{
-        role: 'user',
-        parts: [{ text: 'Hello, I need help with procurement tasks.' }]
-      }];
-
-      return true;
-    } catch (error) {
-      console.error('Failed to initialize Gemini Live:', error);
-      this.isConnected = false;
-      return false;
-    }
-  }
-
-  private async testConnection(): Promise<void> {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.config.model}:generateContent?key=${this.config.apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: 'Hello' }]
-        }],
-        systemInstruction: {
-          parts: [{ text: 'You are a test assistant. Respond with "Connection successful".' }]
+    async initialize(callbacks?: GeminiLiveServiceCallbacks): Promise<boolean> {
+        if (this.isInitialized) {
+            console.log('🛡️ GeminiLiveService already initialized, merging callbacks...');
+            this.callbacks = { ...this.callbacks, ...callbacks };
+            return true;
         }
-      })
-    });
 
-    if (!response.ok) {
-      throw new Error(`API test failed: ${response.statusText}`);
-    }
-  }
-
-  async startListening(): Promise<void> {
-    if (!this.isConnected) {
-      throw new Error('Gemini Live not initialized');
-    }
-
-    if (this.recognition) {
-      this.recognition.start();
-    } else {
-      throw new Error('Speech recognition not supported');
-    }
-  }
-
-  stopListening(): void {
-    if (this.recognition) {
-      this.recognition.stop();
-    }
-  }
-
-  private async processVoiceInput(transcript: string): Promise<void> {
-    try {
-      console.log('Processing voice input:', transcript);
-      
-      // Add user message to conversation history
-      this.conversationHistory.push({
-        role: 'user',
-        parts: [{ text: transcript }]
-      });
-
-      // Get current conversation state for context
-      const conversationState = voiceFunctionRegistry.getConversationState();
-      
-      // Prepare the request with function definitions
-      const requestBody = {
-        contents: this.conversationHistory,
-        systemInstruction: {
-          parts: [{ text: this.config.systemInstruction }]
-        },
-        tools: [{
-          functionDeclarations: voiceFunctionRegistry.getFunctionDefinitions().map(func => ({
-            name: func.name,
-            description: func.description,
-            parameters: func.parameters
-          }))
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        }
-      };
-
-      // Call Gemini API
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.config.model}:generateContent?key=${this.config.apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Gemini API error: ${response.statusText}`);
-      }
-
-      const result: GeminiLiveResponse = await response.json();
-      await this.handleGeminiResponse(result);
-
-    } catch (error) {
-      console.error('Error processing voice input:', error);
-      this.speak('Sorry, I encountered an error processing your request. Please try again.');
-    }
-  }
-
-  private async handleGeminiResponse(response: GeminiLiveResponse): Promise<void> {
-    const candidate = response.candidates[0];
-    if (!candidate) {
-      throw new Error('No response from Gemini');
-    }
-
-    const parts = candidate.content.parts;
-    let responseText = '';
-    
-    for (const part of parts) {
-      if (part.functionCall) {
-        // Execute the function call
         try {
-          const result = await voiceFunctionRegistry.executeFunction(
-            part.functionCall.name,
-            part.functionCall.args
-          );
-          
-          // Handle special cases based on function result
-          if (result.requiresFiles && part.functionCall.name === 'show_bom_analysis') {
-            // BOM analysis was requested but no files are uploaded
-            responseText += result.message + ' Say "yes" to upload files, or tell me what else you would like to do.';
+            console.log('🚀 Starting Gemini Live initialization...');
+            this.isInitialized = true; // Set flag immediately to prevent duplicates
             
-            // Add function result to conversation
-            this.conversationHistory.push({
-              role: 'model',
-              parts: [{ 
-                text: responseText
-              }]
+            this.callbacks = callbacks || {};
+
+            if (!this.apiKey) {
+                throw new Error('Gemini API key not configured');
+            }
+
+            // Initialize audio streamer for output
+            await this.initializeAudioStreamer();
+
+            // Create the client
+            this.client = new MultimodalLiveClient({
+                apiKey: this.apiKey
             });
-          } else {
-            // Normal function execution
-            const actionDescription = part.functionCall.name.replace(/_/g, ' ');
-            responseText += `I've ${actionDescription}. ${result.message || 'Action completed successfully.'} `;
-            
-            // Add function result to conversation
-            this.conversationHistory.push({
-              role: 'model',
-              parts: [{ 
-                text: `I've executed ${part.functionCall.name}. ${result.message || 'Action completed successfully.'}`
-              }]
-            });
-          }
-          
+
+            // Set up event listeners
+            this.setupEventListeners();
+
+            console.log('✅ Gemini Live initialization successful');
+            return true;
         } catch (error) {
-          console.error('Function execution error:', error);
-          responseText += `I encountered an error executing that action. ${error instanceof Error ? error.message : 'Please try again.'} `;
+            console.error('❌ Failed to initialize Gemini Live:', error);
+            this.isInitialized = false; // Reset flag on error
+            this.callbacks.onError?.(
+                error instanceof Error ? error.message : 'Initialization failed'
+            );
+            return false;
         }
-      } else if (part.text) {
-        responseText += part.text;
-      }
     }
 
-    if (responseText) {
-      // Add model response to conversation history if not already added
-      if (!parts.some(p => p.functionCall && responseText.includes('Say "yes" to upload files'))) {
-        this.conversationHistory.push({
-          role: 'model',
-          parts: [{ text: responseText }]
+    private async initializeAudioStreamer(): Promise<void> {
+        try {
+            const audioCtx = await audioContext({
+                id: 'gemini-live-audio-out',
+            });
+            this.audioStreamer = new AudioStreamer(audioCtx);
+
+            // Set up completion callback
+            this.audioStreamer.onComplete = () => {
+                console.log('Audio playback completed');
+                this.isSpeaking = false;
+                this.callbacks.onSpeakingEnd?.();
+            };
+
+            console.log('Audio streamer initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize audio streamer:', error);
+            throw error;
+        }
+    }
+
+    private setupEventListeners() {
+        if (!this.client) return;
+
+        this.client.on('open', () => {
+            console.log('Gemini Live session opened successfully');
+            this.isConnected = true;
+            this.callbacks.onConnected?.();
         });
-      }
 
-      // Speak the response
-      this.speak(responseText);
+        this.client.on('close', (event) => {
+            console.log('Gemini Live session closed:', event.reason);
+            this.isConnected = false;
+            this.callbacks.onDisconnected?.(event.reason);
+        });
+
+        this.client.on('content', (content) => {
+            console.log('Received content from Gemini Live:', content);
+            if (isModelTurn(content)) {
+                for (const part of content.modelTurn.parts) {
+                    if (part.text) {
+                        this.callbacks.onMessage?.(part.text);
+                    }
+                }
+            }
+        });
+
+        this.client.on('audio', (audioData) => {
+            console.log('🎵 GeminiLiveService received audio data:', audioData.byteLength, 'bytes');
+            console.log('🔊 AudioStreamer instance:', this.audioStreamer ? 'EXISTS' : 'NULL');
+
+            // Play audio through streamer
+            if (this.audioStreamer) {
+                if (!this.isSpeaking) {
+                    this.isSpeaking = true;
+                    console.log('🗣️ Starting to speak...');
+                    this.callbacks.onSpeakingStart?.();
+                }
+
+                // Resume audio context if suspended
+                this.audioStreamer.resume();
+
+                // Add audio data to streamer
+                this.audioStreamer.addPCM16(new Uint8Array(audioData));
+                console.log('✅ Audio data added to streamer');
+            }
+
+            this.callbacks.onAudio?.(audioData);
+        });
+
+        this.client.on('toolcall', (toolCall) => {
+            console.log('Received tool call:', toolCall);
+            this.callbacks.onToolCall?.(toolCall);
+            this.handleToolCall(toolCall);
+        });
+
+        this.client.on('log', (log) => {
+            // console.log('Gemini Live log:', log);
+        });
     }
-  }
 
-  speak(text: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      // Stop any current speech
-      this.synthesis.cancel();
+    private async handleToolCall(toolCall: any) {
+        if (!this.client) return;
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-
-      // Try to use a male voice (like the one used during testing)
-      const voices = this.synthesis.getVoices();
-      console.log('Available voices:', voices.map(v => ({ name: v.name, lang: v.lang })));
-      
-      // Prefer male voices in English
-      const preferredVoice = voices.find(voice => 
-        (voice.name.includes('David') || 
-         voice.name.includes('Alex') ||
-         voice.name.includes('Daniel') ||
-         voice.name.includes('Male') ||
-         voice.name.includes('Man')) &&
-        voice.lang.includes('en')
-      ) || voices.find(voice => 
-        voice.lang.includes('en-US') || voice.lang.includes('en')
-      );
-      
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-        console.log('Selected voice:', preferredVoice.name);
-      } else {
-        console.log('Using default voice');
-      }
-
-      utterance.onend = () => {
-        this.currentUtterance = null;
-        resolve();
-      };
-
-      utterance.onerror = (event) => {
-        this.currentUtterance = null;
-        // Don't reject for interrupted errors, just resolve
-        if (event.error === 'interrupted') {
-          console.log('Speech was interrupted, continuing...');
-          resolve();
-        } else {
-          console.error(`Speech synthesis error: ${event.error}`);
-          reject(new Error(`Speech synthesis error: ${event.error}`));
+        const functionResponses = [];
+        for (const fc of toolCall.functionCalls) {
+            try {
+                const result = await voiceFunctionRegistry.executeFunction(
+                    fc.name,
+                    fc.args
+                );
+                functionResponses.push({
+                    id: fc.id,
+                    response: { result: 'ok' },
+                });
+                console.log('Function executed:', fc.name, result);
+            } catch (error) {
+                console.error('Function execution error:', error);
+                functionResponses.push({
+                    id: fc.id,
+                    response: { result: 'error' },
+                });
+            }
         }
-      };
 
-      this.currentUtterance = utterance;
-      this.synthesis.speak(utterance);
-    });
-  }
-
-  stopSpeaking(): void {
-    this.synthesis.cancel();
-    this.currentUtterance = null;
-  }
-
-  isSpeaking(): boolean {
-    return this.synthesis.speaking;
-  }
-
-  async sendTextMessage(message: string): Promise<string> {
-    if (!this.isConnected) {
-      throw new Error('Gemini Live not initialized');
+        if (functionResponses.length > 0) {
+            console.log('Sending tool response...');
+            this.client.sendToolResponse({ functionResponses });
+        }
     }
 
-    await this.processVoiceInput(message);
-    return 'Message processed';
-  }
+    async connect(): Promise<void> {
+        if (!this.client) {
+            throw new Error('Client not initialized');
+        }
 
-  getConversationHistory(): VoiceMessage[] {
-    return [...this.conversationHistory];
-  }
+        // Prevent multiple connections
+        if (this.isConnected) {
+            console.log('Already connected to Gemini Live');
+            return;
+        }
 
-  clearConversation(): void {
-    this.conversationHistory = [];
-  }
+        const config = {
+            model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
+            systemInstruction: {
+                parts: [
+                    {
+                        text: `You are Robbie, an AI-powered procurement assistant. You help users with real-time voice interactions for procurement tasks.
 
-  isInitialized(): boolean {
-    return this.isConnected;
-  }
+Respond naturally and conversationally since users will hear your actual voice.
 
-  // Utility method for testing voice commands
-  async simulateVoiceCommand(command: string): Promise<void> {
-    await this.processVoiceInput(command);
-  }
+Keep responses natural, conversational, and helpful. You're speaking directly to users in real-time.`,
+                    },
+                ],
+            },
+            generationConfig: {
+                responseModalities: 'audio' as const,
+            },
+        };
+
+        await this.client.connect(config);
+    }
+
+    async startListening(): Promise<void> {
+        if (!this.client || !this.isConnected) {
+            throw new Error('Not connected to Gemini Live');
+        }
+
+        if (this.audioRecorder && this.audioRecorder.isRecording()) {
+            console.log('Already listening');
+            return;
+        }
+
+        try {
+            console.log('Starting audio recording...');
+
+            this.audioRecorder = new AudioRecorder(16000);
+
+            this.audioRecorder.on('data', (base64Audio: string) => {
+                // Send audio data to Gemini Live
+                if (this.client) {
+                    this.client.sendRealtimeInput([
+                        {
+                            mimeType: 'audio/pcm;rate=16000',
+                            data: base64Audio,
+                        },
+                    ]);
+                }
+            });
+
+            await this.audioRecorder.start();
+            console.log('Audio recording started successfully');
+        } catch (error) {
+            console.error('Error starting audio recording:', error);
+            this.callbacks.onError?.(
+                'Failed to start audio recording: ' +
+                    (error instanceof Error ? error.message : 'Unknown error')
+            );
+        }
+    }
+
+    stopListening(): void {
+        if (this.audioRecorder) {
+            console.log('Stopping audio recording...');
+            this.audioRecorder.stop();
+            this.audioRecorder = null;
+            console.log('Audio recording stopped');
+        }
+    }
+
+    async sendTextMessage(message: string): Promise<void> {
+        if (!this.client || !this.isConnected) {
+            throw new Error('Not connected to Gemini Live');
+        }
+
+        console.log('Sending text message to Gemini Live:', message);
+        this.client.send([{ text: message }]);
+    }
+
+    getIsListening(): boolean {
+        return this.audioRecorder?.isRecording() || false;
+    }
+
+    getIsSpeaking(): boolean {
+        return this.isSpeaking;
+    }
+
+    stopSpeaking(): void {
+        if (this.audioStreamer) {
+            console.log('Stopping audio playback...');
+            this.audioStreamer.stop();
+            this.isSpeaking = false;
+            this.callbacks.onSpeakingEnd?.();
+        }
+    }
+
+    isServiceConnected(): boolean {
+        return this.isConnected;
+    }
+
+    disconnect(): void {
+        if (this.audioRecorder) {
+            this.audioRecorder.stop();
+            this.audioRecorder = null;
+        }
+
+        if (this.audioStreamer) {
+            this.audioStreamer.stop();
+            this.audioStreamer = null;
+        }
+
+        if (this.client) {
+            this.client.disconnect();
+            this.client = null;
+        }
+
+        this.isConnected = false;
+        this.isSpeaking = false;
+        this.isInitialized = false; // Reset initialization flag
+        this.callbacks.onDisconnected?.();
+    }
+
+    // Complete reset for development/debugging
+    reset(): void {
+        console.log('🔄 Resetting Gemini Live service...');
+        this.disconnect();
+        this.callbacks = {};
+    }
 }
 
 // Export singleton instance
