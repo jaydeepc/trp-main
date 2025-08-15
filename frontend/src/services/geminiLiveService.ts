@@ -33,7 +33,9 @@ class GeminiLiveService {
 
     async initialize(callbacks?: GeminiLiveServiceCallbacks): Promise<boolean> {
         if (this.isInitialized) {
-            console.log('🛡️ GeminiLiveService already initialized, merging callbacks...');
+            console.log(
+                '🛡️ GeminiLiveService already initialized, merging callbacks...'
+            );
             this.callbacks = { ...this.callbacks, ...callbacks };
             return true;
         }
@@ -41,7 +43,7 @@ class GeminiLiveService {
         try {
             console.log('🚀 Starting Gemini Live initialization...');
             this.isInitialized = true; // Set flag immediately to prevent duplicates
-            
+
             this.callbacks = callbacks || {};
 
             if (!this.apiKey) {
@@ -53,7 +55,7 @@ class GeminiLiveService {
 
             // Create the client
             this.client = new MultimodalLiveClient({
-                apiKey: this.apiKey
+                apiKey: this.apiKey,
             });
 
             // Set up event listeners
@@ -119,8 +121,15 @@ class GeminiLiveService {
         });
 
         this.client.on('audio', (audioData) => {
-            console.log('🎵 GeminiLiveService received audio data:', audioData.byteLength, 'bytes');
-            console.log('🔊 AudioStreamer instance:', this.audioStreamer ? 'EXISTS' : 'NULL');
+            // console.log(
+            //     '🎵 GeminiLiveService received audio data:',
+            //     audioData.byteLength,
+            //     'bytes'
+            // );
+            // console.log(
+            //     '🔊 AudioStreamer instance:',
+            //     this.audioStreamer ? 'EXISTS' : 'NULL'
+            // );
 
             // Play audio through streamer
             if (this.audioStreamer) {
@@ -135,7 +144,7 @@ class GeminiLiveService {
 
                 // Add audio data to streamer
                 this.audioStreamer.addPCM16(new Uint8Array(audioData));
-                console.log('✅ Audio data added to streamer');
+                // console.log('✅ Audio data added to streamer');
             }
 
             this.callbacks.onAudio?.(audioData);
@@ -215,6 +224,8 @@ Keep responses natural, conversational, and helpful. You're speaking directly to
     }
 
     async startListening(): Promise<void> {
+        console.log('🔊 Starting to listen for audio input...');
+
         if (!this.client || !this.isConnected) {
             throw new Error('Not connected to Gemini Live');
         }
