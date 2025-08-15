@@ -1,147 +1,94 @@
-import React from 'react';
-import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Mic, MicOff } from 'lucide-react';
 import AudioVisualization from './AudioVisualization';
 import Button from './Button';
+import Toast from './Toast';
+import { useVoice } from '../../hooks/useVoice';
 
 interface VoiceInterfaceProps {
-  audioState: {
-    isListening?: boolean;
-    isSpeaking?: boolean;
-    audioLevel?: number;
-    error: string | null;
-    isInitialized?: boolean;
-    isProcessing?: boolean;
-    isConnected?: boolean;
-    lastMessage?: string;
-  };
-  executeFunction: (name: string, params?: any) => void;
-  sendMessage?: (message: string) => void;
-  onToggleListening?: () => void;
-  onStopSpeaking?: () => void;
 }
 
-const VoiceInterface: React.FC<VoiceInterfaceProps> = ({
-  audioState,
-  executeFunction,
-  sendMessage,
-  onToggleListening,
-  onStopSpeaking,
-}) => {
-  const handleVoiceCommand = (command: string) => {
-    if (sendMessage) {
-      // sendMessage(command);
-    } else {
-      // Fallback to old function execution
-      executeFunction('show_upload_form', { reason: 'Voice command simulation' });
-    }
-  };
+const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
+  const { 
+    isConnected, 
+    isMuted, 
+    isSpeaking, 
+    error, 
+    lastMessage, 
+    toggleMute, 
+    audioState 
+  } = useVoice();
 
   return (
     <div className="text-center">
+      {/* Audio Visualization */}
       <AudioVisualization
-        isListening={audioState.isListening || false}
-        isSpeaking={audioState.isSpeaking || false}
-        audioLevel={audioState.audioLevel || 0}
-        size={300}
-        className="mb-6 transition-all duration-500"
+        isListening={audioState.isListening}
+        isSpeaking={audioState.isSpeaking}
+        audioLevel={audioState.audioLevel}
+        size={400}
+        className="mb-8 transition-all duration-500"
       />
 
-      {/* Voice Control */}
-      <div className="flex items-center justify-center space-x-4 mb-6">
-        <Button
-          onClick={onToggleListening}
-          variant={audioState.isListening ? "primary" : "outline"}
-          className={`${audioState.isListening
-            ? "bg-blue-600 hover:bg-blue-700 text-white"
-            : "border-white/20 text-white hover:bg-white/10"
-            }`}
-          icon={audioState.isListening ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-          disabled={audioState.isProcessing}
-        >
-          {audioState.isProcessing
-            ? 'Processing...'
-            : audioState.isListening
-              ? 'Listening...'
-              : 'Click to Talk'
-          }
-        </Button>
-
-        {audioState.isSpeaking && onStopSpeaking && (
-          <Button
-            onClick={onStopSpeaking}
-            variant="outline"
-            className="border-red-400/20 text-red-400 hover:bg-red-400/10"
-            icon={<VolumeX className="w-4 h-4" />}
-          >
-            Stop Speaking
-          </Button>
+      {/* Connection Status */}
+      <div className="mb-6">
+        {isConnected ? (
+          <div className="flex items-center justify-center space-x-2 text-green-400">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            <span className="text-sm font-medium">Connected & Ready</span>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center space-x-2 text-yellow-400">
+            <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+            <span className="text-sm font-medium">Connecting...</span>
+          </div>
         )}
       </div>
 
-      {/* Status Messages */}
-      {audioState.isProcessing && (
-        <p className="text-blue-400 text-sm mb-4">Processing your request...</p>
-      )}
-
-      {audioState.error && (
-        <p className="text-red-400 text-sm mb-4">{audioState.error}</p>
-      )}
-
-      {!audioState.isInitialized && (
-        <p className="text-yellow-400 text-sm mb-4">
-          Voice assistant is initializing...
-        </p>
-      )}
-
-      {/* Voice Command Hints */}
-      <div className="mt-6 mb-8">
-        <p className="text-xs text-white/60 mb-3">Try saying:</p>
-        <div className="flex flex-wrap justify-center gap-2 text-xs">
-          <span className="px-2 py-1 bg-white/10 rounded-lg text-white/70">
-            "Upload file"
-          </span>
-          <span className="px-2 py-1 bg-white/10 rounded-lg text-white/70">
-            "Analyze BOM"
-          </span>
-          <span className="px-2 py-1 bg-white/10 rounded-lg text-white/70">
-            "Commercial terms"
-          </span>
-          <span className="px-2 py-1 bg-white/10 rounded-lg text-white/70">
-            "Show dashboard"
-          </span>
-        </div>
+      {/* Mute/Unmute Control */}
+      <div className="mb-6">
+        <Button
+          onClick={toggleMute}
+          className={`px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-200 ${
+            isMuted
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-green-600 hover:bg-green-700 text-white'
+          }`}
+          icon={isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+        >
+          {isMuted ? 'Unmute' : 'Mute'}
+        </Button>
       </div>
 
-      {/* Debug Buttons - Now integrated with real voice commands */}
-      <div className="mt-8 opacity-30 hover:opacity-70 transition-opacity duration-300">
-        <p className="text-xs text-white/60 mb-3">Debug: Simulate Voice Commands</p>
-        <div className="flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => handleVoiceCommand('upload file')}
-            className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white/70 hover:text-white transition-colors"
-          >
-            "Upload File"
-          </button>
-          <button
-            onClick={() => handleVoiceCommand('analyze BOM')}
-            className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white/70 hover:text-white transition-colors"
-          >
-            "Analyze BOM"
-          </button>
-          <button
-            onClick={() => handleVoiceCommand('commercial terms')}
-            className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white/70 hover:text-white transition-colors"
-          >
-            "Commercial Terms"
-          </button>
-          <button
-            onClick={() => handleVoiceCommand('show dashboard')}
-            className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white/70 hover:text-white transition-colors"
-          >
-            "Dashboard"
-          </button>
+      {/* AI Speaking Indicator */}
+      {isSpeaking && (
+        <div className="mb-4">
+          <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600/20 border border-blue-500/40 rounded-lg">
+            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+            <span className="text-blue-200 text-sm font-medium">Robbie is speaking...</span>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Last Message */}
+      {lastMessage && (
+        <div className="mt-6 max-w-md mx-auto">
+          <div className="px-4 py-3 bg-white/10 rounded-lg border border-white/20">
+            <p className="text-white/80 text-sm font-medium">Last Message:</p>
+            <p className="text-white text-sm mt-1">{lastMessage}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error Toast */}
+      {error && (
+        <Toast
+          message={error}
+          type="error"
+          isVisible={!!error}
+          onClose={() => {}}
+        />
+      )}
     </div>
   );
 };
