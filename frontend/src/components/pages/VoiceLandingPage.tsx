@@ -16,7 +16,7 @@ import FileUpload from '../floating-windows/FileUpload';
 import BOMAnalysis from '../floating-windows/BOMAnalysis';
 import CommercialTerms from '../floating-windows/CommercialTerms';
 import RFQPreview from '../floating-windows/RFQPreview';
-import VoiceInterface from '../common/VoiceInterface';
+import VoiceInterface from '../common/VoiceInterface.backup';
 import { geminiLiveService } from '../../services/geminiLiveService';
 
 interface VoiceLandingPageProps {
