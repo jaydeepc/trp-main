@@ -21,7 +21,7 @@ import {
     ToolResponseMessage,
     type LiveConfig,
 } from '../multimodal-live-types';
-import { blobToJSON, base64ToArrayBuffer } from './utils';
+import { blobToJSON, base64ToArrayBuffer } from '../../lib/utils';
 
 /**
  * the events that this client will emit
