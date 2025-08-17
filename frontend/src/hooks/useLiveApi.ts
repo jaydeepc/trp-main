@@ -68,10 +68,6 @@ export function useLiveAPI({
         };
 
         const onAudio = (data: ArrayBuffer) => {
-            console.log(
-                '🎵 [useLiveAPI] Received audio data, size:',
-                data.byteLength
-            );
             audioStreamerRef.current?.addPCM16(new Uint8Array(data));
         };
 
