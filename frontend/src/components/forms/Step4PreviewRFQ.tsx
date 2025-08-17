@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, Send, Edit, FileText, Clock, MapPin, CreditCard, Shield, CheckCircle, AlertTriangle, TrendingUp, Users, Star, Award, Globe, Calendar, Download } from 'lucide-react';
 import { RFQ } from '../../types';
-import { useRFQ } from '../../context/RFQContext';
+import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import SupplierTrustGraph from '../common/SupplierTrustGraph';
@@ -204,7 +204,7 @@ const Step4PreviewRFQ: React.FC<Step4PreviewRFQProps> = ({
                   Edit
                 </Button>
               </div>
-              
+
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -296,7 +296,7 @@ const Step4PreviewRFQ: React.FC<Step4PreviewRFQProps> = ({
                   Edit
                 </Button>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <Calendar className="w-4 h-4 text-accent-teal mt-1" />
@@ -305,7 +305,7 @@ const Step4PreviewRFQ: React.FC<Step4PreviewRFQProps> = ({
                     <p className="text-sm text-medium-gray">{commercialTerms.desiredLeadTime}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-3">
                   <CreditCard className="w-4 h-4 text-accent-teal mt-1" />
                   <div>
@@ -313,7 +313,7 @@ const Step4PreviewRFQ: React.FC<Step4PreviewRFQProps> = ({
                     <p className="text-sm text-medium-gray">{commercialTerms.paymentTerms}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-3">
                   <MapPin className="w-4 h-4 text-accent-teal mt-1" />
                   <div>
@@ -321,7 +321,7 @@ const Step4PreviewRFQ: React.FC<Step4PreviewRFQProps> = ({
                     <p className="text-sm text-medium-gray">{commercialTerms.deliveryLocation}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-3">
                   <Shield className="w-4 h-4 text-accent-teal mt-1" />
                   <div>
@@ -385,7 +385,7 @@ const Step4PreviewRFQ: React.FC<Step4PreviewRFQProps> = ({
           >
             Previous
           </Button>
-          
+
           <Button
             onClick={handleSendRFQ}
             loading={loading.isLoading}
@@ -409,12 +409,12 @@ const Step4PreviewRFQ: React.FC<Step4PreviewRFQProps> = ({
                 RFQ Sent Successfully!
               </h3>
               <p className="text-medium-gray mb-6">
-                Your Smart RFQ <strong>{rfq.rfqNumber}</strong> has been sent to suppliers. 
+                Your Smart RFQ <strong>{rfq.rfqNumber}</strong> has been sent to suppliers.
                 You'll receive notifications as quotes come in.
               </p>
               <div className="bg-blue-50 rounded-lg p-4 mb-6">
                 <p className="text-sm text-blue-800">
-                  <strong>Next Steps:</strong> Suppliers will receive your RFQ with AI-enhanced 
+                  <strong>Next Steps:</strong> Suppliers will receive your RFQ with AI-enhanced
                   insights and ZBC analysis. This helps them provide more accurate and competitive quotes.
                 </p>
               </div>

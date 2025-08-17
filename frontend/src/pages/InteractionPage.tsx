@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Mic, MicOff } from 'lucide-react';
 import { useLiveAPIContext } from '../contexts/LiveAPIContext';
-import { AudioRecorder } from '../lib/audio-recorder';
-import AudioVisualization from '../components/common/AudioVisualization';
-import Button from '../components/common/Button';
-import Toast from '../components/common/Toast';
-import useInitialEffect from '../hooks/useInitialEffect';
+import { AudioRecorder } from '../live-api-web-console/lib/audio-recorder';
+import AudioVisualization from '../live-api-web-console/components/common/AudioVisualization';
+import Button from '../live-api-web-console/components/common/Button';
+import Toast from '../live-api-web-console/components/common/Toast';
+import useInitialEffect from '../live-api-web-console/hooks/useInitialEffect';
 
 const InteractionPage: React.FC = () => {
     return (
@@ -60,7 +60,7 @@ When users first connect, briefly introduce yourself and ask how you can help wi
                 .then(() => {
                     console.log('✅ Connection successful!');
                 })
-                .catch((err) => {
+                .catch((err: Error) => {
                     console.error('❌ Connection failed:', err.message || err);
                     setError('Failed to connect to voice service');
                 });

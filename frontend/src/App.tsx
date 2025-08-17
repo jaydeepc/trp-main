@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { LiveAPIProvider } from "./live-api-web-console/contexts/LiveAPIContext";
+import { LiveAPIProvider } from "./contexts/LiveAPIContext";
 import Layout from "./live-api-web-console/components/layout/Layout";
-import LandingPage from "./live-api-web-console/pages/LandingPage";
-import InteractionPage from "./live-api-web-console/pages/InteractionPage";
+import LandingPage from "./pages/LandingPage";
+import InteractionPage from "./pages/InteractionPage";
 
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
 if (typeof API_KEY !== "string") {

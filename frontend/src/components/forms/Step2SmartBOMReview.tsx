@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle, AlertTriangle, XCircle, TrendingUp, TrendingDown, Info, Edit3, Sparkles } from 'lucide-react';
 import InfoTooltip from '../common/InfoTooltip';
 import { RFQ, SmartBOMComponent } from '../../types';
-import { useRFQ } from '../../context/RFQContext';
+import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import SupplierTrustGraph from '../common/SupplierTrustGraph';
@@ -87,7 +87,7 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
 
   const getZBCVarianceClass = (variance: string) => {
     if (!variance || variance === 'N/A') return 'text-gray-600';
-    
+
     const numericVariance = parseFloat(variance.replace('%', ''));
     if (numericVariance < 5) return 'zbc-good';
     if (numericVariance < 20) return 'zbc-moderate';
@@ -96,7 +96,7 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
 
   const getZBCVarianceIcon = (variance: string) => {
     if (!variance || variance === 'N/A') return null;
-    
+
     const numericVariance = parseFloat(variance.replace('%', ''));
     if (numericVariance > 0) {
       return <TrendingUp className="w-4 h-4" />;
@@ -746,7 +746,7 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
                             <div className="text-xs text-gray-500">Confidence:</div>
                             <div className="flex items-center space-x-1">
                               <div className="w-12 bg-gray-200 rounded-full h-1.5">
-                                <div 
+                                <div
                                   className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                                   style={{ width: `${component.confidence}%` }}
                                 ></div>
@@ -800,7 +800,7 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
                         </Button>
                       </td>
                     </tr>
-                    
+
                     {/* Expanded Row Details */}
                     {expandedRows.has(component.id) && (
                       <tr>
@@ -900,11 +900,10 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
                 <button
                   key={component.id}
                   onClick={() => setSelectedComponent(component.id)}
-                  className={`px-4 py-2 rounded-xl border-2 transition-all duration-200 ${
-                    selectedComponent === component.id
+                  className={`px-4 py-2 rounded-xl border-2 transition-all duration-200 ${selectedComponent === component.id
                       ? 'border-accent-teal bg-blue-50 text-accent-teal'
                       : 'border-gray-300 text-dark-slate-gray hover:border-gray-400'
-                  }`}
+                    }`}
                 >
                   <div className="text-sm font-medium">{component.partName}</div>
                   <div className="text-xs opacity-75">{component.partNumber}</div>
@@ -949,7 +948,7 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
           >
             Previous
           </Button>
-          
+
           <Button
             onClick={handleContinue}
             loading={loading.isLoading}

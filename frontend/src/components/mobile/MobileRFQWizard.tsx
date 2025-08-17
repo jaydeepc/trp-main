@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ArrowLeft, 
-  Upload, 
-  FileText, 
-  Settings, 
-  Eye, 
-  CheckCircle, 
+import {
+  ArrowLeft,
+  Upload,
+  FileText,
+  Settings,
+  Eye,
+  CheckCircle,
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
   MoreVertical
 } from 'lucide-react';
-import { useRFQ } from '../../context/RFQContext';
+import { useRFQ } from '../../contexts/RFQContext';
 import { StepConfig } from '../../types';
 import Button from '../common/Button';
 import Card from '../common/Card';
@@ -241,12 +241,12 @@ const MobileRFQWizard: React.FC<MobileRFQWizardProps> = ({ rfqId, onBackToDashbo
             </span>
           </div>
           <div className="w-full bg-surface-200 rounded-full h-2">
-            <div 
+            <div
               className="bg-primary-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / 4) * 100}%` }}
             ></div>
           </div>
-          
+
           {/* Step Description */}
           <p className="text-sm text-surface-600 mt-2">
             {steps[currentStep - 1]?.description}
@@ -260,28 +260,25 @@ const MobileRFQWizard: React.FC<MobileRFQWizardProps> = ({ rfqId, onBackToDashbo
               key={step.number}
               onClick={() => handleStepClick(step.number)}
               disabled={!step.isAccessible}
-              className={`flex flex-col items-center space-y-1 ${
-                step.isAccessible ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-              }`}
+              className={`flex flex-col items-center space-y-1 ${step.isAccessible ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                }`}
             >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
-                step.isCompleted
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${step.isCompleted
                   ? 'bg-emerald-500 text-white'
                   : step.isActive
-                  ? 'bg-primary-600 text-white'
-                  : step.isAccessible
-                  ? 'bg-surface-200 text-surface-600 hover:bg-surface-300'
-                  : 'bg-surface-100 text-surface-400'
-              }`}>
+                    ? 'bg-primary-600 text-white'
+                    : step.isAccessible
+                      ? 'bg-surface-200 text-surface-600 hover:bg-surface-300'
+                      : 'bg-surface-100 text-surface-400'
+                }`}>
                 {step.isCompleted ? (
                   <CheckCircle className="w-4 h-4" />
                 ) : (
                   getStepIcon(step.number)
                 )}
               </div>
-              <span className={`text-xs font-medium ${
-                step.isActive ? 'text-primary-600' : 'text-surface-600'
-              }`}>
+              <span className={`text-xs font-medium ${step.isActive ? 'text-primary-600' : 'text-surface-600'
+                }`}>
                 {step.number}
               </span>
             </button>
@@ -296,7 +293,7 @@ const MobileRFQWizard: React.FC<MobileRFQWizardProps> = ({ rfqId, onBackToDashbo
             <Loading message={loading.message} progress={loading.progress} />
           </div>
         )}
-        
+
         {error.hasError && (
           <div className="mb-6">
             <Card className="border-l-4 border-red-500 bg-red-50 p-4">
@@ -326,22 +323,21 @@ const MobileRFQWizard: React.FC<MobileRFQWizardProps> = ({ rfqId, onBackToDashbo
             <ChevronLeft className="w-4 h-4" />
             <span>Previous</span>
           </Button>
-          
+
           <div className="flex items-center space-x-2">
             {steps.map((step) => (
               <div
                 key={step.number}
-                className={`w-2 h-2 rounded-full ${
-                  step.isCompleted
+                className={`w-2 h-2 rounded-full ${step.isCompleted
                     ? 'bg-emerald-500'
                     : step.isActive
-                    ? 'bg-primary-600'
-                    : 'bg-surface-300'
-                }`}
+                      ? 'bg-primary-600'
+                      : 'bg-surface-300'
+                  }`}
               />
             ))}
           </div>
-          
+
           <Button
             onClick={currentStep === 4 ? onBackToDashboard : handleNextStep}
             disabled={loading.isLoading}
