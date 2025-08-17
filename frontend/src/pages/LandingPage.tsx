@@ -6,9 +6,9 @@ import {
   Users,
   TrendingUp
 } from 'lucide-react';
-import AudioVisualization from '../live-api-web-console/components/common/AudioVisualization';
-import Button from '../live-api-web-console/components/common/Button';
-import Toast from '../live-api-web-console/components/common/Toast';
+import AudioVisualization from '../components/common/AudioVisualization';
+import Button from '../components/common/Button';
+import Toast from '../components/common/Toast';
 import { checkMicrophonePermission } from '../utils/mediaPermissions';
 
 interface LandingPageProps { }
