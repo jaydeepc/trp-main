@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mic, MicOff } from 'lucide-react';
 import { useLiveAPIContext } from '../contexts/LiveAPIContext';
-import { AudioRecorder } from '../live-api-web-console/lib/audio-recorder';
+import { AudioRecorder } from '../lib/audio-recorder';
 import AudioVisualization from '../live-api-web-console/components/common/AudioVisualization';
 import Button from '../live-api-web-console/components/common/Button';
 import Toast from '../live-api-web-console/components/common/Toast';

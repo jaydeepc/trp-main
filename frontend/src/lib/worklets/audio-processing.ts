@@ -1,40 +1,57 @@
-/**
- * Audio processing worklet for recording
- */
-
 const AudioRecordingWorklet = `
-class AudioRecordingWorklet extends AudioWorkletProcessor {
+class AudioProcessingWorklet extends AudioWorkletProcessor {
+
+  // send and clear buffer every 2048 samples, 
+  // which at 16khz is about 8 times a second
+  buffer = new Int16Array(2048);
+
+  // current write index
+  bufferWriteIndex = 0;
+
   constructor() {
     super();
+    this.hasAudio = false;
   }
 
-  process(inputs, outputs, parameters) {
-    const input = inputs[0];
-    
-    if (input.length > 0) {
-      const inputChannel = input[0];
-      
-      // Convert Float32Array to Int16Array (PCM16)
-      const int16Data = new Int16Array(inputChannel.length);
-      for (let i = 0; i < inputChannel.length; i++) {
-        const floatSample = inputChannel[i];
-        // Convert to 16-bit PCM
-        int16Data[i] = Math.max(-32768, Math.min(32767, floatSample * 32768));
-      }
-      
-      // Send the processed audio data to the main thread
-      this.port.postMessage({
-        data: {
-          int16arrayBuffer: int16Data.buffer
-        }
-      });
+  /**
+   * @param inputs Float32Array[][] [input#][channel#][sample#] so to access first inputs 1st channel inputs[0][0]
+   * @param outputs Float32Array[][]
+   */
+  process(inputs) {
+    if (inputs[0].length) {
+      const channel0 = inputs[0][0];
+      this.processChunk(channel0);
     }
-    
     return true;
   }
-}
 
-registerProcessor('audio-recording-worklet', AudioRecordingWorklet);
+  sendAndClearBuffer(){
+    this.port.postMessage({
+      event: "chunk",
+      data: {
+        int16arrayBuffer: this.buffer.slice(0, this.bufferWriteIndex).buffer,
+      },
+    });
+    this.bufferWriteIndex = 0;
+  }
+
+  processChunk(float32Array) {
+    const l = float32Array.length;
+    
+    for (let i = 0; i < l; i++) {
+      // convert float32 -1 to 1 to int16 -32768 to 32767
+      const int16Value = float32Array[i] * 32768;
+      this.buffer[this.bufferWriteIndex++] = int16Value;
+      if(this.bufferWriteIndex >= this.buffer.length) {
+        this.sendAndClearBuffer();
+      }
+    }
+
+    if(this.bufferWriteIndex >= this.buffer.length) {
+      this.sendAndClearBuffer();
+    }
+  }
+}
 `;
 
 export default AudioRecordingWorklet;
