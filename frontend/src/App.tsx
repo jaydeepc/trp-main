@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { LiveAPIProvider } from "./contexts/LiveAPIContext";
-import Layout from "./live-api-web-console/components/layout/Layout";
+import Layout from "./components/layout/Layout";
 import LandingPage from "./pages/LandingPage";
 import InteractionPage from "./pages/InteractionPage";
 

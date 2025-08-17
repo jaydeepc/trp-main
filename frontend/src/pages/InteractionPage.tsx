@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Mic, MicOff } from 'lucide-react';
 import { useLiveAPIContext } from '../contexts/LiveAPIContext';
 import { AudioRecorder } from '../lib/audio-recorder';
-import AudioVisualization from '../live-api-web-console/components/common/AudioVisualization';
-import Button from '../live-api-web-console/components/common/Button';
-import Toast from '../live-api-web-console/components/common/Toast';
-import useInitialEffect from '../live-api-web-console/hooks/useInitialEffect';
+import AudioVisualization from '../components/common/AudioVisualization';
+import Button from '../components/common/Button';
+import Toast from '../components/common/Toast';
+import useInitialEffect from '../hooks/useInitialEffect';
 
 const InteractionPage: React.FC = () => {
     return (
