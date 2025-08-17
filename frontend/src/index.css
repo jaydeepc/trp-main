@@ -5,395 +5,397 @@
 
 /* Base styles */
 @layer base {
-  html {
-    font-family: 'Inter', sans-serif;
-  }
-  
-  body {
-    @apply bg-light-bg text-dark-slate-gray;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-  }
-  
-  /* Headings */
-  h1 {
-    @apply text-4xl font-extrabold leading-tight text-primary-blue;
-  }
-  
-  h2 {
-    @apply text-3xl font-bold text-dark-slate-gray;
-  }
-  
-  h3 {
-    @apply text-xl font-semibold text-dark-slate-gray;
-  }
-  
-  /* Body text */
-  p {
-    @apply text-base font-normal leading-relaxed text-dark-slate-gray;
-  }
-  
-  /* Small text */
-  .text-caption {
-    @apply text-sm font-light text-medium-gray;
-  }
+    html {
+        font-family: 'Inter', sans-serif;
+    }
+
+    body {
+        @apply bg-light-bg text-dark-slate-gray;
+        font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    }
+
+    /* Headings */
+    h1 {
+        @apply text-4xl font-extrabold leading-tight text-primary-blue;
+    }
+
+    h2 {
+        @apply text-3xl font-bold text-dark-slate-gray;
+    }
+
+    h3 {
+        @apply text-xl font-semibold text-dark-slate-gray;
+    }
+
+    /* Body text */
+    p {
+        @apply text-base font-normal leading-relaxed text-dark-slate-gray;
+    }
+
+    /* Small text */
+    .text-caption {
+        @apply text-sm font-light text-medium-gray;
+    }
 }
 
 /* Component styles */
 @layer components {
-  /* Primary Button */
-  .btn-primary {
-    @apply bg-accent-teal hover:bg-opacity-90 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-all duration-300;
-    background: linear-gradient(135deg, #00BCD4 0%, #0288D1 100%);
-  }
-  
-  .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(0, 188, 212, 0.3);
-  }
-  
-  /* Secondary Button */
-  .btn-secondary {
-    @apply bg-gray-200 text-dark-slate-gray hover:bg-gray-300 font-medium py-2 px-5 rounded-xl shadow-sm transition-all duration-200;
-  }
-  
-  /* Input Fields */
-  .input-field {
-    @apply border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-accent-teal transition-colors duration-200 w-full;
-  }
-  
-  /* Cards */
-  .card {
-    @apply bg-card-bg rounded-2xl shadow-card p-6;
-  }
-  
-  .card-large {
-    @apply bg-card-bg rounded-2xl shadow-card p-8;
-  }
-  
-  /* Loading Spinner */
-  .spinner {
-    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-accent-teal;
-  }
-  
-  /* Progress Steps */
-  .step-indicator {
-    @apply flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold;
-  }
-  
-  .step-active {
-    @apply bg-accent-teal text-white;
-  }
-  
-  .step-completed {
-    @apply bg-green-500 text-white;
-  }
-  
-  .step-inactive {
-    @apply bg-gray-200 text-medium-gray;
-  }
-  
-  /* Table Styles */
-  .table-header {
-    @apply font-semibold bg-gray-100 text-dark-slate-gray;
-  }
-  
-  .table-row {
-    @apply border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150;
-  }
-  
-  .table-cell {
-    @apply px-4 py-3 text-sm;
-  }
-  
-  /* Status Badges */
-  .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-  }
-  
-  .badge-success {
-    @apply bg-green-100 text-green-800;
-  }
-  
-  .badge-warning {
-    @apply bg-yellow-100 text-yellow-800;
-  }
-  
-  .badge-error {
-    @apply bg-red-100 text-red-800;
-  }
-  
-  .badge-info {
-    @apply bg-blue-100 text-blue-800;
-  }
-  
-  /* Risk Level Colors */
-  .risk-low {
-    @apply text-green-600 bg-green-50;
-  }
-  
-  .risk-medium {
-    @apply text-yellow-600 bg-yellow-50;
-  }
-  
-  .risk-high {
-    @apply text-red-600 bg-red-50;
-  }
-  
-  /* ZBC Variance Colors */
-  .zbc-good {
-    @apply text-green-600 font-semibold;
-  }
-  
-  .zbc-moderate {
-    @apply text-yellow-600 font-semibold;
-  }
-  
-  .zbc-high {
-    @apply text-secondary-orange font-semibold;
-  }
-  
-  /* File Upload Area */
-  .upload-area {
-    @apply border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-accent-teal transition-colors duration-200 cursor-pointer;
-  }
-  
-  .upload-area-active {
-    @apply border-accent-teal bg-blue-50;
-  }
-  
-  /* Modal Overlay */
-  .modal-overlay {
-    @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
-  }
-  
-  .modal-content {
-    @apply bg-white rounded-2xl shadow-modal max-w-lg w-full mx-4 p-6;
-  }
-  
-  /* Tooltip */
-  .tooltip {
-    @apply absolute z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm opacity-0 transition-opacity duration-300;
-  }
-  
-  /* Navigation */
-  .nav-link {
-    @apply text-medium-gray hover:text-primary-blue transition-colors duration-200 font-medium;
-  }
-  
-  .nav-link-active {
-    @apply text-primary-blue border-b-2 border-accent-teal;
-  }
+    /* Primary Button */
+    .btn-primary {
+        @apply bg-accent-teal hover:bg-opacity-90 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-all duration-300;
+        background: linear-gradient(135deg, #00bcd4 0%, #0288d1 100%);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(0, 188, 212, 0.3);
+    }
+
+    /* Secondary Button */
+    .btn-secondary {
+        @apply bg-gray-200 text-dark-slate-gray hover:bg-gray-300 font-medium py-2 px-5 rounded-xl shadow-sm transition-all duration-200;
+    }
+
+    /* Input Fields */
+    .input-field {
+        @apply border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-accent-teal transition-colors duration-200 w-full;
+    }
+
+    /* Cards */
+    .card {
+        @apply bg-card-bg rounded-2xl shadow-card p-6;
+    }
+
+    .card-large {
+        @apply bg-card-bg rounded-2xl shadow-card p-8;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+        @apply animate-spin rounded-full h-8 w-8 border-b-2 border-accent-teal;
+    }
+
+    /* Progress Steps */
+    .step-indicator {
+        @apply flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold;
+    }
+
+    .step-active {
+        @apply bg-accent-teal text-white;
+    }
+
+    .step-completed {
+        @apply bg-green-500 text-white;
+    }
+
+    .step-inactive {
+        @apply bg-gray-200 text-medium-gray;
+    }
+
+    /* Table Styles */
+    .table-header {
+        @apply font-semibold bg-gray-100 text-dark-slate-gray;
+    }
+
+    .table-row {
+        @apply border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150;
+    }
+
+    .table-cell {
+        @apply px-4 py-3 text-sm;
+    }
+
+    /* Status Badges */
+    .badge {
+        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    }
+
+    .badge-success {
+        @apply bg-green-100 text-green-800;
+    }
+
+    .badge-warning {
+        @apply bg-yellow-100 text-yellow-800;
+    }
+
+    .badge-error {
+        @apply bg-red-100 text-red-800;
+    }
+
+    .badge-info {
+        @apply bg-blue-100 text-blue-800;
+    }
+
+    /* Risk Level Colors */
+    .risk-low {
+        @apply text-green-600 bg-green-50;
+    }
+
+    .risk-medium {
+        @apply text-yellow-600 bg-yellow-50;
+    }
+
+    .risk-high {
+        @apply text-red-600 bg-red-50;
+    }
+
+    /* ZBC Variance Colors */
+    .zbc-good {
+        @apply text-green-600 font-semibold;
+    }
+
+    .zbc-moderate {
+        @apply text-yellow-600 font-semibold;
+    }
+
+    .zbc-high {
+        @apply text-secondary-orange font-semibold;
+    }
+
+    /* File Upload Area */
+    .upload-area {
+        @apply border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-accent-teal transition-colors duration-200 cursor-pointer;
+    }
+
+    .upload-area-active {
+        @apply border-accent-teal bg-blue-50;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+        @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+    }
+
+    .modal-content {
+        @apply bg-white rounded-2xl shadow-modal max-w-lg w-full mx-4 p-6;
+    }
+
+    /* Tooltip */
+    .tooltip {
+        @apply absolute z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm opacity-0 transition-opacity duration-300;
+    }
+
+    /* Navigation */
+    .nav-link {
+        @apply text-medium-gray hover:text-primary-blue transition-colors duration-200 font-medium;
+    }
+
+    .nav-link-active {
+        @apply text-primary-blue border-b-2 border-accent-teal;
+    }
 }
 
 /* Utility classes */
 @layer utilities {
-  .text-gradient {
-    background: linear-gradient(135deg, #1A237E 0%, #00BCD4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  .shadow-glow {
-    box-shadow: 0 0 20px rgba(0, 188, 212, 0.3);
-  }
-  
-  .border-gradient {
-    border: 2px solid transparent;
-    background: linear-gradient(white, white) padding-box,
-                linear-gradient(135deg, #00BCD4, #1A237E) border-box;
-  }
-  
-  /* Scrollbar Styling */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: #00BCD4 #F5F7FA;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: #F5F7FA;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #00BCD4;
-    border-radius: 3px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: #0288D1;
-  }
+    .text-gradient {
+        background: linear-gradient(135deg, #1a237e 0%, #00bcd4 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .shadow-glow {
+        box-shadow: 0 0 20px rgba(0, 188, 212, 0.3);
+    }
+
+    .border-gradient {
+        border: 2px solid transparent;
+        background: linear-gradient(white, white) padding-box,
+            linear-gradient(135deg, #00bcd4, #1a237e) border-box;
+    }
+
+    /* Scrollbar Styling */
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: #00bcd4 #f5f7fa;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: #f5f7fa;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: #00bcd4;
+        border-radius: 3px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background-color: #0288d1;
+    }
 }
 
 /* Animation classes */
 .fade-in {
-  animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.3s ease-in-out;
 }
 
 .slide-up {
-  animation: slideUp 0.3s ease-out;
+    animation: slideUp 0.3s ease-out;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Print styles */
 @media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  .print-break {
-    page-break-before: always;
-  }
+    .no-print {
+        display: none !important;
+    }
+
+    .print-break {
+        page-break-before: always;
+    }
 }
 
 /* Responsive design helpers */
 @media (max-width: 768px) {
-  .card {
-    @apply p-4;
-  }
-  
-  .card-large {
-    @apply p-6;
-  }
-  
-  h1 {
-    @apply text-3xl;
-  }
-  
-  h2 {
-    @apply text-2xl;
-  }
+    .card {
+        @apply p-4;
+    }
 
-  /* Mobile-specific utilities */
-  .mobile-safe-area {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+    .card-large {
+        @apply p-6;
+    }
 
-  /* Hide desktop-only elements on mobile */
-  .desktop-only {
-    @apply hidden;
-  }
+    h1 {
+        @apply text-3xl;
+    }
 
-  /* Mobile navigation spacing */
-  .mobile-nav-spacing {
-    padding-top: 4rem; /* Account for fixed mobile header */
-    padding-bottom: 5rem; /* Account for bottom navigation */
-  }
+    h2 {
+        @apply text-2xl;
+    }
 
-  /* Mobile table improvements */
-  .mobile-table-scroll {
-    @apply overflow-x-auto;
-    -webkit-overflow-scrolling: touch;
-  }
+    /* Mobile-specific utilities */
+    .mobile-safe-area {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
 
-  /* Mobile form improvements */
-  .mobile-form-input {
-    @apply text-base; /* Prevent zoom on iOS */
-  }
+    /* Hide desktop-only elements on mobile */
+    .desktop-only {
+        @apply hidden;
+    }
 
-  /* Mobile button improvements */
-  .mobile-button {
-    @apply min-h-[44px]; /* iOS touch target size */
-  }
+    /* Mobile navigation spacing */
+    .mobile-nav-spacing {
+        padding-top: 4rem; /* Account for fixed mobile header */
+        padding-bottom: 5rem; /* Account for bottom navigation */
+    }
 
-  /* Mobile card improvements */
-  .mobile-card {
-    @apply mx-4 rounded-xl;
-  }
+    /* Mobile table improvements */
+    .mobile-table-scroll {
+        @apply overflow-x-auto;
+        -webkit-overflow-scrolling: touch;
+    }
 
-  /* Mobile spacing */
-  .mobile-spacing {
-    @apply px-4 py-3;
-  }
+    /* Mobile form improvements */
+    .mobile-form-input {
+        @apply text-base; /* Prevent zoom on iOS */
+    }
 
-  /* Mobile text sizing */
-  .mobile-text-sm {
-    @apply text-sm leading-relaxed;
-  }
+    /* Mobile button improvements */
+    .mobile-button {
+        @apply min-h-[44px]; /* iOS touch target size */
+    }
 
-  .mobile-text-xs {
-    @apply text-xs leading-normal;
-  }
+    /* Mobile card improvements */
+    .mobile-card {
+        @apply mx-4 rounded-xl;
+    }
+
+    /* Mobile spacing */
+    .mobile-spacing {
+        @apply px-4 py-3;
+    }
+
+    /* Mobile text sizing */
+    .mobile-text-sm {
+        @apply text-sm leading-relaxed;
+    }
+
+    .mobile-text-xs {
+        @apply text-xs leading-normal;
+    }
 }
 
 /* Tablet-specific styles */
 @media (min-width: 768px) and (max-width: 1024px) {
-  .tablet-grid {
-    @apply grid-cols-2;
-  }
+    .tablet-grid {
+        @apply grid-cols-2;
+    }
 
-  .tablet-spacing {
-    @apply px-6 py-4;
-  }
+    .tablet-spacing {
+        @apply px-6 py-4;
+    }
 }
 
 /* Desktop-specific styles */
 @media (min-width: 1024px) {
-  .desktop-grid {
-    @apply grid-cols-3 lg:grid-cols-4;
-  }
+    .desktop-grid {
+        @apply grid-cols-3 lg:grid-cols-4;
+    }
 
-  .desktop-spacing {
-    @apply px-8 py-6;
-  }
+    .desktop-spacing {
+        @apply px-8 py-6;
+    }
 
-  /* Show desktop-only elements */
-  .desktop-only {
-    @apply block;
-  }
+    /* Show desktop-only elements */
+    .desktop-only {
+        @apply block;
+    }
 
-  /* Hide mobile-only elements on desktop */
-  .mobile-only {
-    @apply hidden;
-  }
+    /* Hide mobile-only elements on desktop */
+    .mobile-only {
+        @apply hidden;
+    }
 }
 
 /* Mobile-only elements */
 @media (max-width: 767px) {
-  .mobile-only {
-    @apply block;
-  }
+    .mobile-only {
+        @apply block;
+    }
 }
 
 /* Touch-friendly improvements */
 @media (hover: none) and (pointer: coarse) {
-  /* Increase touch targets */
-  button, .btn, .clickable {
-    @apply min-h-[44px] min-w-[44px];
-  }
+    /* Increase touch targets */
+    button,
+    .btn,
+    .clickable {
+        @apply min-h-[44px] min-w-[44px];
+    }
 
-  /* Remove hover effects on touch devices */
-  .hover-effect:hover {
-    transform: none !important;
-    box-shadow: none !important;
-  }
+    /* Remove hover effects on touch devices */
+    .hover-effect:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
 }
 
 /* High DPI display improvements */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .high-dpi-border {
-    border-width: 0.5px;
-  }
+    .high-dpi-border {
+        border-width: 0.5px;
+    }
 }
