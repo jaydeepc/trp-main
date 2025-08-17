@@ -1,7 +1,16 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/layout/Layout';
-import LandingPage from './components/pages/LandingPage';
-import InteractionPage from './components/pages/InteractionPage';
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { LiveAPIProvider } from "./live-api-web-console/contexts/LiveAPIContext";
+import Layout from "./live-api-web-console/components/layout/Layout";
+import LandingPage from "./live-api-web-console/pages/LandingPage";
+import InteractionPage from "./live-api-web-console/pages/InteractionPage";
+
+const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
+if (typeof API_KEY !== "string") {
+  throw new Error("set REACT_APP_GEMINI_API_KEY in .env");
+}
+
+const host = "generativelanguage.googleapis.com";
+const uri = `wss://${host}/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent`;
 
 function App() {
   const handleNavigateToDashboard = () => {
@@ -9,23 +18,33 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="App">
-        <Layout handleNavigateToDashboard={handleNavigateToDashboard}>
-          <Routes>
-            <Route
-              path="/"
-              element={<LandingPage />}
-            />
-            <Route
-              path="/interaction"
-              element={<InteractionPage />}
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      </div>
-    </Router>
+    <LiveAPIProvider url={uri} apiKey={API_KEY}>
+      <Layout handleNavigateToDashboard={handleNavigateToDashboard}>
+        <Router>
+          <div className="App">
+            <Routes>
+              {/* Landing Page Route */}
+              <Route
+                path="/"
+                element={
+                  <LandingPage />
+                }
+              />
+
+              {/* Live API Voice Console Route */}
+              <Route
+                path="/interaction"
+                element={
+                  <InteractionPage />
+                }
+              />
+
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+        </Router>
+      </Layout>
+    </LiveAPIProvider>
   );
 }
 
