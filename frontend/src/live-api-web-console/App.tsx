@@ -5,6 +5,7 @@ import { Altair } from "./components/altair/Altair";
 import ControlTray from "./components/control-tray/ControlTray";
 import Layout from "./components/layout/Layout";
 import LandingPage from "./pages/LandingPage";
+import InteractionPage from "./pages/InteractionPage";
 
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
 if (typeof API_KEY !== "string") {
@@ -37,17 +38,7 @@ function App() {
               <Route
                 path="/interaction"
                 element={
-                  <div className="streaming-console">
-                    <main>
-                      <div className="main-app-area">
-                        <Altair />
-                      </div>
-                      <ControlTray
-                        supportsVideo={false}
-                        enableEditingSettings={true}
-                      />
-                    </main>
-                  </div>
+                  <InteractionPage />
                 }
               />
 
