@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mic, MicOff } from 'lucide-react';
+import { FunctionDeclaration, SchemaType } from '@google/generative-ai';
 import { useLiveAPIContext } from '../contexts/LiveAPIContext';
 import { AudioRecorder } from '../lib/audio-recorder';
 import AudioVisualization from '../components/common/AudioVisualization';
@@ -26,6 +27,21 @@ const VoiceInterface: React.FC = () => {
     const [inVolume, setInVolume] = useState(0);
     const [audioRecorder] = useState(() => new AudioRecorder());
 
+    const sayHiFunctionDeclaration: FunctionDeclaration = {
+        name: "say_hi",
+        description: "Call this function whenever the user says 'hi' or any greeting.",
+        parameters: {
+            type: SchemaType.OBJECT,
+            properties: {
+                greeting: {
+                    type: SchemaType.STRING,
+                    description: "The greeting the user said",
+                },
+            },
+            required: ["greeting"],
+        },
+    };
+
     // Set config and connect - using useInitialEffect to prevent multiple calls
     useInitialEffect(() => {
         console.log('🔧 Setting Robbie configuration...');
@@ -46,10 +62,15 @@ You are ALWAYS listening and ready to help. Users don't need to click buttons or
 
 Keep responses conversational, helpful, and concise since users hear your actual voice. 
 
-When users first connect, briefly introduce yourself and ask how you can help with their procurement needs.`,
+When users first connect, briefly introduce yourself and ask how you can help with their procurement needs.
+
+IMPORTANT: Whenever the user says "hi" or any greeting like "hello", "hey", etc., immediately call the "say_hi" function with their greeting.`,
                     },
                 ],
             },
+            tools: [
+                { functionDeclarations: [sayHiFunctionDeclaration] },
+            ],
         });
     }, []);
 
@@ -104,6 +125,28 @@ When users first connect, briefly introduce yourself and ask how you can help wi
             }
         };
 
+        // Handle function calls
+        const handleToolCall = (toolCall: any) => {
+            console.log('🔧 Received tool call:', toolCall);
+            
+            if (toolCall.functionCalls) {
+                toolCall.functionCalls.forEach((functionCall: any) => {
+                    if (functionCall.name === 'say_hi') {
+                        // This is our "hi" function call - log "hi"
+                        console.log('hi');
+                        
+                        // Send function response back to AI
+                        client.sendToolResponse({
+                            functionResponses: [{
+                                response: { success: true, message: "Function completed!" },
+                                id: functionCall.id
+                            }]
+                        });
+                    }
+                });
+            }
+        };
+
         const handleAudio = () => {
             setIsSpeaking(true);
         };
@@ -113,11 +156,13 @@ When users first connect, briefly introduce yourself and ask how you can help wi
         };
 
         client.on('content', handleContent);
+        client.on('toolcall', handleToolCall);
         client.on('audio', handleAudio);
         client.on('turncomplete', handleTurnComplete);
 
         return () => {
             client.off('content', handleContent);
+            client.off('toolcall', handleToolCall);
             client.off('audio', handleAudio);
             client.off('turncomplete', handleTurnComplete);
         };
