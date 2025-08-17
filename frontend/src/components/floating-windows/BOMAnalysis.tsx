@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle, AlertTriangle, XCircle, TrendingUp, TrendingDown, Info, Edit3, Sparkles } from 'lucide-react';
 import InfoTooltip from '../common/InfoTooltip';
 import { RFQ, SmartBOMComponent } from '../../types';
-import { useRFQ } from '../../context/RFQContext';
+import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import SupplierTrustGraph from '../common/SupplierTrustGraph';

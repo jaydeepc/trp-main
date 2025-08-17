@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { RFQProvider } from './context/RFQContext';
+import { RFQProvider } from './contexts/RFQContext';
 import Dashboard from './components/pages/Dashboard';
 import RFQWizard from './components/pages/RFQWizard';
 import VoiceLandingPage from './components/pages/VoiceLandingPage';
 import MobileDashboard from './components/mobile/MobileDashboard';
 import MobileRFQWizard from './components/mobile/MobileRFQWizard';
 import MobileNavigation from './components/mobile/MobileNavigation';
-import { useRFQ } from './context/RFQContext';
+import { useRFQ } from './contexts/RFQContext';
 import { useResponsive } from './hooks/useResponsive';
 
 // Simple router state management for MVP
@@ -21,7 +21,7 @@ function AppContent() {
   const [appState, setAppState] = useState<AppState>({
     currentView: 'voice-landing'
   });
-  
+
   const { createRFQ } = useRFQ();
   const { isMobile } = useResponsive();
 
@@ -137,7 +137,7 @@ function AppContent() {
           onViewRFQ={handleViewRFQ}
         />
       );
-    
+
     case 'rfq-wizard':
       if (!appState.currentRFQId) {
         return (
@@ -156,14 +156,14 @@ function AppContent() {
           </div>
         );
       }
-      
+
       return (
         <RFQWizard
           rfqId={appState.currentRFQId}
           onBackToDashboard={handleBackToDashboard}
         />
       );
-    
+
     default:
       return (
         <div className="min-h-screen bg-light-bg flex items-center justify-center">

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  CheckCircle, 
-  AlertTriangle, 
-  XCircle, 
-  TrendingUp, 
-  TrendingDown, 
-  Info, 
+import {
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  TrendingUp,
+  TrendingDown,
+  Info,
   Sparkles,
   ChevronDown,
   ChevronUp,
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import InfoTooltip from '../common/InfoTooltip';
 import { RFQ, SmartBOMComponent } from '../../types';
-import { useRFQ } from '../../context/RFQContext';
+import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import SupplierTrustGraph from '../common/SupplierTrustGraph';
@@ -90,7 +90,7 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
 
   const getZBCVarianceClass = (variance: string) => {
     if (!variance || variance === 'N/A') return 'text-gray-600';
-    
+
     const numericVariance = parseFloat(variance.replace('%', ''));
     if (numericVariance < 5) return 'text-emerald-600';
     if (numericVariance < 20) return 'text-warning-600';
@@ -99,7 +99,7 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
 
   const getZBCVarianceIcon = (variance: string) => {
     if (!variance || variance === 'N/A') return null;
-    
+
     const numericVariance = parseFloat(variance.replace('%', ''));
     if (numericVariance > 0) {
       return <TrendingUp className="w-4 h-4" />;
@@ -267,7 +267,7 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
                       <span className="text-xs text-blue-600">Confidence:</span>
                       <div className="flex items-center space-x-1">
                         <div className="w-16 bg-blue-200 rounded-full h-1.5">
-                          <div 
+                          <div
                             className="bg-blue-600 h-1.5 rounded-full"
                             style={{ width: `${component.confidence}%` }}
                           ></div>
@@ -579,13 +579,13 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
       const maxCost = Math.max(...mockSuppliers.map(s => s.cost));
       const minTrust = Math.min(...mockSuppliers.map(s => s.trustScore));
       const maxTrust = Math.max(...mockSuppliers.map(s => s.trustScore));
-      
+
       // Add padding to ranges
       const costRange = maxCost - minCost;
       const trustRange = maxTrust - minTrust;
       const costPadding = costRange * 0.1;
       const trustPadding = trustRange * 0.1;
-      
+
       const adjustedMinCost = minCost - costPadding;
       const adjustedMaxCost = maxCost + costPadding;
       const adjustedMinTrust = minTrust - trustPadding;
@@ -602,51 +602,51 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
               {mockSuppliers.length} suppliers
             </div>
           </div>
-          
+
           {/* Mini scatter plot */}
           <div className="relative h-32 bg-white/70 rounded-lg p-3 mb-3">
             <svg width="100%" height="100%" viewBox="0 0 180 100" className="overflow-visible">
               {/* Grid lines */}
               <defs>
                 <pattern id="miniGrid" width="18" height="10" patternUnits="userSpaceOnUse">
-                  <path d="M 18 0 L 0 0 0 10" fill="none" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.4"/>
+                  <path d="M 18 0 L 0 0 0 10" fill="none" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.4" />
                 </pattern>
               </defs>
               <rect width="100%" height="100%" fill="url(#miniGrid)" />
-              
+
               {/* Average lines */}
-              <line 
-                x1={((avgCost - adjustedMinCost) / (adjustedMaxCost - adjustedMinCost)) * 180} 
-                y1="0" 
-                x2={((avgCost - adjustedMinCost) / (adjustedMaxCost - adjustedMinCost)) * 180} 
-                y2="100" 
-                stroke="#3b82f6" 
-                strokeWidth="1" 
-                strokeDasharray="3,3" 
+              <line
+                x1={((avgCost - adjustedMinCost) / (adjustedMaxCost - adjustedMinCost)) * 180}
+                y1="0"
+                x2={((avgCost - adjustedMinCost) / (adjustedMaxCost - adjustedMinCost)) * 180}
+                y2="100"
+                stroke="#3b82f6"
+                strokeWidth="1"
+                strokeDasharray="3,3"
                 opacity="0.7"
               />
-              <line 
-                x1="0" 
-                y1={100 - ((avgTrustScore - adjustedMinTrust) / (adjustedMaxTrust - adjustedMinTrust)) * 100} 
-                x2="180" 
-                y2={100 - ((avgTrustScore - adjustedMinTrust) / (adjustedMaxTrust - adjustedMinTrust)) * 100} 
-                stroke="#10b981" 
-                strokeWidth="1" 
-                strokeDasharray="3,3" 
+              <line
+                x1="0"
+                y1={100 - ((avgTrustScore - adjustedMinTrust) / (adjustedMaxTrust - adjustedMinTrust)) * 100}
+                x2="180"
+                y2={100 - ((avgTrustScore - adjustedMinTrust) / (adjustedMaxTrust - adjustedMinTrust)) * 100}
+                stroke="#10b981"
+                strokeWidth="1"
+                strokeDasharray="3,3"
                 opacity="0.7"
               />
-              
+
               {/* Axes */}
-              <line x1="0" y1="100" x2="180" y2="100" stroke="#94a3b8" strokeWidth="1"/>
-              <line x1="0" y1="0" x2="0" y2="100" stroke="#94a3b8" strokeWidth="1"/>
-              
+              <line x1="0" y1="100" x2="180" y2="100" stroke="#94a3b8" strokeWidth="1" />
+              <line x1="0" y1="0" x2="0" y2="100" stroke="#94a3b8" strokeWidth="1" />
+
               {/* Data points */}
               {mockSuppliers.map((supplier) => {
                 const x = ((supplier.cost - adjustedMinCost) / (adjustedMaxCost - adjustedMinCost)) * 180;
                 const y = 100 - ((supplier.trustScore - adjustedMinTrust) / (adjustedMaxTrust - adjustedMinTrust)) * 100;
-                const color = supplier.category === 'trusted' ? '#3b82f6' : 
-                             supplier.category === 'empanelled' ? '#10b981' : '#f59e0b';
-                
+                const color = supplier.category === 'trusted' ? '#3b82f6' :
+                  supplier.category === 'empanelled' ? '#10b981' : '#f59e0b';
+
                 return (
                   <circle
                     key={supplier.id}
@@ -661,13 +661,13 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
                 );
               })}
             </svg>
-            
+
             {/* Axis labels */}
             <div className="absolute bottom-1 left-1 text-xs text-surface-500">
-              ${(adjustedMinCost/1000).toFixed(0)}K
+              ${(adjustedMinCost / 1000).toFixed(0)}K
             </div>
             <div className="absolute bottom-1 right-1 text-xs text-surface-500">
-              ${(adjustedMaxCost/1000).toFixed(0)}K
+              ${(adjustedMaxCost / 1000).toFixed(0)}K
             </div>
             <div className="absolute top-1 left-1 text-xs text-surface-500">
               {adjustedMaxTrust.toFixed(1)}
@@ -684,7 +684,7 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
               <div className="text-surface-600">Avg Trust</div>
             </div>
             <div className="bg-white/80 p-2 rounded">
-              <div className="font-semibold text-green-600">${(avgCost/1000).toFixed(0)}K</div>
+              <div className="font-semibold text-green-600">${(avgCost / 1000).toFixed(0)}K</div>
               <div className="text-surface-600">Avg Cost</div>
             </div>
           </div>
@@ -708,29 +708,29 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
         <div className="flex items-center justify-center mb-3">
           <div className="relative w-20 h-20">
             <svg width="80" height="80" viewBox="0 0 80 80">
-              <circle cx="40" cy="40" r="30" fill="none" stroke="#e5e7eb" strokeWidth="8"/>
-              <circle 
-                cx="40" cy="40" r="30" 
-                fill="none" 
-                stroke="#3b82f6" 
+              <circle cx="40" cy="40" r="30" fill="none" stroke="#e5e7eb" strokeWidth="8" />
+              <circle
+                cx="40" cy="40" r="30"
+                fill="none"
+                stroke="#3b82f6"
                 strokeWidth="8"
                 strokeDasharray={`${(categoryStats.trusted / mockSuppliers.length) * 188.5} 188.5`}
                 strokeDashoffset="0"
                 transform="rotate(-90 40 40)"
               />
-              <circle 
-                cx="40" cy="40" r="30" 
-                fill="none" 
-                stroke="#10b981" 
+              <circle
+                cx="40" cy="40" r="30"
+                fill="none"
+                stroke="#10b981"
                 strokeWidth="8"
                 strokeDasharray={`${(categoryStats.empanelled / mockSuppliers.length) * 188.5} 188.5`}
                 strokeDashoffset={`-${(categoryStats.trusted / mockSuppliers.length) * 188.5}`}
                 transform="rotate(-90 40 40)"
               />
-              <circle 
-                cx="40" cy="40" r="30" 
-                fill="none" 
-                stroke="#f59e0b" 
+              <circle
+                cx="40" cy="40" r="30"
+                fill="none"
+                stroke="#f59e0b"
                 strokeWidth="8"
                 strokeDasharray={`${(categoryStats.new / mockSuppliers.length) * 188.5} 188.5`}
                 strokeDashoffset={`-${((categoryStats.trusted + categoryStats.empanelled) / mockSuppliers.length) * 188.5}`}
@@ -794,7 +794,7 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-16 bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className="bg-green-500 h-2 rounded-full"
                   style={{ width: `${(riskStats.low / mockSuppliers.length) * 100}%` }}
                 ></div>
@@ -809,7 +809,7 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-16 bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className="bg-yellow-500 h-2 rounded-full"
                   style={{ width: `${(riskStats.medium / mockSuppliers.length) * 100}%` }}
                 ></div>
@@ -824,7 +824,7 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-16 bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className="bg-red-500 h-2 rounded-full"
                   style={{ width: `${(riskStats.high / mockSuppliers.length) * 100}%` }}
                 ></div>
@@ -890,9 +890,8 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
                   {graphs.map((_, index) => (
                     <div
                       key={index}
-                      className={`w-2 h-2 rounded-full ${
-                        index === currentGraphIndex ? 'bg-primary-600' : 'bg-surface-300'
-                      }`}
+                      className={`w-2 h-2 rounded-full ${index === currentGraphIndex ? 'bg-primary-600' : 'bg-surface-300'
+                        }`}
                     />
                   ))}
                 </div>
@@ -917,11 +916,10 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
                 <button
                   key={index}
                   onClick={() => setCurrentGraphIndex(index)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                    index === currentGraphIndex
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${index === currentGraphIndex
                       ? 'bg-primary-600 text-white'
                       : 'bg-surface-100 text-surface-600'
-                  }`}
+                    }`}
                 >
                   {graph.title}
                 </button>
@@ -966,13 +964,12 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        supplier.category === 'trusted' 
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${supplier.category === 'trusted'
                           ? 'bg-emerald-100 text-emerald-700'
                           : supplier.category === 'empanelled'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-orange-100 text-orange-700'
-                      }`}>
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-orange-100 text-orange-700'
+                        }`}>
                         {supplier.category}
                       </span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRiskBadgeClass(supplier.riskLevel)}`}>
@@ -1022,32 +1019,29 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
       <div className="flex bg-surface-100 rounded-lg p-1">
         <button
           onClick={() => setViewMode('list')}
-          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-            viewMode === 'list'
+          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${viewMode === 'list'
               ? 'bg-white text-primary-600 shadow-sm'
               : 'text-surface-600'
-          }`}
+            }`}
         >
           Components
         </button>
         <button
           onClick={() => setViewMode('details')}
-          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-            viewMode === 'details'
+          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${viewMode === 'details'
               ? 'bg-white text-primary-600 shadow-sm'
               : 'text-surface-600'
-          }`}
+            }`}
           disabled={!selectedComponent}
         >
           Details
         </button>
         <button
           onClick={() => setViewMode('suppliers')}
-          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-            viewMode === 'suppliers'
+          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${viewMode === 'suppliers'
               ? 'bg-white text-primary-600 shadow-sm'
               : 'text-surface-600'
-          }`}
+            }`}
           disabled={!selectedComponent}
         >
           Suppliers
@@ -1085,7 +1079,7 @@ const MobileSmartBOMReview: React.FC<MobileSmartBOMReviewProps> = ({
           >
             Previous
           </Button>
-          
+
           <Button
             onClick={handleContinue}
             loading={loading.isLoading}

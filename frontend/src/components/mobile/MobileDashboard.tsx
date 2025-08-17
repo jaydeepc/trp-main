@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, TrendingUp, Clock, AlertTriangle, 
-  BarChart3, Sparkles, Brain, Target, 
+import {
+  Plus, TrendingUp, Clock, AlertTriangle,
+  BarChart3, Sparkles, Brain, Target,
   Activity, DollarSign, Users, Award, ArrowUpRight,
   Calendar, ChevronRight, Eye, Filter
 } from 'lucide-react';
-import { useRFQ } from '../../context/RFQContext';
+import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import StaticMetricCard from '../common/StaticMetricCard';
@@ -47,16 +47,16 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({ onCreateRFQ, onViewRF
           Welcome back, Admin
         </h2>
         <p className="text-surface-600 mb-4">
-          {currentTime.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            month: 'long', 
-            day: 'numeric' 
+          {currentTime.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric'
           })}
         </p>
         <div className="text-lg font-bold text-primary-600">
-          {currentTime.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
+          {currentTime.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit'
           })}
         </div>
       </div>
@@ -75,7 +75,7 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({ onCreateRFQ, onViewRF
             </div>
             <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
           </button>
-          
+
           <div className="grid grid-cols-2 gap-3">
             <button className="bg-surface-50 hover:bg-surface-100 p-3 rounded-xl transition-colors">
               <Target className="w-5 h-5 text-primary-600 mb-2 mx-auto" />
@@ -143,7 +143,7 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({ onCreateRFQ, onViewRF
           </div>
           <h3 className="font-semibold text-surface-900">AI Insights</h3>
         </div>
-        
+
         <div className="space-y-3">
           <div className="p-3 bg-gradient-to-r from-primary-50 to-accent-50 rounded-lg border border-primary-100">
             <div className="flex items-start space-x-3">
@@ -156,7 +156,7 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({ onCreateRFQ, onViewRF
               </div>
             </div>
           </div>
-          
+
           <div className="p-3 bg-gradient-to-r from-accent-50 to-emerald-50 rounded-lg border border-accent-100">
             <div className="flex items-start space-x-3">
               <Users className="w-4 h-4 text-accent-600 mt-0.5" />
@@ -168,7 +168,7 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({ onCreateRFQ, onViewRF
               </div>
             </div>
           </div>
-          
+
           <div className="p-3 bg-gradient-to-r from-warning-50 to-orange-50 rounded-lg border border-warning-100">
             <div className="flex items-start space-x-3">
               <AlertTriangle className="w-4 h-4 text-warning-600 mt-0.5" />
@@ -220,13 +220,12 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({ onCreateRFQ, onViewRF
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    rfq.status === 'completed' || rfq.status === 'sent'
+                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${rfq.status === 'completed' || rfq.status === 'sent'
                       ? 'bg-emerald-100 text-emerald-700'
                       : rfq.status === 'in-progress'
-                      ? 'bg-primary-100 text-primary-700'
-                      : 'bg-warning-100 text-warning-700'
-                  }`}>
+                        ? 'bg-primary-100 text-primary-700'
+                        : 'bg-warning-100 text-warning-700'
+                    }`}>
                     {rfq.status}
                   </div>
                   <ChevronRight className="w-4 h-4 text-surface-400" />
@@ -288,7 +287,7 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({ onCreateRFQ, onViewRF
               <div className="bg-emerald-600 h-2 rounded-full" style={{ width: '67%' }}></div>
             </div>
           </div>
-          
+
           <div className="p-3 bg-blue-50 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-blue-800">Empanelled</span>
@@ -298,7 +297,7 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({ onCreateRFQ, onViewRF
               <div className="bg-blue-600 h-2 rounded-full" style={{ width: '89%' }}></div>
             </div>
           </div>
-          
+
           <div className="p-3 bg-orange-50 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-orange-800">New Suppliers</span>
@@ -348,31 +347,28 @@ const MobileDashboard: React.FC<MobileDashboardProps> = ({ onCreateRFQ, onViewRF
         <div className="flex">
           <button
             onClick={() => setSelectedTab('overview')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              selectedTab === 'overview'
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${selectedTab === 'overview'
                 ? 'text-primary-600 border-b-2 border-primary-600'
                 : 'text-surface-600 hover:text-surface-900'
-            }`}
+              }`}
           >
             Overview
           </button>
           <button
             onClick={() => setSelectedTab('rfqs')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              selectedTab === 'rfqs'
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${selectedTab === 'rfqs'
                 ? 'text-primary-600 border-b-2 border-primary-600'
                 : 'text-surface-600 hover:text-surface-900'
-            }`}
+              }`}
           >
             RFQs
           </button>
           <button
             onClick={() => setSelectedTab('insights')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              selectedTab === 'insights'
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${selectedTab === 'insights'
                 ? 'text-primary-600 border-b-2 border-primary-600'
                 : 'text-surface-600 hover:text-surface-900'
-            }`}
+              }`}
           >
             Insights
           </button>

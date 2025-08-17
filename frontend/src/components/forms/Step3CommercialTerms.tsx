@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, CreditCard, MapPin, Shield, Plus, X, Info } from 'lucide-react';
 import { RFQ, CommercialTerms } from '../../types';
-import { useRFQ } from '../../context/RFQContext';
+import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
 
@@ -17,7 +17,7 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
   onPrevious,
 }) => {
   const { updateStep, loading } = useRFQ();
-  
+
   const [formData, setFormData] = useState<CommercialTerms>({
     desiredLeadTime: rfq.commercialTerms?.desiredLeadTime || '',
     paymentTerms: rfq.commercialTerms?.paymentTerms || 'Net 30',
@@ -63,7 +63,7 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
       ...prev,
       [field]: value,
     }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -78,7 +78,7 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
     const updated = current.includes(requirement)
       ? current.filter(r => r !== requirement)
       : [...current, requirement];
-    
+
     handleInputChange('complianceRequirements', updated);
   };
 
@@ -127,7 +127,7 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
               <Calendar className="w-5 h-5 text-accent-teal" />
               <span>Desired Lead Time</span>
             </label>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
               {leadTimePresets.map((preset) => (
                 <button
@@ -146,7 +146,7 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
                 </button>
               ))}
             </div>
-            
+
             <input
               type="text"
               value={formData.desiredLeadTime}
@@ -165,7 +165,7 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
               <CreditCard className="w-5 h-5 text-accent-teal" />
               <span>Payment Terms</span>
             </label>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {paymentTermsOptions.map((option) => (
                 <div
@@ -207,7 +207,7 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
               <MapPin className="w-5 h-5 text-accent-teal" />
               <span>Delivery Location</span>
             </label>
-            
+
             <input
               type="text"
               value={formData.deliveryLocation}
@@ -226,11 +226,11 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
               <Shield className="w-5 h-5 text-accent-teal" />
               <span>Compliance Requirements</span>
             </label>
-            
+
             <p className="text-medium-gray mb-4">
               Select all applicable certifications and compliance standards required for your components.
             </p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {complianceOptions.map((option) => (
                 <div
@@ -266,7 +266,7 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
                 </div>
               ))}
             </div>
-            
+
             {formData.complianceRequirements.length > 0 && (
               <div className="mt-4 p-3 bg-green-50 rounded-lg">
                 <h4 className="font-semibold text-green-800 mb-2">Selected Requirements:</h4>
@@ -296,7 +296,7 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
               <Plus className="w-5 h-5 text-accent-teal" />
               <span>Additional Requirements (Optional)</span>
             </label>
-            
+
             <textarea
               value={formData.additionalRequirements}
               onChange={(e) => handleInputChange('additionalRequirements', e.target.value)}
@@ -315,7 +315,7 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
           >
             Previous
           </Button>
-          
+
           <Button
             onClick={handleContinue}
             loading={loading.isLoading}

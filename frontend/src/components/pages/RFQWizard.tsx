@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Upload, FileText, Settings, Eye, CheckCircle, AlertTriangle, TrendingUp, Calendar, CreditCard, MapPin, Shield, Send } from 'lucide-react';
-import { useRFQ } from '../../context/RFQContext';
+import { useRFQ } from '../../contexts/RFQContext';
 import { StepConfig } from '../../types';
 import StepIndicator from '../common/StepIndicator';
 import Button from '../common/Button';
@@ -90,8 +90,8 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
   };
 
   const handleComplianceToggle = (cert: string) => {
-    setSelectedCompliance(prev => 
-      prev.includes(cert) 
+    setSelectedCompliance(prev =>
+      prev.includes(cert)
         ? prev.filter(c => c !== cert)
         : [...prev, cert]
     );
@@ -254,7 +254,7 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
             <Loading message={loading.message} progress={loading.progress} />
           </div>
         )}
-        
+
         {error.hasError && (
           <div className="mb-6">
             <Card className="border-l-4 border-red-500 bg-red-50">

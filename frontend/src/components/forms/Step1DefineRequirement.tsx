@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, Zap, Settings, AlertCircle, CheckCircle } from 'lucide-react';
 import { RFQ } from '../../types';
-import { useRFQ } from '../../context/RFQContext';
+import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import AIProcessingAnimation from '../common/AIProcessingAnimation';
@@ -28,7 +28,7 @@ const Step1DefineRequirement: React.FC<Step1DefineRequirementProps> = ({
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
       setSelectedFile(file);
-      
+
       // Auto-detect analysis type based on file
       const fileName = file.name.toLowerCase();
       if (fileName.includes('zbc') || fileName.includes('cost')) {
@@ -63,7 +63,7 @@ const Step1DefineRequirement: React.FC<Step1DefineRequirementProps> = ({
     try {
       setUploadProgress(0);
       setShowAIAnimation(true);
-      
+
       // The animation will run for 8 seconds, then call onNext
       // In a real implementation, this would trigger the actual API call
       // For now, we'll simulate the process
@@ -275,7 +275,7 @@ const Step1DefineRequirement: React.FC<Step1DefineRequirementProps> = ({
           >
             Cancel
           </Button>
-          
+
           <Button
             onClick={handleProcessDocument}
             disabled={!selectedFile || !analysisType || loading.isLoading}
