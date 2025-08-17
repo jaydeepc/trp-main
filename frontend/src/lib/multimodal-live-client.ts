@@ -92,15 +92,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
         );
 
         ws.addEventListener('message', async (evt: MessageEvent) => {
-            console.log(
-                '📨 [MultimodalLiveClient] Received message, type:',
-                typeof evt.data
-            );
             if (evt.data instanceof Blob) {
-                console.log(
-                    '📨 [MultimodalLiveClient] Processing blob message, size:',
-                    evt.data.size
-                );
                 this.receive(evt.data);
             } else {
                 console.log('📨 [MultimodalLiveClient] Non-blob message:', evt);
@@ -215,8 +207,24 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
             blob
         )) as LiveIncomingMessage;
         if (isToolCallMessage(response)) {
+            console.log('🔧 TOOL CALL RECEIVED by MultimodalLiveClient');
+            console.log('📞 Tool call response:', response);
+            console.log('📋 Function calls count:', response.toolCall?.functionCalls?.length || 0);
+            
+            // Log each function call details
+            if (response.toolCall?.functionCalls) {
+                response.toolCall.functionCalls.forEach((fc, index) => {
+                    console.log(`🎯 Function Call ${index + 1}:`);
+                    console.log(`  📝 Name: ${fc.name}`);
+                    console.log(`  🆔 ID: ${fc.id}`);
+                    console.log(`  📋 Args:`, fc.args);
+                });
+            }
+            
             this.log('server.toolCall', response);
+            console.log('📡 Emitting toolcall event to listeners...');
             this.emit('toolcall', response.toolCall);
+            console.log('✅ Tool call event emitted successfully');
             return;
         }
         if (isToolCallCancellationMessage(response)) {
@@ -265,7 +273,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
                     if (b64) {
                         const data = base64ToArrayBuffer(b64);
                         this.emit('audio', data);
-                        this.log(`server.audio`, `buffer (${data.byteLength})`);
+                        // Removed excessive audio logging
                     }
                 });
                 if (!otherParts.length) {

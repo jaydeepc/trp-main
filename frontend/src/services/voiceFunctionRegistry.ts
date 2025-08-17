@@ -1,6 +1,8 @@
 // Voice Function Registry for Gemini Live Integration
 // Handles automatic function calling based on voice input
 
+import { FunctionDeclaration, SchemaType } from '@google/generative-ai';
+
 export interface FunctionDefinition {
   name: string;
   description: string;
@@ -70,26 +72,53 @@ class VoiceFunctionRegistry {
     return Array.from(this.functions.values());
   }
 
+  // Convert registry function definitions to Gemini Live format
+  getGeminiFunctionDeclarations(): FunctionDeclaration[] {
+    return Array.from(this.functions.values()).map(func => ({
+      name: func.name,
+      description: func.description,
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: func.parameters.properties,
+        required: func.parameters.required
+      }
+    }));
+  }
+
   // Execute a function by name
   async executeFunction(name: string, parameters: any = {}) {
     const func = this.functions.get(name);
     if (!func) {
+      console.error(`❌ Function ${name} not found in registry`);
       throw new Error(`Function ${name} not found`);
     }
+
+    console.log(`🎯 FUNCTION CALL START: ${name}`);
+    console.log(`📋 Parameters:`, parameters);
+    console.log(`📝 Description: ${func.description}`);
 
     try {
       // Validate parameters
       this.validateParameters(parameters, func.parameters);
+      console.log(`✅ Parameter validation passed for ${name}`);
       
       // Execute function
+      console.log(`🔄 Executing function: ${name}...`);
+      const startTime = Date.now();
       const result = await func.function(parameters);
+      const duration = Date.now() - startTime;
+      
+      console.log(`✅ FUNCTION CALL SUCCESS: ${name} (${duration}ms)`);
+      console.log(`📤 Result:`, result);
       
       // Update conversation state
       this.updateConversationState(name, parameters, result);
       
       return result;
     } catch (error) {
-      console.error(`Error executing function ${name}:`, error);
+      console.error(`❌ FUNCTION CALL ERROR: ${name}`);
+      console.error(`💥 Error details:`, error);
+      console.error(`📋 Failed parameters:`, parameters);
       throw error;
     }
   }
@@ -154,6 +183,23 @@ class VoiceFunctionRegistry {
 
   // Register default functions for Step 1
   private registerDefaultFunctions() {
+    // Test Function
+    this.registerFunction({
+      name: 'say_hi',
+      description: 'Call this function whenever the user says "hi" or any greeting.',
+      parameters: {
+        type: 'object',
+        properties: {
+          greeting: {
+            type: 'string',
+            description: 'The greeting the user said'
+          }
+        },
+        required: ['greeting']
+      },
+      function: this.sayHi.bind(this)
+    });
+
     // UI Control Functions
     this.registerFunction({
       name: 'show_upload_form',
@@ -312,8 +358,6 @@ class VoiceFunctionRegistry {
       function: this.clearUploadedFiles.bind(this)
     });
   }
-
-  // Function Implementations
 
   private async showUploadForm(args: { reason?: string; focus?: boolean }) {
     if (!this.callbacks) {
@@ -535,8 +579,19 @@ class VoiceFunctionRegistry {
     };
   }
 
+  private async sayHi(args: { greeting: string }) {
+    console.log('hi');
+    
+    return {
+      success: true,
+      message: 'Function completed!',
+      greeting: args.greeting,
+      response: `Hello! You said: ${args.greeting}`
+    };
+  }
+
   private getAvailableActions(): string[] {
-    const actions = ['show_upload_form', 'hide_upload_form', 'get_uploaded_files'];
+    const actions = ['say_hi', 'show_upload_form', 'hide_upload_form', 'get_uploaded_files'];
     
     if (this.conversationState.uploadedFiles.length > 0) {
       actions.push('clear_uploaded_files', 'navigate_to');
