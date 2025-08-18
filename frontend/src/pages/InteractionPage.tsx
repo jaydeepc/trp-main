@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, PhoneOff } from 'lucide-react';
 import { useLiveAPIContext } from '../contexts/LiveAPIContext';
 import { AudioRecorder } from '../lib/audio-recorder';
 import AudioVisualization from '../components/common/AudioVisualization';
@@ -21,7 +21,7 @@ const InteractionPage: React.FC = () => {
 };
 
 const VoiceInterface: React.FC = () => {
-    const { client, connected, connect, volume, setConfig, config } = useLiveAPIContext();
+    const { client, connected, connect, disconnect, volume, setConfig, config, sendText } = useLiveAPIContext();
     const [isMuted, setIsMuted] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [lastMessage, setLastMessage] = useState<string>('');
@@ -92,7 +92,7 @@ const VoiceInterface: React.FC = () => {
         const functionDeclarations = voiceFunctionRegistry.getGeminiFunctionDeclarations();
 
         setConfig({
-            model: "models/gemini-2.5-flash-preview-native-audio-dialog",
+            model: "models/gemini-live-2.5-flash-preview",
             generationConfig: {
                 responseModalities: "audio",
                 speechConfig: {
@@ -111,9 +111,9 @@ Keep responses conversational, helpful, and concise since users hear your actual
 When users first connect, briefly introduce yourself and ask how you can help with their procurement needs.
 
 IMPORTANT: You have access to several functions to help with procurement tasks:
-- When users say "hi" or greetings, call the "say_hi" function
-- For file uploads, use "show_upload_form" or "hide_upload_form"
-- For BOM analysis, use "show_bom_analysis" or "hide_bom_analysis"  
+- For file uploads, use "show_upload_form"
+- For BOM analysis, use "analyse_bom",
+- For showing BOM analysis, use "show_bom_analysis"
 - For commercial terms, use "show_commercial_terms" or "hide_commercial_terms"
 - For navigation, use "navigate_to" with appropriate destinations
 - For file management, use "get_uploaded_files" or "clear_uploaded_files"
@@ -250,6 +250,11 @@ Always call the appropriate function based on user requests.`,
         console.log(isMuted ? 'Unmuted' : 'Muted');
     };
 
+    const handleDisconnect = () => {
+        disconnect();
+        console.log('Disconnected from voice service');
+    };
+
     return (
         <div className="flex h-full max-w-7xl mx-auto transition-all duration-700 ease-in-out">
             {/* Voice Interface Container - Smoothly transitions from center to left */}
@@ -282,8 +287,8 @@ Always call the appropriate function based on user requests.`,
                         )}
                     </div>
 
-                    {/* Mute/Unmute Control */}
-                    <div className="mb-6">
+                    {/* Mute/Unmute and Disconnect Controls */}
+                    <div className="mb-6 flex items-center justify-center space-x-4">
                         <Button
                             onClick={toggleMute}
                             className={`px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-200 ${isMuted
@@ -293,6 +298,14 @@ Always call the appropriate function based on user requests.`,
                             icon={isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
                         >
                             {isMuted ? 'Unmute' : 'Mute'}
+                        </Button>
+                        
+                        <Button
+                            onClick={handleDisconnect}
+                            className="px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-200 bg-red-600 hover:bg-red-700 text-white"
+                            icon={<PhoneOff className="w-6 h-6" />}
+                        >
+                            Disconnect
                         </Button>
                     </div>
 
@@ -329,6 +342,7 @@ Always call the appropriate function based on user requests.`,
                     <UploadFormWindow
                         onClose={() => voiceFunctionRegistry.executeFunction('hide_upload_form')}
                         onFilesChange={updateFiles}
+                        sendText={sendText}
                     />
                 )}
 

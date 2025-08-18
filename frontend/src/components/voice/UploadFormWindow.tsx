@@ -5,17 +5,19 @@ import FileUpload from '../floating-windows/FileUpload';
 interface UploadFormWindowProps {
     onClose: () => void;
     onFilesChange?: (files: any[]) => void;
+    sendText: (message: string) => void;
 }
 
 const UploadFormWindow: React.FC<UploadFormWindowProps> = ({
     onClose,
-    onFilesChange
+    onFilesChange,
+    sendText
 }) => {
     const handleNext = () => {
         onClose();
     };
 
-    const handleFilesChange = (files: any[]) => {
+    const handleFilesChange = async (files: any[]) => {
         if (onFilesChange) {
             // Convert FileUpload files to voice function registry format
             const voiceFiles = files.map((file) => ({
@@ -26,7 +28,18 @@ const UploadFormWindow: React.FC<UploadFormWindowProps> = ({
                 uploadedAt: new Date(),
                 status: file.status === 'complete' ? ('uploaded' as const) : ('uploading' as const),
             }));
-            onFilesChange(voiceFiles);
+            await onFilesChange(voiceFiles);
+
+            // Send text notification to AI when files are uploaded and processed
+            if (sendText) {
+                const message = `Context Update: User has uploaded the following files and these are ready for analysis:
+${voiceFiles.map(file => `- ${file.name} (${file.type})`).join('\n')}
+
+Please acknowledge this and call the 'analyse_bom' function to start the analysis and get ai recommendations.`;
+
+                console.log('📤 Sending file upload notification to AI...');
+                sendText(message);
+            }
         }
     };
 
