@@ -11,6 +11,7 @@ import UploadFormWindow from '../components/voice/UploadFormWindow';
 import BOMAnalysisWindow from '../components/voice/BOMAnalysisWindow';
 import CommercialTermsWindow from '../components/voice/CommercialTermsWindow';
 import RFQPreviewWindow from '../components/voice/RFQPreviewWindow';
+import FloatingOverlayManager from '../components/common/FloatingOverlayManager';
 
 const InteractionPage: React.FC = () => {
     return (
@@ -31,6 +32,7 @@ const VoiceInterface: React.FC = () => {
 
     // UI State for voice functions
     const [showUploadForm, setShowUploadForm] = useState(false);
+    const [showSystemInfo, setShowSystemInfo] = useState(false);
     const [currentStep, setCurrentStep] = useState(1);
     const [notifications, setNotifications] = useState<Array<{
         id: string;
@@ -40,7 +42,7 @@ const VoiceInterface: React.FC = () => {
     }>>([]);
 
     // Track if any UI elements should be shown (determines layout)
-    const hasFloatingElements = showUploadForm || currentStep === 2 || currentStep === 3 || currentStep === 4;
+    const hasFloatingElements = showUploadForm || showSystemInfo || currentStep === 2 || currentStep === 3 || currentStep === 4;
 
     // Get conversation state for uploaded files
     const conversationState = voiceFunctionRegistry.getConversationState();
@@ -82,7 +84,8 @@ const VoiceInterface: React.FC = () => {
             setCurrentStep,
             navigateTo,
             updateFiles,
-            showNotification
+            showNotification,
+            setShowSystemInfo
         });
     }, []);
 
@@ -117,6 +120,7 @@ IMPORTANT: You have access to several functions to help with procurement tasks:
 - For commercial terms, use "show_commercial_terms" or "hide_commercial_terms"
 - For navigation, use "navigate_to" with appropriate destinations
 - For file management, use "get_uploaded_files" or "clear_uploaded_files"
+- When users ask about your purpose, capabilities, "what do you do", "tell me about yourself", or similar queries about the system, use "show_system_info"
 
 Always call the appropriate function based on user requests.`,
                     },
@@ -367,6 +371,10 @@ Always call the appropriate function based on user requests.`,
                         onNext={() => setCurrentStep(1)}
                         uploadedFiles={conversationState.uploadedFiles}
                     />
+                )}
+
+                {showSystemInfo && (
+                    <FloatingOverlayManager onClose={() => setShowSystemInfo(false)} />
                 )}
             </div>
 
