@@ -44,6 +44,7 @@ export interface StateUpdateCallbacks {
         message: string,
         type?: 'info' | 'success' | 'error'
     ) => void;
+    setShowSystemInfo: (show: boolean) => void;
 }
 
 class VoiceFunctionRegistry {
@@ -399,6 +400,23 @@ class VoiceFunctionRegistry {
             },
             function: this.analyseBOM.bind(this),
         });
+
+        this.registerFunction({
+            name: 'show_system_info',
+            description:
+                'Show detailed information about the system when user asks about purpose, capabilities, "what do you do", "tell me about yourself", or similar queries about the system',
+            parameters: {
+                type: 'object',
+                properties: {
+                    query_type: {
+                        type: 'string',
+                        description: 'Type of query - purpose, about, capabilities, features, what_do_you_do',
+                    },
+                },
+                required: [],
+            },
+            function: this.showSystemInfo.bind(this),
+        });
     }
 
     private async showUploadForm(args: { reason?: string; focus?: boolean }) {
@@ -406,6 +424,11 @@ class VoiceFunctionRegistry {
             throw new Error('Callbacks not initialized');
         }
 
+        // Close other UI elements first
+        this.callbacks.setShowSystemInfo(false);
+        this.callbacks.setCurrentStep(1);
+        
+        // Then show upload form
         this.callbacks.setShowUploadForm(true);
 
         if (args.focus) {
@@ -472,6 +495,10 @@ class VoiceFunctionRegistry {
             };
         }
 
+        // Close other UI elements first
+        this.callbacks.setShowSystemInfo(false);
+        this.callbacks.setShowUploadForm(false);
+
         // Files are available, show BOM analysis
         console.log('Setting current step to 2');
         this.callbacks.setCurrentStep(2);
@@ -516,6 +543,10 @@ class VoiceFunctionRegistry {
 
         console.log('showCommercialTerms called with args:', args);
         console.log('Setting current step to 3');
+
+        // Close other UI elements first
+        this.callbacks.setShowSystemInfo(false);
+        this.callbacks.setShowUploadForm(false);
 
         // Set current step to 3 for commercial terms
         this.callbacks.setCurrentStep(3);
@@ -741,6 +772,54 @@ class VoiceFunctionRegistry {
             success: true,
             message: analysisSummary,
             action: 'analyse_bom',
+        };
+    }
+
+    private async showSystemInfo(args: { query_type?: string }) {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        console.log('showSystemInfo called with args:', args);
+
+        // Show the SystemInfo floating window
+        this.callbacks.setShowSystemInfo(true);
+
+        this.callbacks.showNotification(
+            'System information displayed',
+            'success'
+        );
+
+        // Update conversation state to track this action
+        this.updateState('SHOW_SYSTEM_INFO', { query_type: args.query_type });
+
+        // Voice response that syncs exactly with popup sequence
+        const systemResponse = `Hi! I'm Robbie, your AI-powered procurement assistant. I help organizations streamline procurement workflows through intelligent automation and voice interactions.
+
+My Voice-First Interface uses Natural Language Processing. Talk to me naturally - no buttons, no complex menus needed.
+
+Smart BOM Analysis with AI-powered cost optimization. I analyze your Bill of Materials in just 2.3 seconds with 94.2% accuracy.
+
+Supplier Intelligence with 200+ pre-qualified suppliers. Real-time supplier scoring across multiple regions and industries.
+
+Compliance Automation with a 99.1% success rate. Automated regulatory compliance checking across automotive, aerospace, and medical standards.
+
+Cost Optimization delivering an average 12.8% cost reduction. Should-cost modeling with AI recommendations for measurable savings.
+
+Global Integration that's enterprise-ready. Seamless integration with ERP, PLM, and procurement systems worldwide with 99.9% uptime SLA.
+
+Live Supplier Intelligence Matrix with 8 suppliers showing cost versus trust visualization across North America, Europe, and Asia Pacific regions.
+
+Performance Metrics include 94.2% AI recommendation accuracy and 4.8 out of 5 user satisfaction rating.
+
+I'm powered by Google Gemini Live API. How can I help you today?`;
+
+        return {
+            success: true,
+            message: systemResponse,
+            action: 'show_system_info',
+            query_type: args.query_type || 'general',
+            shouldShowUI: true
         };
     }
 
