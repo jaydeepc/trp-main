@@ -203,7 +203,7 @@ class GeminiLiveService {
         }
 
         const config = {
-            model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
+            model: 'models/gemini-live-2.5-flash-preview',
             systemInstruction: {
                 parts: [
                     {

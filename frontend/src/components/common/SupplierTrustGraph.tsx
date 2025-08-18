@@ -78,8 +78,8 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
   const padding = 40;
 
   // Use static values for consistent positioning
-  const minCost = 5000;
-  const maxCost = 50000;
+  const minCost = 0;
+  const maxCost = 500;
   const minTrust = 0;
   const maxTrust = 10;
 

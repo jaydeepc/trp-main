@@ -11,11 +11,23 @@ import VolMeterWorket from '../lib/worklets/vol-meter';
 export type UseLiveAPIResults = {
     client: MultimodalLiveClient;
     setConfig: (config: LiveConfig) => void;
+    updateConfig: (config: LiveConfig) => void;
+    sendText: (message: string) => void;
     config: LiveConfig;
     connected: boolean;
     connect: () => Promise<void>;
     disconnect: () => Promise<void>;
     volume: number;
+};
+
+const BASE_CONFIG: LiveConfig = {
+    model: 'models/gemini-live-2.5-flash-preview',
+    generationConfig: {
+        responseModalities: 'audio',
+        speechConfig: {
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } },
+        },
+    },
 };
 
 export function useLiveAPI({
@@ -29,9 +41,7 @@ export function useLiveAPI({
     const audioStreamerRef = useRef<AudioStreamer | null>(null);
 
     const [connected, setConnected] = useState(false);
-    const [config, setConfig] = useState<LiveConfig>({
-        model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
-    });
+    const [config, setConfig] = useState<LiveConfig>(BASE_CONFIG);
     const [volume, setVolume] = useState(0);
 
     // register audio for streaming server -> speakers
@@ -128,10 +138,43 @@ export function useLiveAPI({
         setConnected(false);
     }, [setConnected, client, connected]);
 
+    const updateConfig = useCallback((newConfig: LiveConfig) => {
+        console.log('🔄 [useLiveAPI] Updating config on active connection...');
+        
+        const mergedConfig = {
+            ...BASE_CONFIG,
+            ...newConfig,
+        };
+        
+        try {
+            // Update the active connection
+            client.updateConfig(mergedConfig);
+            // Update local state
+            setConfig(mergedConfig);
+            console.log('✅ [useLiveAPI] Config updated successfully');
+        } catch (error) {
+            console.error('❌ [useLiveAPI] Failed to update config:', error);
+            throw error;
+        }
+    }, [client, setConfig]);
+
+    const sendText = useCallback((message: string) => {
+        console.log('📤 [useLiveAPI] Sending text message:', message);
+        try {
+            client.send([{ text: message }]);
+            console.log('✅ [useLiveAPI] Text message sent successfully');
+        } catch (error) {
+            console.error('❌ [useLiveAPI] Failed to send text message:', error);
+            throw error;
+        }
+    }, [client]);
+
     return {
         client,
         config,
         setConfig,
+        updateConfig,
+        sendText,
         connected,
         connect,
         disconnect,

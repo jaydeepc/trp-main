@@ -161,7 +161,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
                         '🔌 [MultimodalLiveClient] WebSocket close event, code:',
                         ev.code,
                         'reason:',
-                        ev.reason
+                        ev
                     );
                     this.disconnect(ws);
                     let reason = ev.reason || '';
@@ -358,6 +358,27 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
 
         this._sendDirect(clientContentRequest);
         this.log(`client.send`, clientContentRequest);
+    }
+
+    /**
+     * Update the session configuration (like system instructions) on the existing connection
+     */
+    updateConfig(newConfig: LiveConfig) {
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            throw new Error('WebSocket is not connected or not ready');
+        }
+        
+        const updateEvent = {
+            type: "session.update",
+            session: {
+                ...newConfig,
+            },
+        };
+        
+        console.log("Sending session update event:", updateEvent);
+        this.ws.send(JSON.stringify(updateEvent));
+        this.config = newConfig;
+        this.log('client.updateConfig', 'Session configuration updated');
     }
 
     /**
