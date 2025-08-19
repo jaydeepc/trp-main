@@ -11,6 +11,7 @@ interface UseVoiceFunctionsProps {
   onNavigateToDashboard: () => void;
   onNavigateToRFQ: () => void;
   setShowSystemInfo?: (show: boolean) => void;
+  setShowDetailModal?: (featureId: string | null) => void;
 }
 
 interface VoiceFunctionExecutionResult {
@@ -25,7 +26,8 @@ export const useVoiceFunctions = ({
   setCurrentStep,
   onNavigateToDashboard,
   onNavigateToRFQ,
-  setShowSystemInfo
+  setShowSystemInfo,
+  setShowDetailModal
 }: UseVoiceFunctionsProps) => {
   const [conversationState, setConversationState] = useState<ConversationState>(
     voiceFunctionRegistry.getConversationState()
@@ -86,11 +88,12 @@ export const useVoiceFunctions = ({
       navigateTo,
       updateFiles,
       showNotification,
-      setShowSystemInfo: setShowSystemInfo || (() => {})
+      setShowSystemInfo: setShowSystemInfo || (() => {}),
+      setShowDetailModal: setShowDetailModal || (() => {})
     };
 
     voiceFunctionRegistry.initialize(callbacks);
-  }, [setShowUploadForm, setCurrentStep, navigateTo, updateFiles, showNotification, setShowSystemInfo]);
+  }, [setShowUploadForm, setCurrentStep, navigateTo, updateFiles, showNotification, setShowSystemInfo, setShowDetailModal]);
 
   // Execute a voice function
   const executeFunction = useCallback(async (functionName: string, parameters: any = {}) => {

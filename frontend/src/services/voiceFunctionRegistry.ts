@@ -45,6 +45,7 @@ export interface StateUpdateCallbacks {
         type?: 'info' | 'success' | 'error'
     ) => void;
     setShowSystemInfo: (show: boolean) => void;
+    setShowDetailModal: (featureId: string | null) => void;
 }
 
 class VoiceFunctionRegistry {
@@ -416,6 +417,37 @@ class VoiceFunctionRegistry {
                 required: [],
             },
             function: this.showSystemInfo.bind(this),
+        });
+
+        this.registerFunction({
+            name: 'show_feature_details',
+            description:
+                'Show detailed information about a specific feature when user asks about voice interface, BOM analysis, supplier intelligence, compliance automation, cost optimization, global integration, file upload, or any specific system capability',
+            parameters: {
+                type: 'object',
+                properties: {
+                    feature_id: {
+                        type: 'string',
+                        enum: [
+                            'voice-interface',
+                            'bom-analysis', 
+                            'supplier-intelligence',
+                            'compliance-automation',
+                            'cost-optimization',
+                            'global-integration',
+                            'file-upload',
+                            'system-info'
+                        ],
+                        description: 'The specific feature to show details for',
+                    },
+                    query_context: {
+                        type: 'string',
+                        description: 'Context of what the user is asking about this feature',
+                    },
+                },
+                required: ['feature_id'],
+            },
+            function: this.showFeatureDetails.bind(this),
         });
     }
 
@@ -820,6 +852,62 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             action: 'show_system_info',
             query_type: args.query_type || 'general',
             shouldShowUI: true
+        };
+    }
+
+    private async showFeatureDetails(args: { feature_id: string; query_context?: string }) {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        console.log('showFeatureDetails called with args:', args);
+
+        // Close other UI elements first
+        this.callbacks.setShowSystemInfo(false);
+        this.callbacks.setShowUploadForm(false);
+
+        // Show the DetailModal
+        this.callbacks.setShowDetailModal(args.feature_id);
+
+        // Store the feature request in the conversation state
+        this.updateState('SHOW_FEATURE_DETAILS', { 
+            feature_id: args.feature_id, 
+            query_context: args.query_context 
+        });
+
+        this.callbacks.showNotification(
+            `Detailed information about ${args.feature_id.replace('-', ' ')} displayed`,
+            'success'
+        );
+
+        // Create a detailed response based on the feature
+        const featureResponses: Record<string, string> = {
+            'voice-interface': `I'm showing you detailed information about our Voice-First Interface. This advanced system uses Google Gemini Live API for real-time speech recognition with 98.5% accuracy. It supports natural language understanding, multi-language support, and context-aware conversations. You can upload files, analyze BOMs, and navigate the entire system hands-free. The interface responds in under 200ms and supports unlimited concurrent sessions.`,
+            
+            'bom-analysis': `Here are the comprehensive details about our Smart BOM Analysis feature. This AI-powered system processes complex component lists in just 2.3 seconds with 94.2% accuracy. It provides automated component classification, real-time market price analysis, should-cost modeling, risk assessment, and alternative component suggestions. The system can handle over 10,000 components per analysis and covers 500+ component categories.`,
+            
+            'supplier-intelligence': `I'm displaying detailed information about our Supplier Intelligence platform. This system maintains real-time data on 200+ pre-qualified suppliers across 45+ countries. It features multi-dimensional trust scoring with 96.7% accuracy, geographic risk assessment, financial stability monitoring, and delivery performance analytics. The platform reduces supplier onboarding time by 60% and provides 99.9% data availability.`,
+            
+            'compliance-automation': `Here's comprehensive information about our Compliance Automation system. This engine automatically verifies components against 50+ industry standards with 99.1% success rate. It supports automotive IATF 16949, aerospace AS9100, medical ISO 13485, RoHS, and REACH regulations. The system generates automated documentation, provides real-time monitoring, and reduces compliance delays by 85%.`,
+            
+            'cost-optimization': `I'm showing you detailed information about our Cost Optimization engine. This AI-driven system uses should-cost modeling to identify savings opportunities with 91.5% prediction accuracy. It benchmarks against 1M+ component price points, provides real-time cost analysis, and delivers an average 12.8% cost reduction. The system includes ROI tracking and negotiation support with data insights.`,
+            
+            'global-integration': `Here are the comprehensive details about our Global Integration platform. This enterprise-grade system connects with 50+ ERP, PLM, and procurement systems worldwide. It features API-first architecture with REST/GraphQL support, real-time data synchronization, and 99.9% uptime SLA. Response times are under 100ms with unlimited API calls and enterprise security compliance.`,
+            
+            'file-upload': `I'm displaying detailed information about our Document Upload system. This advanced processor handles 15+ file formats including Excel, CSV, PDF, and XML with 99.2% data extraction accuracy. It supports files up to 100MB, processes them in 5-10 seconds, and includes drag-and-drop interface with progress tracking. The system provides automatic validation, batch processing, and secure cloud storage.`,
+            
+            'system-info': `Here's comprehensive information about our System Overview capabilities. This platform provides real-time performance monitoring, interactive demonstrations, live metrics dashboard, and feature usage tracking. It maintains 99.9% system availability with 94.2% overall AI accuracy and sub-second response times. The system supports enterprise-scale processing with 4.8/5 user satisfaction rating.`
+        };
+
+        const response = featureResponses[args.feature_id] || `I'm showing you detailed information about the ${args.feature_id.replace('-', ' ')} feature. This comprehensive modal includes technical specifications, key benefits, use cases, performance metrics, and integration details.`;
+
+        return {
+            success: true,
+            message: response,
+            action: 'show_feature_details',
+            feature_id: args.feature_id,
+            query_context: args.query_context,
+            shouldShowModal: true
         };
     }
 

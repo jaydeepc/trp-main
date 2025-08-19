@@ -12,6 +12,7 @@ import BOMAnalysisWindow from '../components/voice/BOMAnalysisWindow';
 import CommercialTermsWindow from '../components/voice/CommercialTermsWindow';
 import RFQPreviewWindow from '../components/voice/RFQPreviewWindow';
 import FloatingOverlayManager from '../components/common/FloatingOverlayManager';
+import DetailWindow from '../components/voice/DetailWindow';
 
 const InteractionPage: React.FC = () => {
     return (
@@ -33,6 +34,7 @@ const VoiceInterface: React.FC = () => {
     // UI State for voice functions
     const [showUploadForm, setShowUploadForm] = useState(false);
     const [showSystemInfo, setShowSystemInfo] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState<string | null>(null);
     const [currentStep, setCurrentStep] = useState(1);
     const [notifications, setNotifications] = useState<Array<{
         id: string;
@@ -42,7 +44,7 @@ const VoiceInterface: React.FC = () => {
     }>>([]);
 
     // Track if any UI elements should be shown (determines layout)
-    const hasFloatingElements = showUploadForm || showSystemInfo || currentStep === 2 || currentStep === 3 || currentStep === 4;
+    const hasFloatingElements = showUploadForm || showSystemInfo || showDetailModal || currentStep === 2 || currentStep === 3 || currentStep === 4;
 
     // Get conversation state for uploaded files
     const conversationState = voiceFunctionRegistry.getConversationState();
@@ -76,6 +78,49 @@ const VoiceInterface: React.FC = () => {
         voiceFunctionRegistry.updateState('FILES_UPDATED', files);
     };
 
+    // Mutual exclusion logic for floating windows
+    useEffect(() => {
+        // When BOM analysis opens (currentStep === 2), close other windows
+        if (currentStep === 2) {
+            setShowDetailModal(null);
+            setShowSystemInfo(false);
+            setShowUploadForm(false);
+        }
+    }, [currentStep]);
+
+    useEffect(() => {
+        // When DetailWindow opens, close other windows
+        if (showDetailModal) {
+            setShowSystemInfo(false);
+            setShowUploadForm(false);
+            if (currentStep !== 1) {
+                setCurrentStep(1);
+            }
+        }
+    }, [showDetailModal]);
+
+    useEffect(() => {
+        // When SystemInfo opens, close other windows
+        if (showSystemInfo) {
+            setShowDetailModal(null);
+            setShowUploadForm(false);
+            if (currentStep !== 1) {
+                setCurrentStep(1);
+            }
+        }
+    }, [showSystemInfo]);
+
+    useEffect(() => {
+        // When UploadForm opens, close other windows
+        if (showUploadForm) {
+            setShowDetailModal(null);
+            setShowSystemInfo(false);
+            if (currentStep !== 1) {
+                setCurrentStep(1);
+            }
+        }
+    }, [showUploadForm]);
+
     // Initialize voice function registry
     useInitialEffect(() => {
         console.log('🔧 Initializing voice function registry...');
@@ -85,7 +130,8 @@ const VoiceInterface: React.FC = () => {
             navigateTo,
             updateFiles,
             showNotification,
-            setShowSystemInfo
+            setShowSystemInfo,
+            setShowDetailModal
         });
     }, []);
 
@@ -121,6 +167,7 @@ IMPORTANT: You have access to several functions to help with procurement tasks:
 - For navigation, use "navigate_to" with appropriate destinations
 - For file management, use "get_uploaded_files" or "clear_uploaded_files"
 - When users ask about your purpose, capabilities, "what do you do", "tell me about yourself", or similar queries about the system, use "show_system_info"
+- When users ask about specific features or want detailed information about system capabilities, use "show_feature_details" with the appropriate feature_id
 
 Always call the appropriate function based on user requests.`,
                     },
@@ -376,6 +423,13 @@ Always call the appropriate function based on user requests.`,
                 {showSystemInfo && (
                     <FloatingOverlayManager onClose={() => setShowSystemInfo(false)} />
                 )}
+
+                {showDetailModal && (
+                    <DetailWindow
+                        featureId={showDetailModal}
+                        onClose={() => setShowDetailModal(null)}
+                    />
+                )}
             </div>
 
             {/* Error Toast */}
@@ -406,6 +460,7 @@ Always call the appropriate function based on user requests.`,
                     ))}
                 </div>
             )}
+
         </div>
     );
 };
