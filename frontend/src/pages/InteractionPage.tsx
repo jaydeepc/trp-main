@@ -66,12 +66,14 @@ const VoiceInterface: React.FC = () => {
             timestamp: new Date()
         };
 
-        setNotifications(prev => [...prev, notification]);
+        // setNotifications(prev => [...prev, notification]);
 
-        // Auto-remove notification after 5 seconds
-        setTimeout(() => {
-            setNotifications(prev => prev.filter(n => n.id !== notification.id));
-        }, 5000);
+        // // Auto-remove notification after 5 seconds
+        // setTimeout(() => {
+        //     setNotifications(prev => prev.filter(n => n.id !== notification.id));
+        // }, 5000);
+
+        console.log(`Notification shown: ${message} (${type})`);
     };
 
     // Files update helper
