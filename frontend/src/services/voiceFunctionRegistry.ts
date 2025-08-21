@@ -789,7 +789,7 @@ class VoiceFunctionRegistry {
             '',
         ].join('\n');
 
-        // Build detailed part-by-part analysis
+        // Build detailed part-by-part analysis with comprehensive supplier data
         let componentAnalysis = `I've analyzed your Mercedes-Benz infotainment system BOM with ${components.length} components. Here's what I found for each part: `;
 
         components.forEach((component, index) => {
@@ -800,11 +800,49 @@ class VoiceFunctionRegistry {
                 component.complianceStatus
             } regulatory status with ${component.riskFlag.level.toLowerCase()} supply chain risk. `;
             componentAnalysis += `Current market price range is ${component.predictedMarketRange} with ${component.zbcVariance} variance from should-cost target of ${component.zbcShouldCost}. `;
-            componentAnalysis += `Our recommendation: ${component.aiSuggestedAlternative}. (Resoning: ${component.aiSuggestedAlternativeReasoning}) `;
-            componentAnalysis += `Confidence level: ${component.confidence}%.\n`;
+            componentAnalysis += `Our recommendation: ${component.aiSuggestedAlternative}. (Reasoning: ${component.aiSuggestedAlternativeReasoning}) `;
+            componentAnalysis += `Confidence level: ${component.confidence}%. `;
+
+            // Add comprehensive supplier information
+            const componentSuppliers = mockBOMAnalysisResults.suppliers[component.id as keyof typeof mockBOMAnalysisResults.suppliers];
+            if (componentSuppliers && componentSuppliers.length > 0) {
+                componentAnalysis += `Available suppliers (${componentSuppliers.length}): `;
+                
+                // All suppliers with key details
+                componentSuppliers.forEach((supplier: any, supplierIndex: number) => {
+                    componentAnalysis += `${supplierIndex + 1}) ${supplier.name} (${supplier.region}) - $${supplier.cost}, Trust Score: ${supplier.trustScore}/10, Risk: ${supplier.riskLevel}, Certifications: ${supplier.certifications.join(', ')}`;
+                    if (supplierIndex < componentSuppliers.length - 1) componentAnalysis += '; ';
+                });
+                
+                // Additional suppliers summary
+                if (componentSuppliers.length > 5) {
+                    const additionalCount = componentSuppliers.length - 5;
+                    const additionalSuppliers = componentSuppliers.slice(5);
+                    const additionalNames = additionalSuppliers.map((s: any) => s.name).join(', ');
+                    componentAnalysis += `; Plus ${additionalCount} more suppliers: ${additionalNames}`;
+                }
+            }
+            componentAnalysis += `.\n\n`;
         });
 
         analysisSummary += componentAnalysis;
+
+        // Store comprehensive supplier data in conversation context for LLM understanding
+        // This data won't be spoken to avoid verbosity
+        const supplierIntelligenceContext = {
+            totalSuppliers: Object.values(mockBOMAnalysisResults.suppliers).reduce((sum, suppliers) => sum + suppliers.length, 0),
+            suppliersByComponent: mockBOMAnalysisResults.suppliers,
+            regionalDistribution: {},
+            bestValueRecommendations: {}
+        };
+
+        // Update conversation context with full supplier data for LLM
+        this.conversationState.context.supplierIntelligence = supplierIntelligenceContext;
+        
+        // Add brief supplier summary suitable for voice
+        let supplierSummary = `\n\nSupplier Intelligence: I have ${supplierIntelligenceContext.totalSuppliers} verified suppliers available across all components with regional coverage and trust scoring. The system includes detailed supplier certifications, cost analysis, and risk assessments for procurement optimization.`;
+        
+        analysisSummary += supplierSummary;
 
         const nextSteps =
             "\n\nNext steps:\nCall the 'show_bom_analysis' function to show the analysis results in the UI and then share just a brief summary of the recommended alternatives.";
