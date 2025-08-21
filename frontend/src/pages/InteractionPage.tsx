@@ -192,6 +192,13 @@ Always call the appropriate function based on user requests.`,
             connect()
                 .then(() => {
                     console.log('✅ Connection successful!');
+                    
+                    // Send initial greeting message to make Robbie start talking proactively
+                    setTimeout(() => {
+                        const initialGreeting = "Hello!";
+                        console.log('Sending initial greeting to Robbie...');
+                        sendText(initialGreeting);
+                    }, 500);
                 })
                 .catch((err: Error) => {
                     console.error('❌ Connection failed:', err.message || err);
