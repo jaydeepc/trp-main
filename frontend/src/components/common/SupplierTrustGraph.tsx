@@ -61,27 +61,29 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
     }
   };
 
-  // Use static values to prevent animation
+  // Calculate actual stats from supplier data
   const categoryStats = {
-    trusted: 77,
-    empanelled: 57,
-    new: 66,
+    trusted: filteredSuppliers.filter(s => s.category === 'trusted').length,
+    empanelled: filteredSuppliers.filter(s => s.category === 'empanelled').length,
+    new: filteredSuppliers.filter(s => s.category === 'new').length,
   };
 
-  // Use static values to prevent animation
-  const avgTrustScore = 8.1;
-  const avgCost = 27000;
+  // Calculate actual averages from supplier data
+  const avgTrustScore = filteredSuppliers.reduce((sum, s) => sum + s.trustScore, 0) / filteredSuppliers.length;
+  const avgCost = filteredSuppliers.reduce((sum, s) => sum + s.cost, 0) / filteredSuppliers.length;
 
   // Calculate chart dimensions and scaling
   const chartWidth = 600;
   const chartHeight = 300;
   const padding = 40;
 
-  // Use static values for consistent positioning
-  const minCost = 0;
-  const maxCost = 500;
-  const minTrust = 0;
-  const maxTrust = 10;
+  // Calculate actual min/max values from supplier data
+  const costs = filteredSuppliers.map(s => s.cost);
+  const trustScores = filteredSuppliers.map(s => s.trustScore);
+  const minCost = Math.min(...costs) - 50;
+  const maxCost = Math.max(...costs) + 50;
+  const minTrust = Math.min(...trustScores) - 0.5;
+  const maxTrust = Math.max(...trustScores) + 0.5;
 
   const getXPosition = (cost: number) => {
     return padding + ((cost - minCost) / (maxCost - minCost)) * (chartWidth - 2 * padding);
