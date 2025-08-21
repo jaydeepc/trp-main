@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mic, MicOff, PhoneOff } from 'lucide-react';
 import { useLiveAPIContext } from '../contexts/LiveAPIContext';
+import { useCommercialTermsContext, CommercialTermsData } from '../contexts/CommercialTermsContext';
 import { AudioRecorder } from '../lib/audio-recorder';
 import AudioVisualization from '../components/common/AudioVisualization';
 import Button from '../components/common/Button';
@@ -24,6 +25,7 @@ const InteractionPage: React.FC = () => {
 
 const VoiceInterface: React.FC = () => {
     const { client, connected, connect, disconnect, volume, setConfig, config, sendText } = useLiveAPIContext();
+    const { updateField: updateCommercialTermsField } = useCommercialTermsContext();
     const [isMuted, setIsMuted] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [lastMessage, setLastMessage] = useState<string>('');
@@ -124,6 +126,18 @@ const VoiceInterface: React.FC = () => {
     // Initialize voice function registry
     useInitialEffect(() => {
         console.log('🔧 Initializing voice function registry...');
+        
+        // Wrapper function to handle type conversion
+        const handleCommercialTermsFieldUpdate = (field: string, value: any) => {
+            // Ensure field is a valid key of CommercialTermsData
+            if (field === 'desiredLeadTime' || field === 'paymentTerms' || field === 'deliveryLocation' || 
+                field === 'complianceRequirements' || field === 'additionalRequirements') {
+                updateCommercialTermsField(field as keyof CommercialTermsData, value);
+            } else {
+                console.warn(`Invalid commercial terms field: ${field}`);
+            }
+        };
+
         voiceFunctionRegistry.initialize({
             setShowUploadForm,
             setCurrentStep,
@@ -131,9 +145,10 @@ const VoiceInterface: React.FC = () => {
             updateFiles,
             showNotification,
             setShowSystemInfo,
-            setShowDetailModal
+            setShowDetailModal,
+            updateCommercialTermsField: handleCommercialTermsFieldUpdate
         });
-    }, []);
+    }, [updateCommercialTermsField]);
 
     // Set config and connect - using useInitialEffect to prevent multiple calls
     useInitialEffect(() => {
@@ -164,6 +179,13 @@ SCENARIOS you handle apart from general conversation:
 - Analysis requests: When users want to analyze documents, proactively help them get started by showing the upload form by calling "show_upload_form"
 - Analysis processing: When you're about to call "analyse_bom", first inform the user that BOM analysis will take about 10 seconds to process and ask them to please wait. This sets proper expectations for the processing time.
 - Analysis workflow: After calling "analyse_bom" and receiving results, ALWAYS call "show_bom_analysis" function first to display the analysis interface, then provide verbal explanation of the results. This creates better user experience by showing visual data before talking.
+- Post-Analysis Commercial Terms: After BOM analysis is complete and displayed, ask the user if they want to proceed to commercial terms (e.g. "Would you like to proceed with setting up commercial terms for your RFQ?"). Only start commercial terms workflow when user explicitly agrees (says "ok", "yes", "proceed", etc.).
+- Commercial Terms Workflow: When user agrees to proceed with commercial terms, call "show_commercial_terms" first, then guide them step by step through:
+  1. Lead time: Ask "What's your desired lead time?" and use "set_lead_time" with their response
+  2. Payment terms: Ask about payment preferences and use "set_payment_terms" with chosen option
+  3. Delivery location: Ask "Where should components be delivered?" and use "set_delivery_location"
+  4. Compliance: Ask about certifications needed and use "add_compliance_requirement" for each one
+  5. Additional requirements: Ask about special instructions and use "set_additional_requirements"
 
 You have access to context-aware functions that change based on the current situation. Choose functions intelligently based on user intent and workflow context.
 
@@ -175,6 +197,7 @@ IMPORTANT: You have access to context-aware functions that change based on the c
 - For navigation, use "navigate_to" with appropriate destinations
 - For explaining capbilities or purpose, use "show_system_info"
 - For showing feature details, use "show_feature_details" with the appropriate feature_id
+- Commercial Terms Functions Available: set_lead_time, set_payment_terms, set_delivery_location, add_compliance_requirement, remove_compliance_requirement, set_additional_requirements, get_commercial_terms_status
 
 Always call the appropriate function based on user requests.`,
                     },

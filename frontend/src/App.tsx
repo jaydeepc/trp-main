@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { LiveAPIProvider } from "./contexts/LiveAPIContext";
 import { RFQProvider } from "./contexts/RFQContext";
+import { CommercialTermsProvider } from "./contexts/CommercialTermsContext";
 import Layout from "./components/layout/Layout";
 import LandingPage from "./pages/LandingPage";
 import InteractionPage from "./pages/InteractionPage";
@@ -21,31 +22,33 @@ function App() {
   return (
     <LiveAPIProvider url={uri} apiKey={API_KEY}>
       <RFQProvider>
-        <Layout handleNavigateToDashboard={handleNavigateToDashboard}>
-          <Router>
-            <div className="App">
-              <Routes>
-                {/* Landing Page Route */}
-                <Route
-                  path="/"
-                  element={
-                    <LandingPage />
-                  }
-                />
+        <CommercialTermsProvider>
+          <Layout handleNavigateToDashboard={handleNavigateToDashboard}>
+            <Router>
+              <div className="App">
+                <Routes>
+                  {/* Landing Page Route */}
+                  <Route
+                    path="/"
+                    element={
+                      <LandingPage />
+                    }
+                  />
 
-                {/* Live API Voice Console Route */}
-                <Route
-                  path="/interaction"
-                  element={
-                    <InteractionPage />
-                  }
-                />
+                  {/* Live API Voice Console Route */}
+                  <Route
+                    path="/interaction"
+                    element={
+                      <InteractionPage />
+                    }
+                  />
 
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </div>
-          </Router>
-        </Layout>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </div>
+            </Router>
+          </Layout>
+        </CommercialTermsProvider>
       </RFQProvider>
     </LiveAPIProvider>
   );

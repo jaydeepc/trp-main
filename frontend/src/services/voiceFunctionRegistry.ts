@@ -46,6 +46,8 @@ export interface StateUpdateCallbacks {
     ) => void;
     setShowSystemInfo: (show: boolean) => void;
     setShowDetailModal: (featureId: string | null) => void;
+    updateCommercialTermsField?: (field: string, value: any) => void;
+    setCommercialTermsData?: (data: any) => void;
 }
 
 class VoiceFunctionRegistry {
@@ -451,6 +453,152 @@ class VoiceFunctionRegistry {
             },
             function: this.showFeatureDetails.bind(this),
         });
+
+        // Commercial Terms Functions
+        this.registerFunction({
+            name: 'set_lead_time',
+            description:
+                'Set the desired lead time for the commercial terms. Can be a preset option or custom value.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    leadTime: {
+                        type: 'string',
+                        description:
+                            'Lead time value (e.g., "2-4 weeks", "6-8 weeks", "10-12 weeks")',
+                    },
+                },
+                required: ['leadTime'],
+            },
+            function: this.setLeadTime.bind(this),
+        });
+
+        this.registerFunction({
+            name: 'set_payment_terms',
+            description: 'Set the payment terms for the commercial terms.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    paymentTerms: {
+                        type: 'string',
+                        enum: [
+                            'Net 30',
+                            'Net 60',
+                            'Milestone-based',
+                            '2/10 Net 30',
+                            'Cash on Delivery',
+                            'Letter of Credit',
+                        ],
+                        description: 'Payment terms option',
+                    },
+                },
+                required: ['paymentTerms'],
+            },
+            function: this.setPaymentTerms.bind(this),
+        });
+
+        this.registerFunction({
+            name: 'set_delivery_location',
+            description: 'Set the delivery location for the commercial terms.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    location: {
+                        type: 'string',
+                        description:
+                            'Delivery address or location (e.g., "San Francisco, CA, USA")',
+                    },
+                },
+                required: ['location'],
+            },
+            function: this.setDeliveryLocation.bind(this),
+        });
+
+        this.registerFunction({
+            name: 'add_compliance_requirement',
+            description:
+                'Add a compliance requirement to the commercial terms.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    requirement: {
+                        type: 'string',
+                        enum: [
+                            'ISO 9001',
+                            'AS9100',
+                            'ISO 14001',
+                            'OHSAS 18001',
+                            'RoHS',
+                            'REACH',
+                            'FDA',
+                            'CE Marking',
+                            'UL Listed',
+                        ],
+                        description: 'Compliance requirement to add',
+                    },
+                },
+                required: ['requirement'],
+            },
+            function: this.addComplianceRequirement.bind(this),
+        });
+
+        this.registerFunction({
+            name: 'remove_compliance_requirement',
+            description:
+                'Remove a compliance requirement from the commercial terms.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    requirement: {
+                        type: 'string',
+                        enum: [
+                            'ISO 9001',
+                            'AS9100',
+                            'ISO 14001',
+                            'OHSAS 18001',
+                            'RoHS',
+                            'REACH',
+                            'FDA',
+                            'CE Marking',
+                            'UL Listed',
+                        ],
+                        description: 'Compliance requirement to remove',
+                    },
+                },
+                required: ['requirement'],
+            },
+            function: this.removeComplianceRequirement.bind(this),
+        });
+
+        this.registerFunction({
+            name: 'set_additional_requirements',
+            description:
+                'Set additional requirements or special instructions for the commercial terms.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    requirements: {
+                        type: 'string',
+                        description:
+                            'Additional requirements or special instructions',
+                    },
+                },
+                required: ['requirements'],
+            },
+            function: this.setAdditionalRequirements.bind(this),
+        });
+
+        this.registerFunction({
+            name: 'get_commercial_terms_status',
+            description:
+                'Get the current status of commercial terms form fields to see what has been filled and what remains.',
+            parameters: {
+                type: 'object',
+                properties: {},
+                required: [],
+            },
+            function: this.getCommercialTermsStatus.bind(this),
+        });
     }
 
     private async showUploadForm(args: { reason?: string; focus?: boolean }) {
@@ -741,7 +889,7 @@ class VoiceFunctionRegistry {
         );
 
         // Add 15-second processing delay for better UX
-        await new Promise(resolve => setTimeout(resolve, 15000));
+        await new Promise((resolve) => setTimeout(resolve, 15000));
 
         // Mark files as analyzed (mock)
         this.conversationState.uploadedFiles =
@@ -804,21 +952,37 @@ class VoiceFunctionRegistry {
             componentAnalysis += `Confidence level: ${component.confidence}%. `;
 
             // Add comprehensive supplier information
-            const componentSuppliers = mockBOMAnalysisResults.suppliers[component.id as keyof typeof mockBOMAnalysisResults.suppliers];
+            const componentSuppliers =
+                mockBOMAnalysisResults.suppliers[
+                    component.id as keyof typeof mockBOMAnalysisResults.suppliers
+                ];
             if (componentSuppliers && componentSuppliers.length > 0) {
                 componentAnalysis += `Available suppliers (${componentSuppliers.length}): `;
-                
+
                 // All suppliers with key details
-                componentSuppliers.forEach((supplier: any, supplierIndex: number) => {
-                    componentAnalysis += `${supplierIndex + 1}) ${supplier.name} (${supplier.region}) - $${supplier.cost}, Trust Score: ${supplier.trustScore}/10, Risk: ${supplier.riskLevel}, Certifications: ${supplier.certifications.join(', ')}`;
-                    if (supplierIndex < componentSuppliers.length - 1) componentAnalysis += '; ';
-                });
-                
+                componentSuppliers.forEach(
+                    (supplier: any, supplierIndex: number) => {
+                        componentAnalysis += `${supplierIndex + 1}) ${
+                            supplier.name
+                        } (${supplier.region}) - $${
+                            supplier.cost
+                        }, Trust Score: ${supplier.trustScore}/10, Risk: ${
+                            supplier.riskLevel
+                        }, Certifications: ${supplier.certifications.join(
+                            ', '
+                        )}`;
+                        if (supplierIndex < componentSuppliers.length - 1)
+                            componentAnalysis += '; ';
+                    }
+                );
+
                 // Additional suppliers summary
                 if (componentSuppliers.length > 5) {
                     const additionalCount = componentSuppliers.length - 5;
                     const additionalSuppliers = componentSuppliers.slice(5);
-                    const additionalNames = additionalSuppliers.map((s: any) => s.name).join(', ');
+                    const additionalNames = additionalSuppliers
+                        .map((s: any) => s.name)
+                        .join(', ');
                     componentAnalysis += `; Plus ${additionalCount} more suppliers: ${additionalNames}`;
                 }
             }
@@ -830,18 +994,21 @@ class VoiceFunctionRegistry {
         // Store comprehensive supplier data in conversation context for LLM understanding
         // This data won't be spoken to avoid verbosity
         const supplierIntelligenceContext = {
-            totalSuppliers: Object.values(mockBOMAnalysisResults.suppliers).reduce((sum, suppliers) => sum + suppliers.length, 0),
+            totalSuppliers: Object.values(
+                mockBOMAnalysisResults.suppliers
+            ).reduce((sum, suppliers) => sum + suppliers.length, 0),
             suppliersByComponent: mockBOMAnalysisResults.suppliers,
             regionalDistribution: {},
-            bestValueRecommendations: {}
+            bestValueRecommendations: {},
         };
 
         // Update conversation context with full supplier data for LLM
-        this.conversationState.context.supplierIntelligence = supplierIntelligenceContext;
-        
+        this.conversationState.context.supplierIntelligence =
+            supplierIntelligenceContext;
+
         // Add brief supplier summary suitable for voice
         let supplierSummary = `\n\nSupplier Intelligence: I have ${supplierIntelligenceContext.totalSuppliers} verified suppliers available across all components with regional coverage and trust scoring. The system includes detailed supplier certifications, cost analysis, and risk assessments for procurement optimization.`;
-        
+
         analysisSummary += supplierSummary;
 
         const nextSteps =
@@ -979,6 +1146,278 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             message: 'Function completed!',
             greeting: args.greeting,
             response: `Hello! You said: ${args.greeting}`,
+        };
+    }
+
+    // Commercial Terms Function Implementations
+    private async setLeadTime(args: { leadTime: string }) {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        // Store the lead time in conversation context
+        if (!this.conversationState.context.commercialTerms) {
+            this.conversationState.context.commercialTerms = {};
+        }
+        this.conversationState.context.commercialTerms.desiredLeadTime =
+            args.leadTime;
+
+        // Update the UI through shared context
+        if (this.callbacks.updateCommercialTermsField) {
+            this.callbacks.updateCommercialTermsField('desiredLeadTime', args.leadTime);
+        }
+
+        this.callbacks.showNotification(
+            `Lead time set to ${args.leadTime}`,
+            'success'
+        );
+
+        return {
+            success: true,
+            message: `I've set the desired lead time to ${args.leadTime}. What would you like to set for payment terms? The options are Net 30, Net 60, Milestone-based, 2/10 Net 30, Cash on Delivery, or Letter of Credit.`,
+            action: 'set_lead_time',
+            leadTime: args.leadTime,
+            nextStep: 'payment_terms',
+        };
+    }
+
+    private async setPaymentTerms(args: { paymentTerms: string }) {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        // Store the payment terms in conversation context
+        if (!this.conversationState.context.commercialTerms) {
+            this.conversationState.context.commercialTerms = {};
+        }
+        this.conversationState.context.commercialTerms.paymentTerms =
+            args.paymentTerms;
+
+        // Update the UI through shared context
+        if (this.callbacks.updateCommercialTermsField) {
+            this.callbacks.updateCommercialTermsField('paymentTerms', args.paymentTerms);
+        }
+
+        this.callbacks.showNotification(
+            `Payment terms set to ${args.paymentTerms}`,
+            'success'
+        );
+
+        return {
+            success: true,
+            message: `Perfect! I've set payment terms to ${args.paymentTerms}. Now, where would you like the components delivered? Please provide the delivery location.`,
+            action: 'set_payment_terms',
+            paymentTerms: args.paymentTerms,
+            nextStep: 'delivery_location',
+        };
+    }
+
+    private async setDeliveryLocation(args: { location: string }) {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        // Store the delivery location in conversation context
+        if (!this.conversationState.context.commercialTerms) {
+            this.conversationState.context.commercialTerms = {};
+        }
+        this.conversationState.context.commercialTerms.deliveryLocation =
+            args.location;
+
+        // Update the UI through shared context
+        if (this.callbacks.updateCommercialTermsField) {
+            this.callbacks.updateCommercialTermsField('deliveryLocation', args.location);
+        }
+
+        this.callbacks.showNotification(
+            `Delivery location set to ${args.location}`,
+            'success'
+        );
+
+        return {
+            success: true,
+            message: `Great! I've set the delivery location to ${args.location}. Now let's discuss compliance requirements. Do you need any specific certifications like ISO 9001, AS9100, RoHS, REACH, or others? You can tell me which ones you need, or say "none" if no specific compliance is required.`,
+            action: 'set_delivery_location',
+            location: args.location,
+            nextStep: 'compliance_requirements',
+        };
+    }
+
+    private async addComplianceRequirement(args: { requirement: string }) {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        // Initialize compliance array if needed
+        if (!this.conversationState.context.commercialTerms) {
+            this.conversationState.context.commercialTerms = {};
+        }
+        if (
+            !this.conversationState.context.commercialTerms
+                .complianceRequirements
+        ) {
+            this.conversationState.context.commercialTerms.complianceRequirements =
+                [];
+        }
+
+        // Add requirement if not already present
+        const requirements =
+            this.conversationState.context.commercialTerms
+                .complianceRequirements;
+        if (!requirements.includes(args.requirement)) {
+            requirements.push(args.requirement);
+        }
+
+        // Update the UI through shared context
+        if (this.callbacks.updateCommercialTermsField) {
+            this.callbacks.updateCommercialTermsField('complianceRequirements', requirements);
+        }
+
+        this.callbacks.showNotification(
+            `Added ${args.requirement} to compliance requirements`,
+            'success'
+        );
+
+        const currentRequirements =
+            this.conversationState.context.commercialTerms
+                .complianceRequirements;
+        const requirementsList =
+            currentRequirements.length > 0
+                ? currentRequirements.join(', ')
+                : 'none';
+
+        return {
+            success: true,
+            message: `I've added ${args.requirement} to your compliance requirements. Current requirements: ${requirementsList}. Would you like to add any other compliance requirements, or shall we move on to additional requirements?`,
+            action: 'add_compliance_requirement',
+            requirement: args.requirement,
+            currentRequirements: currentRequirements,
+        };
+    }
+
+    private async removeComplianceRequirement(args: { requirement: string }) {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        // Remove requirement if present
+        if (
+            this.conversationState.context.commercialTerms
+                ?.complianceRequirements
+        ) {
+            const requirements =
+                this.conversationState.context.commercialTerms
+                    .complianceRequirements;
+            const index = requirements.indexOf(args.requirement);
+            if (index > -1) {
+                requirements.splice(index, 1);
+            }
+        }
+
+        const currentRequirements =
+            this.conversationState.context.commercialTerms
+                ?.complianceRequirements || [];
+
+        // Update the UI through shared context
+        if (this.callbacks.updateCommercialTermsField) {
+            this.callbacks.updateCommercialTermsField('complianceRequirements', currentRequirements);
+        }
+
+        this.callbacks.showNotification(
+            `Removed ${args.requirement} from compliance requirements`,
+            'success'
+        );
+
+        const requirementsList =
+            currentRequirements.length > 0
+                ? currentRequirements.join(', ')
+                : 'none';
+
+        return {
+            success: true,
+            message: `I've removed ${args.requirement} from your compliance requirements. Current requirements: ${requirementsList}.`,
+            action: 'remove_compliance_requirement',
+            requirement: args.requirement,
+            currentRequirements: currentRequirements,
+        };
+    }
+
+    private async setAdditionalRequirements(args: { requirements: string }) {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        // Store additional requirements
+        if (!this.conversationState.context.commercialTerms) {
+            this.conversationState.context.commercialTerms = {};
+        }
+        this.conversationState.context.commercialTerms.additionalRequirements =
+            args.requirements;
+
+        // Update the UI through shared context
+        if (this.callbacks.updateCommercialTermsField) {
+            this.callbacks.updateCommercialTermsField('additionalRequirements', args.requirements);
+        }
+
+        this.callbacks.showNotification(
+            'Additional requirements updated',
+            'success'
+        );
+
+        return {
+            success: true,
+            message: `Perfect! I've recorded your additional requirements: "${args.requirements}". Let me summarize what we've configured for your commercial terms.`,
+            action: 'set_additional_requirements',
+            requirements: args.requirements,
+            nextStep: 'summary',
+        };
+    }
+
+    private async getCommercialTermsStatus() {
+        const commercialTerms =
+            this.conversationState.context.commercialTerms || {};
+
+        const status = {
+            desiredLeadTime: commercialTerms.desiredLeadTime || null,
+            paymentTerms: commercialTerms.paymentTerms || null,
+            deliveryLocation: commercialTerms.deliveryLocation || null,
+            complianceRequirements:
+                commercialTerms.complianceRequirements || [],
+            additionalRequirements:
+                commercialTerms.additionalRequirements || null,
+        };
+
+        const completedFields = [];
+        const remainingFields = [];
+
+        if (status.desiredLeadTime) completedFields.push('Lead Time');
+        else remainingFields.push('Lead Time');
+
+        if (status.paymentTerms) completedFields.push('Payment Terms');
+        else remainingFields.push('Payment Terms');
+
+        if (status.deliveryLocation) completedFields.push('Delivery Location');
+        else remainingFields.push('Delivery Location');
+
+        if (status.complianceRequirements.length > 0)
+            completedFields.push('Compliance Requirements');
+        else remainingFields.push('Compliance Requirements');
+
+        const isComplete = remainingFields.length === 0;
+
+        return {
+            success: true,
+            status: status,
+            completedFields: completedFields,
+            remainingFields: remainingFields,
+            isComplete: isComplete,
+            message: isComplete
+                ? `Commercial terms are complete! Completed: ${completedFields.join(
+                      ', '
+                  )}.`
+                : `Commercial terms status - Completed: ${completedFields.join(
+                      ', '
+                  )}. Still need: ${remainingFields.join(', ')}.`,
         };
     }
 

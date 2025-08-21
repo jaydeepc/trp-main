@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
 import { Calendar, CreditCard, MapPin, Shield, Plus, X, Info } from 'lucide-react';
 import Button from '../common/Button';
+import { useCommercialTermsContext, CommercialTermsData } from '../../contexts/CommercialTermsContext';
 
 interface CommercialTermsProps {
   onNext: () => void;
   onCancel: () => void;
   bomData?: any[];
-}
-
-interface CommercialTermsData {
-  desiredLeadTime: string;
-  paymentTerms: string;
-  deliveryLocation: string;
-  complianceRequirements: string[];
-  additionalRequirements: string;
 }
 
 const CommercialTerms: React.FC<CommercialTermsProps> = ({
@@ -22,16 +15,10 @@ const CommercialTerms: React.FC<CommercialTermsProps> = ({
   bomData = []
 }) => {
   const [loading, setLoading] = useState({ isLoading: false });
-  
-  const [formData, setFormData] = useState<CommercialTermsData>({
-    desiredLeadTime: '',
-    paymentTerms: 'Net 30',
-    deliveryLocation: '',
-    complianceRequirements: [],
-    additionalRequirements: '',
-  });
-
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Use shared context instead of local state
+  const { formData, updateField } = useCommercialTermsContext();
 
   const paymentTermsOptions = [
     { value: 'Net 30', label: 'Net 30 Days', description: 'Payment due within 30 days' },
@@ -64,10 +51,8 @@ const CommercialTerms: React.FC<CommercialTermsProps> = ({
   ];
 
   const handleInputChange = (field: keyof CommercialTermsData, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    // Use context update function
+    updateField(field, value);
     
     // Clear error when user starts typing
     if (errors[field]) {
