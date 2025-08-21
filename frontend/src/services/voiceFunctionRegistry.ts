@@ -312,6 +312,34 @@ class VoiceFunctionRegistry {
         });
 
         this.registerFunction({
+            name: 'show_rfq_preview',
+            description:
+                'Show the RFQ preview interface to review and finalize the complete RFQ summary',
+            parameters: {
+                type: 'object',
+                properties: {
+                    reason: {
+                        type: 'string',
+                        description: 'Reason for showing RFQ preview',
+                    },
+                },
+                required: [],
+            },
+            function: this.showRFQPreview.bind(this),
+        });
+
+        this.registerFunction({
+            name: 'hide_rfq_preview',
+            description: 'Hide the RFQ preview interface',
+            parameters: {
+                type: 'object',
+                properties: {},
+                required: [],
+            },
+            function: this.hideRFQPreview.bind(this),
+        });
+
+        this.registerFunction({
             name: 'navigate_to',
             description: 'Navigate to different sections of the application',
             parameters: {
@@ -750,6 +778,53 @@ class VoiceFunctionRegistry {
             success: true,
             message: 'Commercial terms interface hidden',
             action: 'hide_commercial_terms',
+        };
+    }
+
+    private async showRFQPreview(args: { reason?: string }) {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        console.log('showRFQPreview called with args:', args);
+        console.log('Setting current step to 4');
+
+        // Close other UI elements first
+        this.callbacks.setShowSystemInfo(false);
+        this.callbacks.setShowUploadForm(false);
+
+        // Set current step to 4 for RFQ preview
+        this.callbacks.setCurrentStep(4);
+
+        // Also update internal state
+        this.conversationState.currentStep = 4;
+        this.updateState('STEP_CHANGED', { step: 4 });
+
+        this.callbacks.showNotification(
+            'RFQ Preview interface opened',
+            'success'
+        );
+
+        return {
+            success: true,
+            message: 'RFQ preview interface displayed. You can now review the complete summary of your request for quote.',
+            action: 'show_rfq_preview',
+            reason: args.reason || 'User requested RFQ preview',
+        };
+    }
+
+    private async hideRFQPreview() {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        // Reset back to step 1
+        this.callbacks.setCurrentStep(1);
+
+        return {
+            success: true,
+            message: 'RFQ preview interface hidden',
+            action: 'hide_rfq_preview',
         };
     }
 

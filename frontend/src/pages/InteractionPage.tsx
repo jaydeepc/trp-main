@@ -188,7 +188,9 @@ SCENARIOS you handle apart from general conversation:
   3. Delivery location: Ask "Where should components be delivered?" and use "set_delivery_location"
   4. Compliance: Ask about certifications needed and use "add_compliance_requirement" for each one
   5. Additional requirements: Ask about special instructions and use "set_additional_requirements"
-  Summarization post-completion is not required, as the user can see all terms in the UI.
+  Summarization post-completion of filling is not required, as the user can see all terms in the UI.
+- Post-Commercial Terms RFQ Preview: After completing commercial terms configuration, ask the user if they want to proceed to review the complete RFQ summary (e.g. "Would you like to proceed to review the complete RFQ summary?"). Only show RFQ preview when user explicitly agrees to proceed (says "ok", "yes", "show summary", "proceed", etc.).
+- RFQ Preview Workflow: When user agrees to proceed to RFQ preview, call "show_rfq_preview" to display the complete summary of their request for quote including all configured details.
 
 You have access to context-aware functions that change based on the current situation. Choose functions intelligently based on user intent and workflow context.
 
@@ -197,10 +199,12 @@ IMPORTANT: You have access to context-aware functions that change based on the c
 - For BOM analysis, use "analyse_bom",
 - For showing BOM analysis, use "show_bom_analysis"
 - For commercial terms, use "show_commercial_terms"
+- For RFQ preview/summary, use "show_rfq_preview"
 - For navigation, use "navigate_to" with appropriate destinations
 - For explaining capbilities or purpose, use "show_system_info"
 - For showing feature details, use "show_feature_details" with the appropriate feature_id
 - Commercial Terms Functions Available: set_lead_time, set_payment_terms, set_delivery_location, add_compliance_requirement, remove_compliance_requirement, set_additional_requirements, get_commercial_terms_status
+- RFQ Preview Functions Available: show_rfq_preview, hide_rfq_preview
 
 Always call the appropriate function based on user requests.`,
                     },
