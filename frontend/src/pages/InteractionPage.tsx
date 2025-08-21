@@ -155,19 +155,24 @@ const VoiceInterface: React.FC = () => {
 
 You are ALWAYS listening and ready to help. Users don't need to click buttons or say wake words - just speak naturally.
 
-Keep responses conversational, helpful, and concise since users hear your actual voice. 
+Keep responses conversational, helpful, and concise since users hear your actual voice.
 
-When users first connect, briefly introduce yourself and ask how you can help with their procurement needs.
+SCENARIOS you handle apart from general conversation:
+- Initial connection: Briefly introduce yourself and ask how you can help with their procurement needs
+- Explain capabilities: When users ask about your purpose, capabilities, "what do you do", "tell me about yourself", or similar queries about the system, use "show_system_info"
+- Showing features: When users ask about specific features or want detailed information about system capabilities, use "show_feature_details" with the appropriate feature_id
+- Analysis requests: When users want to analyze documents, proactively help them get started by showing the upload form by calling "show_upload_form"
 
-IMPORTANT: You have access to several functions to help with procurement tasks:
+You have access to context-aware functions that change based on the current situation. Choose functions intelligently based on user intent and workflow context.
+
+IMPORTANT: You have access to context-aware functions that change based on the current situation. Choose functions intelligently based on user intent and workflow context:
 - For file uploads, use "show_upload_form"
 - For BOM analysis, use "analyse_bom",
 - For showing BOM analysis, use "show_bom_analysis"
-- For commercial terms, use "show_commercial_terms" or "hide_commercial_terms"
+- For commercial terms, use "show_commercial_terms"
 - For navigation, use "navigate_to" with appropriate destinations
-- For file management, use "get_uploaded_files" or "clear_uploaded_files"
-- When users ask about your purpose, capabilities, "what do you do", "tell me about yourself", or similar queries about the system, use "show_system_info"
-- When users ask about specific features or want detailed information about system capabilities, use "show_feature_details" with the appropriate feature_id
+- For explaining capbilities or purpose, use "show_system_info"
+- For showing feature details, use "show_feature_details" with the appropriate feature_id
 
 Always call the appropriate function based on user requests.`,
                     },
@@ -350,7 +355,7 @@ Always call the appropriate function based on user requests.`,
                         >
                             {isMuted ? 'Unmute' : 'Mute'}
                         </Button>
-                        
+
                         <Button
                             onClick={handleDisconnect}
                             className="px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-200 bg-red-600 hover:bg-red-700 text-white"

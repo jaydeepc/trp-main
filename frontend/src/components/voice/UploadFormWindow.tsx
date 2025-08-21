@@ -39,6 +39,11 @@ Please acknowledge this and call the 'analyse_bom' function to start the analysi
 
                 console.log('📤 Sending file upload notification to AI...');
                 sendText(message);
+
+                setTimeout(() => {
+                    console.log('🔄 Auto-closing upload form after file upload...');
+                    onClose();
+                }, 1500);
             }
         }
     };
