@@ -587,18 +587,6 @@ class VoiceFunctionRegistry {
             },
             function: this.setAdditionalRequirements.bind(this),
         });
-
-        this.registerFunction({
-            name: 'get_commercial_terms_status',
-            description:
-                'Get the current status of commercial terms form fields to see what has been filled and what remains.',
-            parameters: {
-                type: 'object',
-                properties: {},
-                required: [],
-            },
-            function: this.getCommercialTermsStatus.bind(this),
-        });
     }
 
     private async showUploadForm(args: { reason?: string; focus?: boolean }) {
@@ -1164,7 +1152,10 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
 
         // Update the UI through shared context
         if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField('desiredLeadTime', args.leadTime);
+            this.callbacks.updateCommercialTermsField(
+                'desiredLeadTime',
+                args.leadTime
+            );
         }
 
         this.callbacks.showNotification(
@@ -1195,7 +1186,10 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
 
         // Update the UI through shared context
         if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField('paymentTerms', args.paymentTerms);
+            this.callbacks.updateCommercialTermsField(
+                'paymentTerms',
+                args.paymentTerms
+            );
         }
 
         this.callbacks.showNotification(
@@ -1226,7 +1220,10 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
 
         // Update the UI through shared context
         if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField('deliveryLocation', args.location);
+            this.callbacks.updateCommercialTermsField(
+                'deliveryLocation',
+                args.location
+            );
         }
 
         this.callbacks.showNotification(
@@ -1270,7 +1267,10 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
 
         // Update the UI through shared context
         if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField('complianceRequirements', requirements);
+            this.callbacks.updateCommercialTermsField(
+                'complianceRequirements',
+                requirements
+            );
         }
 
         this.callbacks.showNotification(
@@ -1320,7 +1320,10 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
 
         // Update the UI through shared context
         if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField('complianceRequirements', currentRequirements);
+            this.callbacks.updateCommercialTermsField(
+                'complianceRequirements',
+                currentRequirements
+            );
         }
 
         this.callbacks.showNotification(
@@ -1356,7 +1359,10 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
 
         // Update the UI through shared context
         if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField('additionalRequirements', args.requirements);
+            this.callbacks.updateCommercialTermsField(
+                'additionalRequirements',
+                args.requirements
+            );
         }
 
         this.callbacks.showNotification(
@@ -1370,54 +1376,6 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             action: 'set_additional_requirements',
             requirements: args.requirements,
             nextStep: 'summary',
-        };
-    }
-
-    private async getCommercialTermsStatus() {
-        const commercialTerms =
-            this.conversationState.context.commercialTerms || {};
-
-        const status = {
-            desiredLeadTime: commercialTerms.desiredLeadTime || null,
-            paymentTerms: commercialTerms.paymentTerms || null,
-            deliveryLocation: commercialTerms.deliveryLocation || null,
-            complianceRequirements:
-                commercialTerms.complianceRequirements || [],
-            additionalRequirements:
-                commercialTerms.additionalRequirements || null,
-        };
-
-        const completedFields = [];
-        const remainingFields = [];
-
-        if (status.desiredLeadTime) completedFields.push('Lead Time');
-        else remainingFields.push('Lead Time');
-
-        if (status.paymentTerms) completedFields.push('Payment Terms');
-        else remainingFields.push('Payment Terms');
-
-        if (status.deliveryLocation) completedFields.push('Delivery Location');
-        else remainingFields.push('Delivery Location');
-
-        if (status.complianceRequirements.length > 0)
-            completedFields.push('Compliance Requirements');
-        else remainingFields.push('Compliance Requirements');
-
-        const isComplete = remainingFields.length === 0;
-
-        return {
-            success: true,
-            status: status,
-            completedFields: completedFields,
-            remainingFields: remainingFields,
-            isComplete: isComplete,
-            message: isComplete
-                ? `Commercial terms are complete! Completed: ${completedFields.join(
-                      ', '
-                  )}.`
-                : `Commercial terms status - Completed: ${completedFields.join(
-                      ', '
-                  )}. Still need: ${remainingFields.join(', ')}.`,
         };
     }
 
