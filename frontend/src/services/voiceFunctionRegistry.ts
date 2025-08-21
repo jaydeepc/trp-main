@@ -734,6 +734,15 @@ class VoiceFunctionRegistry {
             };
         }
 
+        // Show processing notification
+        this.callbacks.showNotification(
+            'Analyzing BOM... Please wait.',
+            'info'
+        );
+
+        // Add 15-second processing delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 15000));
+
         // Mark files as analyzed (mock)
         this.conversationState.uploadedFiles =
             this.conversationState.uploadedFiles.map((file) => ({
@@ -798,7 +807,7 @@ class VoiceFunctionRegistry {
         analysisSummary += componentAnalysis;
 
         const nextSteps =
-            "\n\nNext steps:\nCall the 'show_bom_analysis' function to show the analysis results in the UI and share just a brief summary of the recommented alternatives.";
+            "\n\nNext steps:\nCall the 'show_bom_analysis' function to show the analysis results in the UI and then share just a brief summary of the recommended alternatives.";
 
         analysisSummary += nextSteps;
 
