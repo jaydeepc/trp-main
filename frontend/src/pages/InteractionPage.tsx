@@ -162,6 +162,8 @@ SCENARIOS you handle apart from general conversation:
 - Explain capabilities: When users ask about your purpose, capabilities, "what do you do", "tell me about yourself", or similar queries about the system, use "show_system_info"
 - Showing features: When users ask about specific features or want detailed information about system capabilities, use "show_feature_details" with the appropriate feature_id
 - Analysis requests: When users want to analyze documents, proactively help them get started by showing the upload form by calling "show_upload_form"
+- Analysis processing: When you're about to call "analyse_bom", first inform the user that BOM analysis will take about 10 seconds to process and ask them to please wait. This sets proper expectations for the processing time.
+- Analysis workflow: After calling "analyse_bom" and receiving results, ALWAYS call "show_bom_analysis" function first to display the analysis interface, then provide verbal explanation of the results. This creates better user experience by showing visual data before talking.
 
 You have access to context-aware functions that change based on the current situation. Choose functions intelligently based on user intent and workflow context.
 
