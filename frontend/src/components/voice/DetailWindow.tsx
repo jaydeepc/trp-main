@@ -381,8 +381,8 @@ const DetailWindow: React.FC<DetailWindowProps> = ({ featureId, onClose, queryCo
                             {getIcon(feature.icon)}
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold">{dynamicFeature?.title}</h3>
-                            <p className="text-sm text-gray-300">{dynamicFeature?.subtitle}</p>
+                            <h3 className="text-lg font-bold text-white">{dynamicFeature?.title}</h3>
+                            <p className="text-sm text-white/90">{dynamicFeature?.subtitle}</p>
                             <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1 ${categoryColors[feature.category]} bg-white/20`}>
                                 {feature.category.charAt(0).toUpperCase() + feature.category.slice(1)}
                             </span>
@@ -431,10 +431,7 @@ const DetailWindow: React.FC<DetailWindowProps> = ({ featureId, onClose, queryCo
 
             {/* Footer */}
             <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 rounded-b-2xl">
-                <div className="flex items-center justify-between">
-                    <div className="text-xs text-gray-600">
-                        Powered by Google Gemini Live API
-                    </div>
+                <div className="flex items-center justify-end">
                     <button
                         onClick={onClose}
                         className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
