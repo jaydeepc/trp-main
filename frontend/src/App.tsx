@@ -5,6 +5,7 @@ import { CommercialTermsProvider } from "./contexts/CommercialTermsContext";
 import Layout from "./components/layout/Layout";
 import LandingPage from "./pages/LandingPage";
 import InteractionPage from "./pages/InteractionPage";
+import Dashboard from "./components/pages/Dashboard";
 
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
 if (typeof API_KEY !== "string") {
@@ -31,7 +32,7 @@ function App() {
                   <Route
                     path="/"
                     element={
-                      <LandingPage />
+                      <Dashboard onCreateRFQ={() => console.log('Create RFQ')} onViewRFQ={(id) => console.log('View RFQ:', id)} />
                     }
                   />
 

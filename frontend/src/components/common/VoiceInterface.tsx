@@ -9,26 +9,27 @@ interface VoiceInterfaceProps {
 }
 
 const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
-  const { 
-    isConnected, 
-    isMuted, 
-    isSpeaking, 
-    error, 
-    lastMessage, 
-    toggleMute, 
-    audioState 
+  const {
+    isConnected,
+    isMuted,
+    isSpeaking,
+    error,
+    lastMessage,
+    toggleMute,
+    audioState
   } = useVoice();
 
   return (
-    <div className="text-center">
+    <div className="text-center h-full flex flex-col">
       {/* Audio Visualization */}
       <AudioVisualization
         isListening={audioState.isListening}
         isSpeaking={audioState.isSpeaking}
         audioLevel={audioState.audioLevel}
-        size={400}
-        className="mb-8 transition-all duration-500"
+        size={300}
+        className="mb-6 transition-all duration-500 flex-1"
       />
+
 
       {/* Connection Status */}
       <div className="mb-6">
@@ -49,11 +50,10 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
       <div className="mb-6">
         <Button
           onClick={toggleMute}
-          className={`px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-200 ${
-            isMuted
+          className={`px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-200 ${isMuted
               ? 'bg-red-600 hover:bg-red-700 text-white'
               : 'bg-green-600 hover:bg-green-700 text-white'
-          }`}
+            }`}
           icon={isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
         >
           {isMuted ? 'Unmute' : 'Mute'}
@@ -61,14 +61,14 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
       </div>
 
       {/* AI Speaking Indicator */}
-      {isSpeaking && (
+      {/* {isSpeaking && (
         <div className="mb-4">
           <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600/20 border border-blue-500/40 rounded-lg">
             <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
             <span className="text-blue-200 text-sm font-medium">Robbie is speaking...</span>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Last Message */}
       {lastMessage && (
@@ -86,7 +86,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
           message={error}
           type="error"
           isVisible={!!error}
-          onClose={() => {}}
+          onClose={() => { }}
         />
       )}
     </div>
