@@ -24,6 +24,9 @@ const VoiceInterfaceSidebar: React.FC = () => {
     const [error, setError] = useState<string>('');
     const [inVolume, setInVolume] = useState(0);
     const [audioRecorder] = useState(() => new AudioRecorder());
+    const [isInitialized, setIsInitialized] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [isTransitioning, setIsTransitioning] = useState(false);
 
     // UI State for voice functions
     const [showUploadForm, setShowUploadForm] = useState(false);
@@ -210,26 +213,42 @@ Always call the appropriate function based on user requests.`,
         });
     }, []);
 
-    useEffect(() => {
-        if (config && config.systemInstruction && !connected && connect) {
-            console.log('🔗 Attempting initial connection...');
-            connect()
-                .then(() => {
-                    console.log('✅ Connection successful!');
-
-                    // Send initial greeting message to make Robbie start talking proactively
-                    setTimeout(() => {
-                        const initialGreeting = "Hello!";
-                        console.log('Sending initial greeting to Robbie...');
-                        sendText(initialGreeting);
-                    }, 500);
-                })
-                .catch((err: Error) => {
-                    console.error('❌ Connection failed:', err.message || err);
-                    setError('Failed to connect to voice service');
-                });
+    // Initialize connection handler with smooth transitions
+    const handleInitialize = async () => {
+        if (!config || !config.systemInstruction || !connect) {
+            console.error('Configuration not ready');
+            return;
         }
-    }, [config]);
+
+        setIsConnecting(true);
+        setIsTransitioning(true);
+
+        console.log('🔗 Attempting initial connection...');
+        try {
+            await connect();
+            console.log('✅ Connection successful!');
+
+            // Wait for fade out transition
+            setTimeout(() => {
+                setIsInitialized(true);
+                setIsConnecting(false);
+
+                // Wait for fade in transition then send greeting
+                setTimeout(() => {
+                    setIsTransitioning(false);
+                    const initialGreeting = "Hello!";
+                    console.log('Sending initial greeting to Robbie...');
+                    sendText(initialGreeting);
+                }, 300);
+            }, 300);
+
+        } catch (err: any) {
+            console.error('❌ Connection failed:', err.message || err);
+            setError('Failed to connect to voice service');
+            setIsConnecting(false);
+            setIsTransitioning(false);
+        }
+    };
 
     // Handle microphone audio streaming (like ControlTray)
     useEffect(() => {
@@ -345,70 +364,106 @@ Always call the appropriate function based on user requests.`,
 
     return (
         <>
-            {/* Sidebar Voice Interface */}
-            <div className="h-full flex flex-col">
-                {/* Header */}
-                <div className="pb-4 border-b border-white/10">
-                    <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-accent-400 to-primary-400 rounded-lg flex items-center justify-center">
-                            <Sparkles className="w-4 h-4 text-white" />
+            {/* Sidebar Interface */}
+            <div className="h-full flex flex-col relative overflow-hidden">
+                {/* Welcome Interface - Fades out when initializing */}
+                <div className={`absolute inset-0 flex flex-col transition-all duration-500 ease-in-out ${isInitialized ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+                    }`}>
+                    {/* Welcome Header */}
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                        <div className="w-24 h-24 bg-gradient-to-br from-accent-400 to-primary-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Sparkles className="w-12 h-12 text-white" />
                         </div>
-                        <div>
-                            <h3 className="font-semibold text-white">Robbie AI</h3>
-                            <div className="flex items-center space-x-2">
-                                <div className={`w-2 h-2 rounded-full animate-pulse ${connected ? 'bg-green-400' : 'bg-yellow-400'}`} />
-                                <span className="text-xs text-white/70">
-                                    {connected ? 'Listening...' : 'Connecting...'}
-                                </span>
+                        <h2 className="text-3xl font-bold text-white mb-4">Hi there! I'm Robbie</h2>
+                        <p className="text-white/70 mb-8 leading-relaxed text-lg">
+                            Ready to chat? I can help you with procurement tasks, analyze your documents,
+                            and make your RFQ process effortless.<br />
+                            <span className="text-white/90 font-medium">Just speak naturally - I'm all ears!</span>
+                        </p>
+                    </div>
+
+                    {/* Talk to Robbie Button at Bottom */}
+                    <div className="p-6">
+                        <Button
+                            onClick={handleInitialize}
+                            disabled={isConnecting}
+                            className="w-full bg-gradient-to-r from-accent-500 to-primary-500 hover:from-accent-600 hover:to-primary-600 text-white font-semibold py-4 disabled:opacity-50"
+                            icon={isConnecting ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <Sparkles className="w-5 h-5" />
+                            )}
+                        >
+                            {isConnecting ? 'Connecting...' : 'Talk to Robbie'}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Voice Interface - Fades in when initialized with delay */}
+                <div className={`absolute inset-0 flex flex-col transition-all duration-500 ease-in-out ${isInitialized ? 'opacity-100 pointer-events-auto delay-300' : 'opacity-0 pointer-events-none'
+                    }`}>
+                    {/* Header */}
+                    <div className="pb-4 border-b border-white/10">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-accent-400 to-primary-400 rounded-lg flex items-center justify-center">
+                                <Sparkles className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-white">Robbie AI</h3>
+                                <div className="flex items-center space-x-2">
+                                    <div className={`w-2 h-2 rounded-full animate-pulse ${connected ? 'bg-green-400' : 'bg-yellow-400'
+                                        }`} />
+                                    <span className="text-xs text-white/70">
+                                        {connected ? 'Listening...' : 'Connecting...'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Voice Visualization */}
-                <div className="flex-1 flex flex-col items-center justify-center p-6">
-                    <AudioVisualization
-                        isListening={connected && !isMuted}
-                        isSpeaking={isSpeaking}
-                        audioLevel={volume || 0}
-                        size={220}
-                        className="mb-6"
-                    />
-
-                </div>
-
-                {/* Last Message */}
-                {lastMessage && (
-                    <div className="p-4 border-t border-white/10">
-                        <div className="bg-white/10 rounded-lg p-3">
-                            <p className="text-white/80 text-xs font-medium mb-1">Robbie:</p>
-                            <p className="text-white text-sm leading-relaxed">{lastMessage}</p>
-                        </div>
+                    {/* Voice Visualization */}
+                    <div className="flex-1 flex flex-col items-center justify-center p-6">
+                        <AudioVisualization
+                            isListening={connected && !isMuted}
+                            isSpeaking={isSpeaking}
+                            audioLevel={volume || 0}
+                            size={220}
+                            className="mb-6"
+                        />
                     </div>
-                )}
 
-                {/* Function Status */}
-                <div className="p-4 border-t border-white/10">
+                    {/* Last Message */}
+                    {lastMessage && (
+                        <div className="p-4 border-t border-white/10">
+                            <div className="bg-white/10 rounded-lg p-3">
+                                <p className="text-white/80 text-xs font-medium mb-1">Robbie:</p>
+                                <p className="text-white text-sm leading-relaxed">{lastMessage}</p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Voice Controls */}
-                    <div className="space-y-3 w-full">
-                        <Button
-                            onClick={toggleMute}
-                            className={`w-full ${isMuted
-                                ? 'bg-red-500 hover:bg-red-600 text-white'
-                                : 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                                }`}
-                            icon={isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                        >
-                            {isMuted ? 'Unmute' : 'Mute'}
-                        </Button>
+                    <div className="p-4 border-t border-white/10">
+                        <div className="space-y-3 w-full">
+                            <Button
+                                onClick={toggleMute}
+                                className={`w-full ${isMuted
+                                    ? 'bg-red-500 hover:bg-red-600 text-white'
+                                    : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                    }`}
+                                icon={isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                            >
+                                {isMuted ? 'Unmute' : 'Mute'}
+                            </Button>
 
-                        <Button
-                            onClick={handleDisconnect}
-                            className="w-full bg-gray-600 hover:bg-gray-700 text-white"
-                            icon={<PhoneOff className="w-4 h-4" />}
-                        >
-                            Disconnect
-                        </Button>
+                            <Button
+                                onClick={handleDisconnect}
+                                className="w-full bg-gray-600 hover:bg-gray-700 text-white"
+                                icon={<PhoneOff className="w-4 h-4" />}
+                            >
+                                Disconnect
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
