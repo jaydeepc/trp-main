@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { RFQProvider } from './contexts/RFQContext';
 import Dashboard from './components/pages/Dashboard';
 import RFQWizard from './components/pages/RFQWizard';
-import VoiceLandingPage from './components/pages/VoiceLandingPage';
 import MobileDashboard from './components/mobile/MobileDashboard';
 import MobileRFQWizard from './components/mobile/MobileRFQWizard';
 import MobileNavigation from './components/mobile/MobileNavigation';
@@ -10,7 +9,7 @@ import { useRFQ } from './contexts/RFQContext';
 import { useResponsive } from './hooks/useResponsive';
 
 // Simple router state management for MVP
-type AppView = 'voice-landing' | 'dashboard' | 'rfq-wizard';
+type AppView = 'dashboard' | 'rfq-wizard';
 
 interface AppState {
   currentView: AppView;
@@ -19,7 +18,7 @@ interface AppState {
 
 function AppContent() {
   const [appState, setAppState] = useState<AppState>({
-    currentView: 'voice-landing'
+    currentView: 'dashboard'
   });
 
   const { createRFQ } = useRFQ();
@@ -51,16 +50,6 @@ function AppContent() {
     });
   };
 
-  const handleNavigateToVoiceLanding = () => {
-    setAppState({
-      currentView: 'voice-landing'
-    });
-  };
-
-  const handleNavigateToRFQ = () => {
-    handleCreateRFQ();
-  };
-
   // Render current view with responsive components
   if (isMobile) {
     return (
@@ -70,12 +59,7 @@ function AppContent() {
           onCreateRFQ={handleCreateRFQ}
           onBackToDashboard={handleBackToDashboard}
         />
-        {appState.currentView === 'voice-landing' ? (
-          <VoiceLandingPage
-            onNavigateToDashboard={handleBackToDashboard}
-            onNavigateToRFQ={handleNavigateToRFQ}
-          />
-        ) : appState.currentView === 'dashboard' ? (
+        {appState.currentView === 'dashboard' ? (
           <MobileDashboard
             onCreateRFQ={handleCreateRFQ}
             onViewRFQ={handleViewRFQ}
@@ -122,14 +106,6 @@ function AppContent() {
 
   // Desktop view (original components)
   switch (appState.currentView) {
-    case 'voice-landing':
-      return (
-        <VoiceLandingPage
-          onNavigateToDashboard={handleBackToDashboard}
-          onNavigateToRFQ={handleNavigateToRFQ}
-        />
-      );
-
     case 'dashboard':
       return (
         <Dashboard
