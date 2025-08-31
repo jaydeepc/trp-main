@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { RFQProvider } from './contexts/RFQContext';
 import Dashboard from './components/pages/Dashboard';
 import RFQWizard from './components/pages/RFQWizard';
-import MobileDashboard from './components/mobile/MobileDashboard';
-import MobileRFQWizard from './components/mobile/MobileRFQWizard';
-import MobileNavigation from './components/mobile/MobileNavigation';
 import { useRFQ } from './contexts/RFQContext';
-import { useResponsive } from './hooks/useResponsive';
 
 // Simple router state management for MVP
 type AppView = 'dashboard' | 'rfq-wizard';
@@ -22,7 +18,6 @@ function AppContent() {
   });
 
   const { createRFQ } = useRFQ();
-  const { isMobile } = useResponsive();
 
   const handleCreateRFQ = async () => {
     try {
@@ -50,61 +45,6 @@ function AppContent() {
     });
   };
 
-  // Render current view with responsive components
-  if (isMobile) {
-    return (
-      <>
-        <MobileNavigation
-          currentView={appState.currentView}
-          onCreateRFQ={handleCreateRFQ}
-          onBackToDashboard={handleBackToDashboard}
-        />
-        {appState.currentView === 'dashboard' ? (
-          <MobileDashboard
-            onCreateRFQ={handleCreateRFQ}
-            onViewRFQ={handleViewRFQ}
-          />
-        ) : appState.currentView === 'rfq-wizard' ? (
-          appState.currentRFQId ? (
-            <MobileRFQWizard
-              rfqId={appState.currentRFQId}
-              onBackToDashboard={handleBackToDashboard}
-            />
-          ) : (
-            <div className="min-h-screen bg-surface-50 flex items-center justify-center p-4">
-              <div className="text-center">
-                <h2 className="text-xl font-bold text-surface-900 mb-4">
-                  No RFQ Selected
-                </h2>
-                <button
-                  onClick={handleBackToDashboard}
-                  className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-medium"
-                >
-                  Back to Dashboard
-                </button>
-              </div>
-            </div>
-          )
-        ) : (
-          <div className="min-h-screen bg-surface-50 flex items-center justify-center p-4">
-            <div className="text-center">
-              <h2 className="text-xl font-bold text-surface-900 mb-4">
-                Page Not Found
-              </h2>
-              <button
-                onClick={handleBackToDashboard}
-                className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-medium"
-              >
-                Back to Dashboard
-              </button>
-            </div>
-          </div>
-        )}
-      </>
-    );
-  }
-
-  // Desktop view (original components)
   switch (appState.currentView) {
     case 'dashboard':
       return (

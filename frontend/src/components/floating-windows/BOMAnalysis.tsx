@@ -6,8 +6,6 @@ import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import SupplierTrustGraph from '../common/SupplierTrustGraph';
-import MobileSmartBOMReview from '../mobile/MobileSmartBOMReview';
-import { useResponsive } from '../../hooks/useResponsive';
 import { components, suppliers } from '../../data/mockBOMData';
 
 interface BOMAnalysisProps {
@@ -22,7 +20,6 @@ const BOMAnalysis: React.FC<BOMAnalysisProps> = ({
   uploadedFiles = []
 }) => {
   const { updateStep, loading } = useRFQ();
-  const { isMobile } = useResponsive();
   const [notes, setNotes] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedComponent, setSelectedComponent] = useState<string>('1'); // Default to first component
