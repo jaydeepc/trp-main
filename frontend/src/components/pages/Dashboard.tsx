@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus, TrendingUp, Clock, AlertTriangle,
   BarChart3, Sparkles, Brain, Target, Globe,
-  Activity, DollarSign, Users, Award, ArrowUpRight,
-  Calendar, Search, Bell, Settings
+  Activity, DollarSign, Users, Award, ArrowUpRight
 } from 'lucide-react';
 import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
@@ -18,16 +17,12 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
-  const { rfqs, loading, fetchRFQs } = useRFQ();
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const { rfqs, fetchRFQs } = useRFQ();
   const [isLoaded, setIsLoaded] = useState(false);
-  const [selectedTimeframe, setSelectedTimeframe] = useState('30d');
 
   useEffect(() => {
     fetchRFQs();
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     setTimeout(() => setIsLoaded(true), 300);
-    return () => clearInterval(timer);
   }, [fetchRFQs]);
 
   const stats = {
@@ -109,31 +104,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Welcome Section */}
         <div className={`mb-8 transition-all duration-700 delay-300 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-3xl font-bold text-surface-900 mb-2">
-                Welcome back, Admin
-              </h2>
-              <p className="text-lg text-surface-600">
-                Here's what's happening with your procurement operations today.
-              </p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <select
-                value={selectedTimeframe}
-                onChange={(e) => setSelectedTimeframe(e.target.value)}
-                className="px-4 py-2 bg-white border border-surface-200 rounded-xl text-sm font-medium text-surface-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
-                <option value="7d">Last 7 days</option>
-                <option value="30d">Last 30 days</option>
-                <option value="90d">Last 90 days</option>
-              </select>
-            </div>
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold text-surface-900 mb-2">
+              Hey Jaydeep,
+            </h2>
+            <p className="text-lg text-surface-600">
+              Here's your procurement intelligence dashboard
+            </p>
           </div>
         </div>
 
         {/* Static Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 transition-all duration-700 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
           <StaticMetricCard
             title="Total RFQs"
             value={stats.totalRFQs}
@@ -181,80 +163,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Supplier Trust Graph - Enhanced */}
-          <div className={`lg:col-span-2 transition-all duration-700 delay-800 ${isLoaded ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'}`}>
-            <div className="mb-4 space-y-4">
-              {/* Main Explanation */}
-              <div className="p-4 bg-gradient-to-r from-primary-50 to-accent-50 rounded-xl border border-primary-100">
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center mt-1">
-                    <Target className="w-4 h-4 text-primary-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-surface-900 mb-2">Understanding the Supplier Matrix</h4>
-                    <p className="text-sm text-surface-600 leading-relaxed mb-3">
-                      This visualization shows all <strong>{mockSuppliers.length} suppliers</strong> in our database plotted by <strong>Trust Score vs Cost</strong>.
-                      The ideal suppliers are in the <strong>top-right quadrant</strong> (high trust, competitive cost).
-                      When creating Smart BOMs, suppliers are automatically filtered based on material compatibility and requirements.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Detailed Graph Explanations */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-white rounded-xl border border-surface-200 shadow-sm">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-6 h-6 bg-accent-100 rounded-lg flex items-center justify-center">
-                      <DollarSign className="w-3 h-3 text-accent-600" />
-                    </div>
-                    <h5 className="font-medium text-surface-900">Average Cost Line</h5>
-                  </div>
-                  <p className="text-xs text-surface-600 leading-relaxed">
-                    The <strong>vertical blue line</strong> represents the average cost across all suppliers (${Math.round(mockSuppliers.reduce((sum, s) => sum + s.cost, 0) / mockSuppliers.length / 1000)}K).
-                    Suppliers to the left are below average cost, those to the right are above average.
-                  </p>
-                </div>
-
-                <div className="p-4 bg-white rounded-xl border border-surface-200 shadow-sm">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-6 h-6 bg-emerald-100 rounded-lg flex items-center justify-center">
-                      <Award className="w-3 h-3 text-emerald-600" />
-                    </div>
-                    <h5 className="font-medium text-surface-900">Average Trust Line</h5>
-                  </div>
-                  <p className="text-xs text-surface-600 leading-relaxed">
-                    The <strong>horizontal green line</strong> shows average trust score ({(mockSuppliers.reduce((sum, s) => sum + s.trustScore, 0) / mockSuppliers.length).toFixed(1)}/10).
-                    Suppliers above this line have higher than average trust ratings.
-                  </p>
-                </div>
-
-                <div className="p-4 bg-white rounded-xl border border-surface-200 shadow-sm">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-6 h-6 bg-primary-100 rounded-lg flex items-center justify-center">
-                      <Target className="w-3 h-3 text-primary-600" />
-                    </div>
-                    <h5 className="font-medium text-surface-900">Sweet Spot Zone</h5>
-                  </div>
-                  <p className="text-xs text-surface-600 leading-relaxed">
-                    The <strong>top-left quadrant</strong> contains the most valuable suppliers:
-                    high trust scores with below-average costs. These are your preferred partners.
-                  </p>
-                </div>
-
-                <div className="p-4 bg-white rounded-xl border border-surface-200 shadow-sm">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-6 h-6 bg-warning-100 rounded-lg flex items-center justify-center">
-                      <AlertTriangle className="w-3 h-3 text-warning-600" />
-                    </div>
-                    <h5 className="font-medium text-surface-900">Dot Sizes & Colors</h5>
-                  </div>
-                  <p className="text-xs text-surface-600 leading-relaxed">
-                    <strong>Dot size</strong> reflects trust score (larger = more trusted).
-                    <strong>Colors:</strong> Blue (trusted), Green (empanelled), Orange (new suppliers).
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className={`lg:col-span-2 transition-all duration-700 delay-1000 ${isLoaded ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'}`}>
             <SupplierTrustGraph
               componentName="All Supplier Categories"
               suppliers={mockSuppliers}
@@ -263,7 +172,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
           </div>
 
           {/* Quick Actions & Insights */}
-          <div className={`space-y-6 transition-all duration-700 delay-900 ${isLoaded ? 'translate-x-0 opacity-100' : 'translate-x-10 opacity-0'}`}>
+          <div className={`space-y-6 transition-all duration-700 delay-1000 ${isLoaded ? 'translate-x-0 opacity-100' : 'translate-x-10 opacity-0'}`}>
             {/* AI Insights Panel */}
             <Card className="p-6">
               <div className="flex items-center space-x-3 mb-4">
@@ -390,10 +299,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
                       </div>
                       <div className="flex items-center space-x-3">
                         <div className={`px-3 py-1 rounded-full text-xs font-medium ${rfq.status === 'completed' || rfq.status === 'sent'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : rfq.status === 'in-progress'
-                              ? 'bg-primary-100 text-primary-700'
-                              : 'bg-warning-100 text-warning-700'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : rfq.status === 'in-progress'
+                            ? 'bg-primary-100 text-primary-700'
+                            : 'bg-warning-100 text-warning-700'
                           }`}>
                           {rfq.status}
                         </div>
