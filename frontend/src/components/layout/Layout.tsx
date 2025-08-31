@@ -1,6 +1,6 @@
 import React from 'react';
 import Header from '../common/Header';
-import VoiceInterface from '../common/VoiceInterface';
+import VoiceInterfaceSidebar from '../common/VoiceInterfaceSidebar';
 
 interface LayoutProps {
     handleNavigateToDashboard: () => void;
@@ -22,7 +22,7 @@ const Layout: React.FC<LayoutProps> = ({ handleNavigateToDashboard, children }) 
                 {/* Voice Sidebar - 30% */}
                 <aside className="fixed right-0 z-50 w-1/4 min-w-80 border-l border-surface-200/20 bg-gradient-to-b from-primary-900/95 to-accent-900/95 backdrop-blur-sm overflow-y-auto h-screen">
                     <div className="p-6 h-full">
-                        <VoiceInterface />
+                        <VoiceInterfaceSidebar />
                     </div>
                 </aside>
             </div>

@@ -85,7 +85,7 @@ export const useVoice = () => {
             }
         };
 
-        // initializeService();
+        initializeService();
 
         // Cleanup on unmount
         return () => {
