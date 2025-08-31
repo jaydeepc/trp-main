@@ -105,68 +105,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-surface-50 via-white to-primary-50/30">
-      {/* Enhanced Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-surface-200/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo & Brand */}
-            <div className={`flex items-center space-x-4 transition-all duration-500 ${isLoaded ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'}`}>
-              <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Brain className="w-6 h-6 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-accent-400 rounded-full animate-pulse"></div>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-surface-900">Project Robbie</h1>
-                <p className="text-surface-600 text-sm font-medium">AI-Powered Procurement Intelligence</p>
-              </div>
-            </div>
-
-            {/* Header Actions */}
-            <div className={`flex items-center space-x-4 transition-all duration-500 delay-200 ${isLoaded ? 'translate-x-0 opacity-100' : 'translate-x-10 opacity-0'}`}>
-              <div className="hidden md:flex items-center space-x-3 text-sm text-surface-600">
-                <Calendar className="w-4 h-4" />
-                <span className="font-medium">
-                  {currentTime.toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </span>
-                <span className="text-primary-600 font-bold">
-                  {currentTime.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <button className="p-2 hover:bg-surface-100 rounded-xl transition-colors">
-                  <Search className="w-5 h-5 text-surface-600" />
-                </button>
-                <button className="p-2 hover:bg-surface-100 rounded-xl transition-colors relative">
-                  <Bell className="w-5 h-5 text-surface-600" />
-                  <div className="absolute top-1 right-1 w-2 h-2 bg-accent-500 rounded-full"></div>
-                </button>
-                <button className="p-2 hover:bg-surface-100 rounded-xl transition-colors">
-                  <Settings className="w-5 h-5 text-surface-600" />
-                </button>
-              </div>
-
-              <Button
-                onClick={onCreateRFQ}
-                className="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-6 py-2.5 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-                icon={<Plus className="w-4 h-4" />}
-              >
-                Create RFQ
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Welcome Section */}
