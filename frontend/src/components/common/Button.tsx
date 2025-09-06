@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variantClass?: string;
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   icon?: React.ReactNode;
@@ -11,6 +12,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
+  variantClass,
   size = 'md',
   loading = false,
   icon,
@@ -19,13 +21,13 @@ const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variantClasses = {
-    primary: 'btn-primary focus:ring-accent-teal',
-    secondary: 'btn-secondary focus:ring-gray-300',
-    outline: 'border-2 border-accent-teal text-accent-teal hover:bg-accent-teal hover:text-white focus:ring-accent-teal',
-    ghost: 'text-medium-gray hover:text-primary-blue hover:bg-gray-100 focus:ring-gray-300',
+    primary: 'btn-primary',
+    secondary: 'btn-secondary',
+    outline: 'border-2 border-accent-teal text-accent-teal hover:bg-accent-teal hover:text-white',
+    ghost: 'text-medium-gray hover:text-primary-blue hover:bg-gray-100',
   };
   
   const sizeClasses = {
@@ -34,7 +36,8 @@ const Button: React.FC<ButtonProps> = ({
     lg: 'px-6 py-3 text-lg',
   };
   
-  const classes = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
+  const effectiveVariantClass = variantClass || variantClasses[variant];
+  const classes = `${baseClasses} ${effectiveVariantClass} ${sizeClasses[size]} ${className}`;
   
   return (
     <button

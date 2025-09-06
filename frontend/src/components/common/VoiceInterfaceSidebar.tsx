@@ -359,6 +359,8 @@ Always call the appropriate function based on user requests.`,
 
     const handleDisconnect = () => {
         disconnect();
+        setIsInitialized(false);
+        setLastMessage('');
         console.log('Disconnected from voice service');
     };
 
@@ -405,11 +407,11 @@ Always call the appropriate function based on user requests.`,
                     {/* Header */}
                     <div className="pb-4 border-b border-white/10">
                         <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-gradient-to-br from-accent-400 to-primary-400 rounded-lg flex items-center justify-center">
-                                <Sparkles className="w-4 h-4 text-white" />
+                            <div className="w-10 h-10 bg-gradient-to-br from-accent-400 to-primary-400 rounded-lg flex items-center justify-center">
+                                <Sparkles className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-white">Robbie AI</h3>
+                                <h3 className="font-semibold text-white">Robbie</h3>
                                 <div className="flex items-center space-x-2">
                                     <div className={`w-2 h-2 rounded-full animate-pulse ${connected ? 'bg-green-400' : 'bg-yellow-400'
                                         }`} />
@@ -445,23 +447,25 @@ Always call the appropriate function based on user requests.`,
                     {/* Voice Controls */}
                     <div className="p-4 border-t border-white/10">
                         <div className="space-y-3 w-full">
+                            {/* Primary Action: Mute/Unmute */}
                             <Button
                                 onClick={toggleMute}
-                                className={`w-full ${isMuted
-                                    ? 'bg-red-500 hover:bg-red-600 text-white'
-                                    : 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                                    }`}
+                                variant="primary"
+                                variantClass={isMuted ? 'bg-red-500 hover:bg-red-600 text-white' : undefined}
+                                className="w-full"
                                 icon={isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                             >
                                 {isMuted ? 'Unmute' : 'Mute'}
                             </Button>
 
+                            {/* Secondary Action: Disconnect */}
                             <Button
                                 onClick={handleDisconnect}
-                                className="w-full bg-gray-600 hover:bg-gray-700 text-white"
+                                variant="secondary"
+                                className="w-full"
                                 icon={<PhoneOff className="w-4 h-4" />}
                             >
-                                Disconnect
+                                End Conversation
                             </Button>
                         </div>
                     </div>
