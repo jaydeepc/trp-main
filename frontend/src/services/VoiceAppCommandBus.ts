@@ -9,6 +9,8 @@ export interface VoiceAppContext {
   uploadedFiles: any[];
   analysisResults: any | null;
   formState: any;
+  isVoiceInitiated: boolean;
+  sendText?: (message: string) => void;
   [key: string]: any;
 }
 
@@ -29,7 +31,8 @@ class VoiceAppCommandBus {
     currentRFQ: null,
     uploadedFiles: [],
     analysisResults: null,
-    formState: {}
+    formState: {},
+    isVoiceInitiated: false
   };
 
   // ===============================
@@ -190,7 +193,8 @@ class VoiceAppCommandBus {
       currentRFQ: null,
       uploadedFiles: [],
       analysisResults: null,
-      formState: {}
+      formState: {},
+      isVoiceInitiated: false
     };
   }
 

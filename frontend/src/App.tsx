@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Provider as ReduxProvider } from 'react-redux';
+import { store } from './store';
 import { LiveAPIProvider } from "./contexts/LiveAPIContext";
 import { RFQProvider, useRFQ } from "./contexts/RFQContext";
 import { CommercialTermsProvider } from "./contexts/CommercialTermsContext";
@@ -58,15 +60,17 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ handleCreateRFQ }) => {
 
 function App() {
   return (
-    <LiveAPIProvider url={uri} apiKey={API_KEY}>
-      <RFQProvider>
-        <CommercialTermsProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </CommercialTermsProvider>
-      </RFQProvider>
-    </LiveAPIProvider>
+    <ReduxProvider store={store}>
+      <LiveAPIProvider url={uri} apiKey={API_KEY}>
+        <RFQProvider>
+          <CommercialTermsProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </CommercialTermsProvider>
+        </RFQProvider>
+      </LiveAPIProvider>
+    </ReduxProvider>
   );
 }
 
@@ -137,7 +141,7 @@ const AppContent: React.FC = () => {
 
   return (
     <Layout handleNavigateToDashboard={handleCreateRFQ}>
-      <AppRoutes handleCreateRFQ={handleCreateRFQ}/>
+      <AppRoutes handleCreateRFQ={handleCreateRFQ} />
     </Layout>
   );
 };

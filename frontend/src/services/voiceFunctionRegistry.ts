@@ -403,18 +403,6 @@ class VoiceFunctionRegistry {
         });
 
         this.registerFunction({
-            name: 'analyse_bom',
-            description:
-                'Analyze uploaded BOM files and show results with AI recommendations',
-            parameters: {
-                type: 'object',
-                properties: {},
-                required: [],
-            },
-            function: this.analyseBOM.bind(this),
-        });
-
-        this.registerFunction({
             name: 'show_system_info',
             description:
                 'Show detailed information about the system when user asks about purpose, capabilities, "what do you do", "tell me about yourself", or similar queries about the system',
@@ -608,9 +596,12 @@ class VoiceFunctionRegistry {
             'Voice: Using voiceActionService to navigate to RFQ creation\nReason:',
             args.reason
         );
-        
+
         // Use voiceActionService to handle navigation
-        await this.callbacks.voiceActionService.executeVoiceCommand('show_upload_form', args);
+        await this.callbacks.voiceActionService.executeVoiceCommand(
+            'show_upload_form',
+            args
+        );
 
         return {
             message:
@@ -804,8 +795,14 @@ class VoiceFunctionRegistry {
         }
 
         // Use voiceActionService for external navigation, direct callbacks for internal navigation
-        if (args.destination === 'dashboard' || args.destination === 'create-rfq') {
-            await this.callbacks.voiceActionService.executeVoiceCommand('navigate_to', args);
+        if (
+            args.destination === 'dashboard' ||
+            args.destination === 'create-rfq'
+        ) {
+            await this.callbacks.voiceActionService.executeVoiceCommand(
+                'navigate_to',
+                args
+            );
         } else if (args.destination === 'bom-review') {
             this.callbacks.setCurrentStep(2);
         } else if (args.destination === 'commercial-terms') {
@@ -884,174 +881,6 @@ class VoiceFunctionRegistry {
             success: true,
             message: 'All uploaded files cleared',
             filesCleared: true,
-        };
-    }
-
-    private async analyseBOM() {
-        if (!this.callbacks) {
-            throw new Error('Callbacks not initialized');
-        }
-
-        console.log('analyseBOM called');
-        console.log(
-            'Current uploaded files:',
-            this.conversationState.uploadedFiles.length
-        );
-
-        // Check if there are uploaded files first
-        if (this.conversationState.uploadedFiles.length === 0) {
-            this.callbacks.showNotification(
-                'No files found to analyze. Please upload files first.',
-                'error'
-            );
-
-            return {
-                success: false,
-                message:
-                    'No files available for analysis. Please upload BOM files first.',
-                action: 'analyse_bom',
-                requiresFiles: true,
-            };
-        }
-
-        // Show processing notification
-        this.callbacks.showNotification(
-            'Analyzing BOM... Please wait.',
-            'info'
-        );
-
-        // Add 15-second processing delay for better UX
-        await new Promise((resolve) => setTimeout(resolve, 15000));
-
-        // Mark files as analyzed (mock)
-        this.conversationState.uploadedFiles =
-            this.conversationState.uploadedFiles.map((file) => ({
-                ...file,
-                status: 'analyzed' as const,
-            }));
-
-        // Store analysis results in conversation state for AI context
-        this.conversationState.activeAnalysis = mockBOMAnalysisResults;
-        this.updateState('ANALYSIS_COMPLETE', mockBOMAnalysisResults);
-
-        this.callbacks.showNotification(
-            'BOM analysis completed with AI recommendations',
-            'success'
-        );
-
-        // Create human-readable analysis summary
-        const components = mockBOMAnalysisResults.components;
-        const compliantCount = components.filter(
-            (c) => c.complianceStatus === 'compliant'
-        ).length;
-        const mediumRiskCount = components.filter(
-            (c) => c.riskFlag.level === 'Medium'
-        ).length;
-
-        // Calculate average ZBC variance
-        const avgVariance = Math.round(
-            components.reduce((sum, c) => {
-                const variance = parseFloat(
-                    c.zbcVariance?.replace('%', '') || '0'
-                );
-                return sum + variance;
-            }, 0) / components.length
-        );
-
-        // Build human-readable summary
-        let analysisSummary = [
-            `I've analyzed your Mercedes-Benz infotainment system BOM with ${components.length} components.`,
-            `${compliantCount} components are fully compliant with automotive standards.`,
-            mediumRiskCount > 0
-                ? `${mediumRiskCount} components have medium supply chain risk levels.`
-                : 'All components have low supply chain risk.',
-            `The average cost variance is ${avgVariance}% compared to should-cost targets.`,
-            '',
-        ].join('\n');
-
-        // Build detailed part-by-part analysis with comprehensive supplier data
-        let componentAnalysis = `I've analyzed your Mercedes-Benz infotainment system BOM with ${components.length} components. Here's what I found for each part: `;
-
-        components.forEach((component, index) => {
-            componentAnalysis += `Component ${index + 1}: ${
-                component.partName
-            } (${component.partNumber}) - `;
-            componentAnalysis += `This ${component.material} component has ${
-                component.complianceStatus
-            } regulatory status with ${component.riskFlag.level.toLowerCase()} supply chain risk. `;
-            componentAnalysis += `Current market price range is ${component.predictedMarketRange} with ${component.zbcVariance} variance from should-cost target of ${component.zbcShouldCost}. `;
-            componentAnalysis += `Our recommendation: ${component.aiSuggestedAlternative}. (Reasoning: ${component.aiSuggestedAlternativeReasoning}) `;
-            componentAnalysis += `Confidence level: ${component.confidence}%. `;
-
-            // Add comprehensive supplier information
-            const componentSuppliers =
-                mockBOMAnalysisResults.suppliers[
-                    component.id as keyof typeof mockBOMAnalysisResults.suppliers
-                ];
-            if (componentSuppliers && componentSuppliers.length > 0) {
-                componentAnalysis += `Available suppliers (${componentSuppliers.length}): `;
-
-                // All suppliers with key details
-                componentSuppliers.forEach(
-                    (supplier: any, supplierIndex: number) => {
-                        componentAnalysis += `${supplierIndex + 1}) ${
-                            supplier.name
-                        } (${supplier.region}) - $${
-                            supplier.cost
-                        }, Trust Score: ${supplier.trustScore}/10, Risk: ${
-                            supplier.riskLevel
-                        }, Certifications: ${supplier.certifications.join(
-                            ', '
-                        )}`;
-                        if (supplierIndex < componentSuppliers.length - 1)
-                            componentAnalysis += '; ';
-                    }
-                );
-
-                // Additional suppliers summary
-                if (componentSuppliers.length > 5) {
-                    const additionalCount = componentSuppliers.length - 5;
-                    const additionalSuppliers = componentSuppliers.slice(5);
-                    const additionalNames = additionalSuppliers
-                        .map((s: any) => s.name)
-                        .join(', ');
-                    componentAnalysis += `; Plus ${additionalCount} more suppliers: ${additionalNames}`;
-                }
-            }
-            componentAnalysis += `.\n\n`;
-        });
-
-        analysisSummary += componentAnalysis;
-
-        // Store comprehensive supplier data in conversation context for LLM understanding
-        // This data won't be spoken to avoid verbosity
-        const supplierIntelligenceContext = {
-            totalSuppliers: Object.values(
-                mockBOMAnalysisResults.suppliers
-            ).reduce((sum, suppliers) => sum + suppliers.length, 0),
-            suppliersByComponent: mockBOMAnalysisResults.suppliers,
-            regionalDistribution: {},
-            bestValueRecommendations: {},
-        };
-
-        // Update conversation context with full supplier data for LLM
-        this.conversationState.context.supplierIntelligence =
-            supplierIntelligenceContext;
-
-        // Add brief supplier summary suitable for voice
-        let supplierSummary = `\n\nSupplier Intelligence: I have ${supplierIntelligenceContext.totalSuppliers} verified suppliers available across all components with regional coverage and trust scoring. The system includes detailed supplier certifications, cost analysis, and risk assessments for procurement optimization.`;
-
-        analysisSummary += supplierSummary;
-
-        const nextSteps =
-            "\n\nNext steps:\nCall the 'show_bom_analysis' function to show the analysis results in the UI and then share just a brief summary of the recommended alternatives.";
-
-        analysisSummary += nextSteps;
-
-        return {
-            success: true,
-            message: analysisSummary,
-            action: 'analyse_bom',
         };
     }
 
