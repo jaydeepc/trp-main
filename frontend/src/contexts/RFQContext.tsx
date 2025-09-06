@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 import { RFQ, LoadingState, ErrorState, DocumentProcessingResult, RFQContextType } from '../types';
 import apiService from '../services/api';
 
@@ -114,6 +116,8 @@ interface RFQProviderProps {
 export function RFQProvider({ children }: RFQProviderProps) {
   const [state, dispatch] = useReducer(rfqReducer, initialState);
 
+  const { isVoiceInitialized, sendText } = useSelector((state: RootState) => state.voice);
+
   // Helper function to handle errors
   const handleError = useCallback((error: any, defaultMessage: string) => {
     const errorMessage = apiService.getErrorMessage(error);
@@ -131,10 +135,10 @@ export function RFQProvider({ children }: RFQProviderProps) {
   const createRFQ = useCallback(async (): Promise<RFQ> => {
     try {
       dispatch({ type: 'SET_LOADING', payload: { isLoading: true, message: 'Creating new RFQ...' } });
-      
+
       const newRFQ = await apiService.createRFQ();
       dispatch({ type: 'ADD_RFQ', payload: newRFQ });
-      
+
       return newRFQ;
     } catch (error) {
       handleError(error, 'Failed to create RFQ');
@@ -146,7 +150,7 @@ export function RFQProvider({ children }: RFQProviderProps) {
   const fetchRFQs = useCallback(async (params?: { status?: string; page?: number; limit?: number }) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: { isLoading: true, message: 'Loading RFQs...' } });
-      
+
       const response = await apiService.getRFQs(params);
       dispatch({ type: 'SET_RFQS', payload: response.items || [] });
     } catch (error) {
@@ -158,7 +162,7 @@ export function RFQProvider({ children }: RFQProviderProps) {
   const fetchRFQ = useCallback(async (id: string) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: { isLoading: true, message: 'Loading RFQ...' } });
-      
+
       const rfq = await apiService.getRFQ(id);
       dispatch({ type: 'SET_CURRENT_RFQ', payload: rfq });
     } catch (error) {
@@ -170,7 +174,7 @@ export function RFQProvider({ children }: RFQProviderProps) {
   const updateRFQ = useCallback(async (id: string, data: Partial<RFQ>) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: { isLoading: true, message: 'Updating RFQ...' } });
-      
+
       // For now, we'll update the local state directly
       // In a real implementation, this would make an API call
       const currentRFQ = state.currentRFQ;
@@ -187,7 +191,7 @@ export function RFQProvider({ children }: RFQProviderProps) {
   const deleteRFQ = useCallback(async (id: string) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: { isLoading: true, message: 'Deleting RFQ...' } });
-      
+
       await apiService.deleteRFQ(id);
       dispatch({ type: 'REMOVE_RFQ', payload: id });
     } catch (error) {
@@ -197,28 +201,46 @@ export function RFQProvider({ children }: RFQProviderProps) {
 
   // Process document for RFQ
   const processDocument = useCallback(async (
-    rfqId: string, 
-    file: File, 
-    analysisType?: string
+    rfqId: string,
+    file: File,
   ): Promise<DocumentProcessingResult> => {
     try {
-      dispatch({ 
-        type: 'SET_LOADING', 
-        payload: { 
-          isLoading: true, 
-          message: 'Processing document...', 
-          progress: 0 
-        } 
+      dispatch({
+        type: 'SET_LOADING',
+        payload: {
+          isLoading: true,
+          message: 'Processing document...',
+          progress: 0
+        }
       });
 
-      const result = await apiService.updateRFQStep1(rfqId, file, analysisType);
-      
+      const result = await apiService.updateRFQStep1(rfqId, file);
+
       // Update the current RFQ with the processed data
       if (result.rfq) {
         dispatch({ type: 'UPDATE_RFQ', payload: result.rfq });
       }
 
       dispatch({ type: 'SET_LOADING', payload: { isLoading: false } });
+
+      // Send voice feedback if voice is initialized (voice-initiated processing)
+      if (isVoiceInitialized && sendText) {
+        const totalComponents = result.smartBoM?.length || 0;
+        const analysisType = result.processingInfo?.analysisType || 'Unknown';
+
+        const voiceFeedback = `Analysis Complete: BOM analysis has finished successfully. 
+
+Results Summary:
+- ${totalComponents} components analyzed
+- Analysis type: ${analysisType}
+- Processing completed successfully
+
+The analysis results are now available. Please call 'show_bom_analysis' function to display the results to the user.`;
+
+        setTimeout(() => {
+          sendText(voiceFeedback);
+        }, 500);
+      }
 
       // Return a formatted result
       return {
@@ -249,12 +271,12 @@ export function RFQProvider({ children }: RFQProviderProps) {
   // Update RFQ step
   const updateStep = useCallback(async (rfqId: string, step: number, data: any) => {
     try {
-      dispatch({ 
-        type: 'SET_LOADING', 
-        payload: { 
-          isLoading: true, 
-          message: `Updating step ${step}...` 
-        } 
+      dispatch({
+        type: 'SET_LOADING',
+        payload: {
+          isLoading: true,
+          message: `Updating step ${step}...`
+        }
       });
 
       let result;

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { initializeVoice, disconnectVoice } from '../../store/voiceSlice';
 import { Mic, MicOff, PhoneOff, Sparkles } from 'lucide-react';
 import { useLiveAPIContext } from '../../contexts/LiveAPIContext';
 import { useCommercialTermsContext, CommercialTermsData } from '../../contexts/CommercialTermsContext';
@@ -19,6 +21,7 @@ import DetailWindow from '../voice/DetailWindow';
 
 const VoiceInterfaceSidebar: React.FC = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const { client, connected, connect, disconnect, volume, setConfig, config, sendText } = useLiveAPIContext();
     const { updateField: updateCommercialTermsField } = useCommercialTermsContext();
@@ -178,8 +181,7 @@ SCENARIOS you handle apart from general conversation:
 - Explain capabilities: When users ask about your purpose, capabilities, "what do you do", "tell me about yourself", or similar queries about the system, use "show_system_info"
 - Showing features: When users ask about specific features or want detailed information about system capabilities, use "show_feature_details" with the appropriate feature_id
 - Analysis requests: When users want to analyze documents, proactively help them get started by showing the upload form by calling "show_upload_form"
-- Analysis processing: When you're about to call "analyse_bom", first inform the user that BOM analysis will take about 10 seconds to process and ask them to please wait. This sets proper expectations for the processing time.
-- Analysis workflow: After calling "analyse_bom" and receiving results, ALWAYS call "show_bom_analysis" function first to display the analysis interface, then provide verbal explanation of the results. This creates better user experience by showing visual data before talking.
+- Analysis workflow: When files are uploaded through voice, analysis starts automatically. After processing completes, you will be notifited.
 - Post-Analysis Commercial Terms: After BOM analysis is complete and displayed, ask the user if they want to proceed to commercial terms (e.g. "Would you like to proceed with setting up commercial terms for your RFQ?"). Only start commercial terms workflow when user explicitly agrees (says "ok", "yes", "proceed", etc.).
 - Commercial Terms Workflow: When user agrees to proceed with commercial terms, call "show_commercial_terms" first, then guide them step by step through:
   1. Lead time: Ask "What's your desired lead time?" and use "set_lead_time" with their response
@@ -195,8 +197,6 @@ You have access to context-aware functions that change based on the current situ
 
 IMPORTANT: You have access to context-aware functions that change based on the current situation. Choose functions intelligently based on user intent and workflow context:
 - For file uploads, use "show_upload_form"
-- For BOM analysis, use "analyse_bom",
-- For showing BOM analysis, use "show_bom_analysis"
 - For commercial terms, use "show_commercial_terms"
 - For RFQ preview/summary, use "show_rfq_preview"
 - For navigation, use "navigate_to" with appropriate destinations
@@ -234,6 +234,8 @@ Always call the appropriate function based on user requests.`,
             setTimeout(() => {
                 setIsInitialized(true);
                 setIsConnecting(false);
+
+                dispatch(initializeVoice({ sendText }));
 
                 // Wait for fade in transition then send greeting
                 setTimeout(() => {
@@ -362,6 +364,7 @@ Always call the appropriate function based on user requests.`,
     const handleDisconnect = () => {
         disconnect();
         setIsInitialized(false);
+        dispatch(disconnectVoice());
         setLastMessage('');
         console.log('Disconnected from voice service');
     };

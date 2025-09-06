@@ -1,4 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, Zap, Settings, AlertCircle, CheckCircle } from 'lucide-react';
 import { RFQ } from '../../types';
@@ -21,13 +23,40 @@ const Step1DefineRequirement: React.FC<Step1DefineRequirementProps> = ({
   const { processDocument, loading } = useRFQ();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showAIAnimation, setShowAIAnimation] = useState(false);
+  const [shouldAutoProcess, setShouldAutoProcess] = useState(false);
+
+  const { isVoiceInitialized, sendText } = useSelector((state: RootState) => state.voice);
+
+  // Auto-process when voice upload is ready
+  useEffect(() => {
+    if (shouldAutoProcess && selectedFile && !loading.isLoading) {
+      console.log('🎙️ Auto-processing voice upload:', selectedFile.name);
+      handleProcessDocument();
+      setShouldAutoProcess(false);
+    }
+  }, [shouldAutoProcess, selectedFile, loading.isLoading]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
       setSelectedFile(file);
+
+      // Auto-process if voice initiated the upload
+      if (isVoiceInitialized && sendText) {
+        console.log('🎙️ Voice-initiated upload detected - will auto-process...');
+
+        // Send feedback to AI about the upload
+        setTimeout(() => {
+          sendText(`Context Update: User has uploaded the following files and these are ready for analysis:
+${acceptedFiles.map(file => `- ${file.name} (${file.type})`).join('\n')}
+
+The analysis is starting automatically. Please wait for the results.`);
+        }, 500);
+
+        setShouldAutoProcess(true);
+      }
     }
-  }, []);
+  }, [isVoiceInitialized, sendText]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -49,11 +78,16 @@ const Step1DefineRequirement: React.FC<Step1DefineRequirementProps> = ({
     try {
       setShowAIAnimation(true);
 
-      // The animation will run for 8 seconds, then call onNext
-      // In a real implementation, this would trigger the actual API call
-      // For now, we'll simulate the process
+      console.log('🔄 Starting document processing...', selectedFile.name);
+
+      // Make actual API call to backend
+      const result = await processDocument(rfq.id, selectedFile);
+
+      console.log('✅ Document processing completed:', result);
+
+      // Animation will complete and call onNext
     } catch (error) {
-      console.error('Error processing document:', error);
+      console.error('❌ Error processing document:', error);
       setShowAIAnimation(false);
     }
   };
