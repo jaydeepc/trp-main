@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
+import { useDispatch } from 'react-redux';
 import { RFQ, LoadingState, ErrorState, DocumentProcessingResult, RFQContextType } from '../types';
+import { setRFQData } from '../store/rfqSlice';
 import apiService from '../services/api';
 
 // Action types
@@ -115,8 +115,7 @@ interface RFQProviderProps {
 
 export function RFQProvider({ children }: RFQProviderProps) {
   const [state, dispatch] = useReducer(rfqReducer, initialState);
-
-  const { isVoiceInitialized, sendText } = useSelector((state: RootState) => state.voice);
+  const reduxDispatch = useDispatch();
 
   // Helper function to handle errors
   const handleError = useCallback((error: any, defaultMessage: string) => {
@@ -216,51 +215,101 @@ export function RFQProvider({ children }: RFQProviderProps) {
 
       const result = await apiService.updateRFQStep1(rfqId, file);
 
-      // Update the current RFQ with the processed data
-      if (result.rfq) {
-        dispatch({ type: 'UPDATE_RFQ', payload: result.rfq });
+      console.log('🔄 API Response received:', result);
+
+      // Dispatch API data to Redux store (backend returns { components, suppliers, insights })
+      if (result.components && result.suppliers) {
+        console.log('📊 Dispatching API data to Redux store...');
+        reduxDispatch(setRFQData({
+          components: result.components,
+          suppliers: result.suppliers,
+          insights: result.insights || []
+        }));
+        console.log('✅ API data dispatched to Redux store');
       }
 
       dispatch({ type: 'SET_LOADING', payload: { isLoading: false } });
 
-      // Send voice feedback if voice is initialized (voice-initiated processing)
-      if (isVoiceInitialized && sendText) {
-        const totalComponents = result.smartBoM?.length || 0;
-        const analysisType = result.processingInfo?.analysisType || 'Unknown';
+      const totalComponents = result.components?.length || 0;
+      const components = result.components || [];
 
-        const voiceFeedback = `Analysis Complete: BOM analysis has finished successfully. 
+      // Calculate analysis statistics
+      const compliantCount = components.filter((c: any) => c.complianceStatus === 'compliant').length;
+      const mediumRiskCount = components.filter((c: any) => c.riskFlag?.level === 'Medium').length;
+
+      // Calculate average ZBC variance
+      const avgVariance = components.length > 0 ? Math.round(
+        components.reduce((sum: number, c: any) => {
+          const variance = parseFloat(c.zbcVariance?.replace('%', '') || '0');
+          return sum + variance;
+        }, 0) / components.length
+      ) : 0;
+
+      // Build human-readable summary
+      let analysisSummary = [
+        `I've analyzed your Mercedes-Benz infotainment system BOM with ${totalComponents} components.`,
+        `${compliantCount} components are fully compliant with automotive standards.`,
+        mediumRiskCount > 0
+          ? `${mediumRiskCount} components have medium supply chain risk levels.`
+          : 'All components have low supply chain risk.',
+        `The average cost variance is ${avgVariance}% compared to should-cost targets.`,
+        '',
+      ].join('\n');
+
+      // Build detailed part-by-part analysis
+      let componentAnalysis = `Here's what I found for each part: `;
+
+      components.forEach((component: any, index: number) => {
+        componentAnalysis += `Component ${index + 1}: ${component.partName} (${component.partNumber}) - `;
+        componentAnalysis += `This ${component.material} component has ${component.complianceStatus} regulatory status with ${component.riskFlag?.level?.toLowerCase() || 'low'} supply chain risk. `;
+        componentAnalysis += `Current market price range is ${component.predictedMarketRange} with ${component.zbcVariance} variance from should-cost target of ${component.zbcShouldCost}. `;
+        componentAnalysis += `Our recommendation: ${component.aiSuggestedAlternative}. `;
+        componentAnalysis += `Confidence level: ${component.confidence}%. `;
+
+        // Add supplier information
+        const componentSuppliers = result.suppliers?.[component.id];
+        if (componentSuppliers && componentSuppliers.length > 0) {
+          componentAnalysis += `Available suppliers (${componentSuppliers.length}): `;
+
+          componentSuppliers.slice(0, 3).forEach((supplier: any, supplierIndex: number) => {
+            componentAnalysis += `${supplier.name} (${supplier.region}) - $${supplier.cost}, Trust Score: ${supplier.trustScore}/10, Risk: ${supplier.riskLevel}`;
+            if (supplierIndex < Math.min(2, componentSuppliers.length - 1)) componentAnalysis += '; ';
+          });
+
+          if (componentSuppliers.length > 3) {
+            componentAnalysis += `; Plus ${componentSuppliers.length - 3} more suppliers available`;
+          }
+        }
+        componentAnalysis += `.\n\n`;
+      });
+
+      const totalSuppliers = Object.values(result.suppliers || {}).reduce((sum: number, suppliers: any) => sum + suppliers.length, 0);
+      const supplierSummary = `\n\nSupplier Intelligence: I have ${totalSuppliers} verified suppliers available across all components with regional coverage and trust scoring. The system includes detailed supplier certifications, cost analysis, and risk assessments for procurement optimization.`;
+
+      const nextSteps = "\n\nNext steps:\nAnalysis results is displayed in the UI to the user. Share just a brief summary of the recommended alternatives.";
+
+      const voiceFeedback = `Analysis Complete: BOM analysis has finished successfully. 
 
 Results Summary:
 - ${totalComponents} components analyzed
-- Analysis type: ${analysisType}
+- Analysis type: BOM Processing
 - Processing completed successfully
 
-The analysis results are now available. Please call 'show_bom_analysis' function to display the results to the user.`;
+${analysisSummary}
 
-        setTimeout(() => {
-          sendText(voiceFeedback);
-        }, 500);
-      }
+Component Analysis:
+${componentAnalysis}
 
-      // Return a formatted result
+${supplierSummary}
+
+${nextSteps}`;
+
+
+      // Return formatted result WITH voice feedback for Step1 to use
       return {
         success: true,
         message: 'Document processed successfully',
-        data: {
-          processingInfo: result.processingInfo,
-          smartBoM: result.smartBoM,
-          analysisResults: {
-            analysis: {},
-            suggestions: {},
-            marketPrices: {}
-          },
-          summary: {
-            totalComponents: result.smartBoM?.length || 0,
-            analysisType: result.processingInfo?.analysisType || 'Unknown',
-            confidence: 'N/A',
-            processingTime: 'N/A'
-          }
-        }
+        summary: voiceFeedback
       };
     } catch (error) {
       handleError(error, 'Failed to process document');

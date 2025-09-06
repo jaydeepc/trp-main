@@ -2,12 +2,11 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, Zap, Settings, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, FileText, Zap, Settings, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { RFQ } from '../../types';
 import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
-import AIProcessingAnimation from '../common/AIProcessingAnimation';
 
 interface Step1DefineRequirementProps {
   rfq: RFQ;
@@ -22,7 +21,7 @@ const Step1DefineRequirement: React.FC<Step1DefineRequirementProps> = ({
 }) => {
   const { processDocument, loading } = useRFQ();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [showAIAnimation, setShowAIAnimation] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [shouldAutoProcess, setShouldAutoProcess] = useState(false);
 
   const { isVoiceInitialized, sendText } = useSelector((state: RootState) => state.voice);
@@ -76,26 +75,32 @@ The analysis is starting automatically. Please wait for the results.`);
     if (!selectedFile) return;
 
     try {
-      setShowAIAnimation(true);
+      setIsProcessing(true);
 
       console.log('🔄 Starting document processing...', selectedFile.name);
 
       // Make actual API call to backend
       const result = await processDocument(rfq.id, selectedFile);
 
-      console.log('✅ Document processing completed:', result);
+      console.log('✅ Document processing completed');
 
-      // Animation will complete and call onNext
+      // Send comprehensive voice feedback if available
+      if (isVoiceInitialized && sendText && result.summary) {
+        console.log('🎙️ Sending comprehensive analysis summary to voice...');
+        setTimeout(() => {
+          sendText(result.summary!);
+        }, 500);
+      }
+
+      // API completed - move to next step immediately
+      setIsProcessing(false);
+      onNext();
     } catch (error) {
       console.error('❌ Error processing document:', error);
-      setShowAIAnimation(false);
+      setIsProcessing(false);
     }
   };
 
-  const handleAnimationComplete = () => {
-    setShowAIAnimation(false);
-    onNext();
-  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -166,25 +171,6 @@ The analysis is starting automatically. Please wait for the results.`);
           </div>
         </div>
 
-        {/* Upload Progress */}
-        {loading.isLoading && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-dark-slate-gray">
-                {loading.message || 'Processing document...'}
-              </span>
-              <span className="text-sm text-medium-gray">
-                {loading.progress ? `${Math.round(loading.progress)}%` : ''}
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-accent-teal h-2 rounded-full transition-all duration-300"
-                style={{ width: `${loading.progress || 0}%` }}
-              />
-            </div>
-          </div>
-        )}
 
         {/* Action Buttons */}
         <div className="flex justify-between">
@@ -198,8 +184,8 @@ The analysis is starting automatically. Please wait for the results.`);
 
           <Button
             onClick={handleProcessDocument}
-            disabled={!selectedFile || loading.isLoading}
-            loading={loading.isLoading}
+            disabled={!selectedFile || isProcessing}
+            loading={isProcessing}
           >
             Process Document & Continue
           </Button>
@@ -223,13 +209,29 @@ The analysis is starting automatically. Please wait for the results.`);
         </div>
       </Card>
 
-      {/* AI Processing Animation */}
-      <AIProcessingAnimation
-        isVisible={showAIAnimation}
-        fileName={selectedFile?.name}
-        onComplete={handleAnimationComplete}
-        duration={8000}
-      />
+      {/* Processing Overlay with Blurred Background */}
+      {isProcessing && (
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl p-8 shadow-2xl max-w-sm w-full mx-4">
+            <div className="text-center space-y-4">
+              <Loader2 className="w-12 h-12 text-accent-teal animate-spin mx-auto" />
+              <div>
+                <h3 className="text-lg font-semibold text-dark-slate-gray mb-2">
+                  Analyzing BOM
+                </h3>
+                <p className="text-medium-gray">
+                  Processing your document with AI analysis...
+                </p>
+                {selectedFile && (
+                  <p className="text-sm text-accent-teal mt-2 font-medium">
+                    {selectedFile.name}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

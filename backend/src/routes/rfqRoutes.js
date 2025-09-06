@@ -13,7 +13,7 @@ function getMockData() {
   try {
     const fileContent = fs.readFileSync(mockDataPath, 'utf8');
     const data = JSON.parse(fileContent);
-    
+
     console.log(`✅ Successfully loaded Mercedes-Benz mock data: ${data.components.length} components`);
     return data;
   } catch (error) {
@@ -145,7 +145,7 @@ router.put('/:id/analyse', authenticateUser, documentProcessor.getUploadMiddlewa
     console.log(`🔄 Processing document: ${req.file.originalname}`);
 
     // Simulate processing delay (10 seconds like frontend expects)
-    await new Promise(resolve => setTimeout(resolve, 10000));
+    await new Promise(resolve => setTimeout(resolve, 20000));
 
     // Get mock BOM analysis data from frontend
     const mockData = getMockData();

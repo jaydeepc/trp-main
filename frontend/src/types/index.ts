@@ -94,27 +94,7 @@ export interface RFQSummary {
 export interface DocumentProcessingResult {
   success: boolean;
   message: string;
-  data: {
-    processingInfo: ProcessingInfo;
-    smartBoM: SmartBOMComponent[];
-    analysisResults: AnalysisResults;
-    summary: ProcessingSummary;
-  };
-}
-
-export interface ProcessingInfo {
-  fileName: string;
-  fileType: string;
-  fileCategory: string;
-  fileSize: number;
-  processingMode: 'mock' | 'gemini';
-  timestamp: string;
-}
-
-export interface AnalysisResults {
-  analysis: any;
-  suggestions: any;
-  marketPrices: any;
+  summary?: string;
 }
 
 export interface ProcessingSummary {
