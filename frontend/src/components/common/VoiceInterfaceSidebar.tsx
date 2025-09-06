@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mic, MicOff, PhoneOff, Sparkles } from 'lucide-react';
 import { useLiveAPIContext } from '../../contexts/LiveAPIContext';
 import { useCommercialTermsContext, CommercialTermsData } from '../../contexts/CommercialTermsContext';
@@ -8,6 +9,7 @@ import Button from './Button';
 import Toast from './Toast';
 import useInitialEffect from '../../hooks/useInitialEffect';
 import voiceFunctionRegistry from '../../services/voiceFunctionRegistry';
+import voiceActionService from '../../services/voiceActionService';
 import UploadFormWindow from '../voice/UploadFormWindow';
 import BOMAnalysisWindow from '../voice/BOMAnalysisWindow';
 import CommercialTermsWindow from '../voice/CommercialTermsWindow';
@@ -16,8 +18,11 @@ import FloatingOverlayManager from './FloatingOverlayManager';
 import DetailWindow from '../voice/DetailWindow';
 
 const VoiceInterfaceSidebar: React.FC = () => {
+    const navigate = useNavigate();
+
     const { client, connected, connect, disconnect, volume, setConfig, config, sendText } = useLiveAPIContext();
     const { updateField: updateCommercialTermsField } = useCommercialTermsContext();
+
     const [isMuted, setIsMuted] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [lastMessage, setLastMessage] = useState<string>('');
@@ -45,12 +50,6 @@ const VoiceInterfaceSidebar: React.FC = () => {
 
     // Get conversation state for uploaded files
     const conversationState = voiceFunctionRegistry.getConversationState();
-
-    // Navigation helper
-    const navigateTo = (destination: string) => {
-        console.log(`Navigate to ${destination} requested`);
-        // Add actual navigation logic here if needed
-    };
 
     // Notification helper
     const showNotification = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
@@ -120,8 +119,11 @@ const VoiceInterfaceSidebar: React.FC = () => {
         }
     }, [showUploadForm]);
 
-    // Initialize voice function registry
+    // Initialize voice action service and voice function registry
     useInitialEffect(() => {
+        console.log('🔧 Initializing voice action service...');
+        voiceActionService.initialize();
+
         console.log('🔧 Initializing voice function registry...');
 
         // Wrapper function to handle type conversion
@@ -136,16 +138,16 @@ const VoiceInterfaceSidebar: React.FC = () => {
         };
 
         voiceFunctionRegistry.initialize({
+            voiceActionService,
             setShowUploadForm,
             setCurrentStep,
-            navigateTo,
             updateFiles,
             showNotification,
             setShowSystemInfo,
             setShowDetailModal,
             updateCommercialTermsField: handleCommercialTermsFieldUpdate
         });
-    }, [updateCommercialTermsField]);
+    }, [navigate, updateCommercialTermsField]);
 
     // Set config and connect - using useInitialEffect to prevent multiple calls
     useInitialEffect(() => {

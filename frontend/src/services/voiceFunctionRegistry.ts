@@ -36,9 +36,9 @@ export interface UploadedFile {
 }
 
 export interface StateUpdateCallbacks {
+    voiceActionService: any;
     setShowUploadForm: (show: boolean) => void;
     setCurrentStep: (step: number) => void;
-    navigateTo: (destination: string) => void;
     updateFiles: (files: UploadedFile[]) => void;
     showNotification: (
         message: string,
@@ -205,24 +205,6 @@ class VoiceFunctionRegistry {
 
     // Register default functions for Step 1
     private registerDefaultFunctions() {
-        // Test Function
-        // this.registerFunction({
-        //     name: 'say_hi',
-        //     description:
-        //         'Call this function whenever the user says "hi" or any greeting.',
-        //     parameters: {
-        //         type: 'object',
-        //         properties: {
-        //             greeting: {
-        //                 type: 'string',
-        //                 description: 'The greeting the user said',
-        //             },
-        //         },
-        //         required: ['greeting'],
-        //     },
-        //     function: this.sayHi.bind(this),
-        // });
-
         // UI Control Functions
         this.registerFunction({
             name: 'show_upload_form',
@@ -622,30 +604,17 @@ class VoiceFunctionRegistry {
             throw new Error('Callbacks not initialized');
         }
 
-        // Close other UI elements first
-        this.callbacks.setShowSystemInfo(false);
-        this.callbacks.setCurrentStep(1);
-
-        // Then show upload form
-        this.callbacks.setShowUploadForm(true);
-
-        if (args.focus) {
-            // Focus on upload area after a short delay
-            setTimeout(() => {
-                const uploadArea = document.querySelector(
-                    '[data-upload-area]'
-                ) as HTMLElement;
-                if (uploadArea) {
-                    uploadArea.focus();
-                }
-            }, 100);
-        }
+        console.log(
+            'Voice: Using voiceActionService to navigate to RFQ creation\nReason:',
+            args.reason
+        );
+        
+        // Use voiceActionService to handle navigation
+        await this.callbacks.voiceActionService.executeVoiceCommand('show_upload_form', args);
 
         return {
-            success: true,
-            message: 'Upload form displayed',
-            action: 'show_upload_form',
-            reason: args.reason || 'User requested document upload',
+            message:
+                "Perfect! I've opened the RFQ creation page where you can upload your documents. You can drag and drop files or click to browse and select your BOM or design files.",
         };
     }
 
@@ -807,7 +776,8 @@ class VoiceFunctionRegistry {
 
         return {
             success: true,
-            message: 'RFQ preview interface displayed. You can now review the complete summary of your request for quote.',
+            message:
+                'RFQ preview interface displayed. You can now review the complete summary of your request for quote.',
             action: 'show_rfq_preview',
             reason: args.reason || 'User requested RFQ preview',
         };
@@ -833,29 +803,28 @@ class VoiceFunctionRegistry {
             throw new Error('Callbacks not initialized');
         }
 
-        const destinations = {
-            dashboard: () => this.callbacks!.navigateTo('dashboard'),
-            'rfq-wizard': () => this.callbacks!.navigateTo('rfq-wizard'),
-            'bom-review': () => this.callbacks!.setCurrentStep(2),
-            'commercial-terms': () => this.callbacks!.setCurrentStep(3),
-            preview: () => this.callbacks!.setCurrentStep(4),
-        };
-
-        if (destinations[args.destination as keyof typeof destinations]) {
-            destinations[args.destination as keyof typeof destinations]();
-
-            // Update conversation state
-            this.updateState('NAVIGATE_TO', { destination: args.destination });
-
-            return {
-                success: true,
-                message: `Navigated to ${args.destination}`,
-                destination: args.destination,
-                step: args.step,
-            };
+        // Use voiceActionService for external navigation, direct callbacks for internal navigation
+        if (args.destination === 'dashboard' || args.destination === 'create-rfq') {
+            await this.callbacks.voiceActionService.executeVoiceCommand('navigate_to', args);
+        } else if (args.destination === 'bom-review') {
+            this.callbacks.setCurrentStep(2);
+        } else if (args.destination === 'commercial-terms') {
+            this.callbacks.setCurrentStep(3);
+        } else if (args.destination === 'preview') {
+            this.callbacks.setCurrentStep(4);
+        } else {
+            throw new Error(`Invalid destination: ${args.destination}`);
         }
 
-        throw new Error(`Invalid destination: ${args.destination}`);
+        // Update conversation state
+        this.updateState('NAVIGATE_TO', { destination: args.destination });
+
+        return {
+            success: true,
+            message: `Navigated to ${args.destination}`,
+            destination: args.destination,
+            step: args.step,
+        };
     }
 
     private async getUploadedFiles() {

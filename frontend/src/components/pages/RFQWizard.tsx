@@ -12,7 +12,7 @@ import Step3CommercialTerms from '../forms/Step3CommercialTerms';
 import Step4PreviewRFQ from '../forms/Step4PreviewRFQ';
 
 interface RFQWizardProps {
-  rfqId: string;
+  rfqId?: string;
   onBackToDashboard: () => void;
 }
 
@@ -25,7 +25,7 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
   const [selectedCompliance, setSelectedCompliance] = useState<string[]>(['ISO 9001', 'RoHS']);
 
   useEffect(() => {
-    if (rfqId) {
+    if (rfqId && rfqId !== 'new') {
       fetchRFQ(rfqId);
     }
   }, [rfqId, fetchRFQ]);
