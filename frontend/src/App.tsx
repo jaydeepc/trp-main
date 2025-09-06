@@ -1,11 +1,12 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { LiveAPIProvider } from "./contexts/LiveAPIContext";
-import { RFQProvider } from "./contexts/RFQContext";
+import { RFQProvider, useRFQ } from "./contexts/RFQContext";
 import { CommercialTermsProvider } from "./contexts/CommercialTermsContext";
 import Layout from "./components/layout/Layout";
-import LandingPage from "./pages/LandingPage";
-import InteractionPage from "./pages/InteractionPage";
 import Dashboard from "./components/pages/Dashboard";
+import RFQWizard from "./components/pages/RFQWizard";
+import { useEffect } from "react";
+import voiceAppCommandBus from "./services/VoiceAppCommandBus";
 
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
 if (typeof API_KEY !== "string") {
@@ -15,44 +16,131 @@ if (typeof API_KEY !== "string") {
 const host = "generativelanguage.googleapis.com";
 const uri = `wss://${host}/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent`;
 
-function App() {
-  const handleNavigateToDashboard = () => {
-    console.log('Navigate to Dashboard clicked');
+// Main App Routes Component (inside Router context)
+const AppRoutes: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleCreateRFQ = () => {
+    console.log('Creating new RFQ');
+    navigate('/create-rfq');
   };
 
+  const handleViewRFQ = (rfqId: string) => {
+    console.log('Viewing existing RFQ:', rfqId);
+    navigate(`/rfq?rfqId=${rfqId}`);
+  };
+
+  const handleBackToDashboard = () => {
+    navigate('/');
+  };
+
+  return (
+    <Routes>
+      {/* Dashboard Route */}
+      <Route
+        path="/"
+        element={
+          <Dashboard onCreateRFQ={handleCreateRFQ} onViewRFQ={handleViewRFQ} />
+        }
+      />
+
+      {/* RFQ Routes */}
+      <Route
+        path="/rfq-wizard/:rfqId"
+        element={
+          <RFQWizard rfqId={""} onBackToDashboard={handleBackToDashboard} />
+        }
+      />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
+function App() {
   return (
     <LiveAPIProvider url={uri} apiKey={API_KEY}>
       <RFQProvider>
         <CommercialTermsProvider>
-          <Layout handleNavigateToDashboard={handleNavigateToDashboard}>
-            <Router>
-              <div className="App">
-                <Routes>
-                  {/* Landing Page Route */}
-                  <Route
-                    path="/"
-                    element={
-                      <Dashboard onCreateRFQ={() => console.log('Create RFQ')} onViewRFQ={(id) => console.log('View RFQ:', id)} />
-                    }
-                  />
-
-                  {/* Live API Voice Console Route */}
-                  <Route
-                    path="/interaction"
-                    element={
-                      <InteractionPage />
-                    }
-                  />
-
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </div>
-            </Router>
-          </Layout>
+          <Router>
+            <AppContent />
+          </Router>
         </CommercialTermsProvider>
       </RFQProvider>
     </LiveAPIProvider>
   );
 }
+
+// Component that has access to navigation inside Router context
+const AppContent: React.FC = () => {
+  const navigate = useNavigate();
+  const { createRFQ } = useRFQ();
+
+  const handleCreateRFQ = async () => {
+    console.log('Header: Creating new RFQ');
+    const newRFQ = await createRFQ();
+    navigate(`/rfq-wizard/${newRFQ.id}`);
+  };
+
+  // Register app commands with voice command bus
+  useEffect(() => {
+    // Register createRFQ command
+    voiceAppCommandBus.registerAppCommand('createRFQ', async () => {
+      try {
+        const newRFQ = await createRFQ();
+        navigate(`/rfq-wizard/${newRFQ.id}`);
+
+        // Send feedback to voice
+        voiceAppCommandBus.sendVoiceFeedback('rfqCreated', {
+          rfq: newRFQ,
+          message: `RFQ ${newRFQ.id} created successfully`
+        });
+
+        return {
+          success: true,
+          message: 'RFQ created and navigated to wizard',
+          data: newRFQ
+        };
+      } catch (error) {
+        return {
+          success: false,
+          message: 'Failed to create RFQ',
+          data: error
+        };
+      }
+    });
+
+    // Register navigation commands
+    voiceAppCommandBus.registerAppCommand('navigateTo', async ({ destination }) => {
+      const routeMap: Record<string, string> = {
+        'dashboard': '/',
+        'create-rfq': '/create-rfq',
+        'home': '/'
+      };
+
+      const route = routeMap[destination] || destination;
+      navigate(route);
+
+      voiceAppCommandBus.sendVoiceFeedback('navigationCompleted', {
+        destination,
+        route
+      });
+
+      return {
+        success: true,
+        message: `Navigated to ${destination}`,
+        data: { destination, route }
+      };
+    });
+
+    console.log('📡 App commands registered with Voice Command Bus');
+  }, [navigate, createRFQ]);
+
+  return (
+    <Layout handleNavigateToDashboard={handleCreateRFQ}>
+      <AppRoutes />
+    </Layout>
+  );
+};
 
 export default App;
