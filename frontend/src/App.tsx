@@ -62,13 +62,13 @@ function App() {
   return (
     <ReduxProvider store={store}>
       <LiveAPIProvider url={uri} apiKey={API_KEY}>
-        <RFQProvider>
-          <CommercialTermsProvider>
-            <Router>
+        <CommercialTermsProvider>
+          <Router>
+            <RFQProvider>
               <AppContent />
-            </Router>
-          </CommercialTermsProvider>
-        </RFQProvider>
+            </RFQProvider>
+          </Router>
+        </CommercialTermsProvider>
       </LiveAPIProvider>
     </ReduxProvider>
   );

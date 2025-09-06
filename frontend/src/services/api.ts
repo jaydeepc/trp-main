@@ -125,9 +125,9 @@ class APIService {
         file: File,
         analysisType?: string
     ): Promise<{
-        rfq: RFQ;
-        smartBoM: any[];
-        processingInfo: any;
+        components: any[];
+        suppliers: any;
+        insights: string[];
     }> {
         const formData = new FormData();
         formData.append('document', file);

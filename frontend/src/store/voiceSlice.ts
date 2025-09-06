@@ -20,9 +20,14 @@ const voiceSlice = createSlice({
                 sendText: (message: string) => void;
             }>
         ) => {
+            console.log({ action });
+            console.log('sendText function:', action.payload.sendText);
+
             state.isVoiceInitialized = true;
             state.sendText = action.payload.sendText;
+            
             console.log('🎙️ Redux: Voice initialized');
+            console.log('sendText in state:', state.sendText);
         },
         disconnectVoice: (state) => {
             state.isVoiceInitialized = false;
