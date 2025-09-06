@@ -17,13 +17,12 @@ const host = "generativelanguage.googleapis.com";
 const uri = `wss://${host}/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent`;
 
 // Main App Routes Component (inside Router context)
-const AppRoutes: React.FC = () => {
-  const navigate = useNavigate();
+interface AppRoutesProps {
+  handleCreateRFQ: () => Promise<void>;
+}
 
-  const handleCreateRFQ = () => {
-    console.log('Creating new RFQ');
-    navigate('/create-rfq');
-  };
+const AppRoutes: React.FC<AppRoutesProps> = ({ handleCreateRFQ }) => {
+  const navigate = useNavigate();
 
   const handleViewRFQ = (rfqId: string) => {
     console.log('Viewing existing RFQ:', rfqId);
@@ -138,7 +137,7 @@ const AppContent: React.FC = () => {
 
   return (
     <Layout handleNavigateToDashboard={handleCreateRFQ}>
-      <AppRoutes />
+      <AppRoutes handleCreateRFQ={handleCreateRFQ}/>
     </Layout>
   );
 };
