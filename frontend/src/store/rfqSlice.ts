@@ -1,5 +1,4 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { components as mockComponents, suppliers as mockSuppliers } from '../data/mockBOMData';
 
 // Component interface
 interface Component {
@@ -46,6 +45,7 @@ export interface RFQState {
     suppliers: Record<string, Supplier[]>;
     insights: string[];
     currentRFQId?: string;
+    currentStep: number;
     isLoading: boolean;
     error?: string;
 }
@@ -54,6 +54,7 @@ const initialState: RFQState = {
     components: [],
     suppliers: {},
     insights: [],
+    currentStep: 1,
     isLoading: false,
 };
 
@@ -80,11 +81,13 @@ const rfqSlice = createSlice({
             action: PayloadAction<{ id: string; updates: Partial<Component> }>
         ) => {
             const { id, updates } = action.payload;
-            const componentIndex = state.components.findIndex(c => c.id === id);
+            const componentIndex = state.components.findIndex(
+                (c) => c.id === id
+            );
             if (componentIndex !== -1) {
-                state.components[componentIndex] = { 
-                    ...state.components[componentIndex], 
-                    ...updates 
+                state.components[componentIndex] = {
+                    ...state.components[componentIndex],
+                    ...updates,
                 };
             }
         },
@@ -101,16 +104,21 @@ const rfqSlice = createSlice({
         setCurrentRFQ: (state, action: PayloadAction<string>) => {
             state.currentRFQId = action.payload;
         },
+        setCurrentStep: (state, action: PayloadAction<number>) => {
+            state.currentStep = action.payload;
+            console.log('📊 Redux: Current step updated to', action.payload);
+        },
     },
 });
 
-export const { 
-    setRFQData, 
-    updateComponent, 
-    setLoading, 
-    setError, 
+export const {
+    setRFQData,
+    updateComponent,
+    setLoading,
+    setError,
     clearError,
-    setCurrentRFQ 
+    setCurrentRFQ,
+    setCurrentStep,
 } = rfqSlice.actions;
 
 export default rfqSlice.reducer;

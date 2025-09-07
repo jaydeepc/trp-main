@@ -227,17 +227,6 @@ class VoiceFunctionRegistry {
         });
 
         this.registerFunction({
-            name: 'hide_upload_form',
-            description: 'Hide the document upload form',
-            parameters: {
-                type: 'object',
-                properties: {},
-                required: [],
-            },
-            function: this.hideUploadForm.bind(this),
-        });
-
-        this.registerFunction({
             name: 'show_bom_analysis',
             description:
                 'Show the BOM analysis interface to review and analyze uploaded files',
@@ -255,17 +244,6 @@ class VoiceFunctionRegistry {
         });
 
         this.registerFunction({
-            name: 'hide_bom_analysis',
-            description: 'Hide the BOM analysis interface',
-            parameters: {
-                type: 'object',
-                properties: {},
-                required: [],
-            },
-            function: this.hideBOMAnalysis.bind(this),
-        });
-
-        this.registerFunction({
             name: 'show_commercial_terms',
             description:
                 'Show the commercial terms interface to define payment and compliance requirements',
@@ -280,17 +258,6 @@ class VoiceFunctionRegistry {
                 required: [],
             },
             function: this.showCommercialTerms.bind(this),
-        });
-
-        this.registerFunction({
-            name: 'hide_commercial_terms',
-            description: 'Hide the commercial terms interface',
-            parameters: {
-                type: 'object',
-                properties: {},
-                required: [],
-            },
-            function: this.hideCommercialTerms.bind(this),
         });
 
         this.registerFunction({
@@ -609,88 +576,29 @@ class VoiceFunctionRegistry {
         };
     }
 
-    private async hideUploadForm() {
-        if (!this.callbacks) {
-            throw new Error('Callbacks not initialized');
-        }
-
-        this.callbacks.setShowUploadForm(false);
-
-        return {
-            success: true,
-            message: 'Upload form hidden',
-            action: 'hide_upload_form',
-        };
-    }
-
     private async showBOMAnalysis(args: { reason?: string }) {
         if (!this.callbacks) {
             throw new Error('Callbacks not initialized');
         }
 
         console.log('showBOMAnalysis called with args:', args);
-        console.log(
-            'Current uploaded files:',
-            this.conversationState.uploadedFiles.length
+        console.log('Navigating to Step 2 BOM Analysis in main wizard');
+
+        // Use voiceActionService to navigate to Step 2 in the main wizard
+        await this.callbacks.voiceActionService.executeVoiceCommand(
+            'navigate_to_step',
+            { step: 2, destination: 'bom-analysis' }
         );
-        console.log('Current conversation state:', this.conversationState);
-
-        // Check if there are uploaded files first
-        if (this.conversationState.uploadedFiles.length === 0) {
-            // No files uploaded, suggest uploading first
-            this.callbacks.showNotification(
-                'Please upload files first before analyzing BOM',
-                'info'
-            );
-
-            return {
-                success: true,
-                message:
-                    'To analyze a BOM, you need to upload files first. Would you like me to show the upload form?',
-                action: 'show_bom_analysis',
-                reason: args.reason || 'User requested BOM analysis',
-                requiresFiles: true,
-            };
-        }
-
-        // Close other UI elements first
-        this.callbacks.setShowSystemInfo(false);
-        this.callbacks.setShowUploadForm(false);
-
-        // Files are available, show BOM analysis
-        console.log('Setting current step to 2');
-        this.callbacks.setCurrentStep(2);
 
         // Also update internal state
         this.conversationState.currentStep = 2;
         this.updateState('STEP_CHANGED', { step: 2 });
 
-        this.callbacks.showNotification(
-            'BOM Analysis interface opened',
-            'success'
-        );
-
         return {
             success: true,
-            message:
-                'BOM analysis interface displayed. You can now review your uploaded files.',
+            message: 'Navigated to BOM Analysis step in the main wizard. You can now analyze your bill of materials and make any necessary adjustments.',
             action: 'show_bom_analysis',
             reason: args.reason || 'User requested BOM analysis',
-        };
-    }
-
-    private async hideBOMAnalysis() {
-        if (!this.callbacks) {
-            throw new Error('Callbacks not initialized');
-        }
-
-        // Reset back to step 1
-        this.callbacks.setCurrentStep(1);
-
-        return {
-            success: true,
-            message: 'BOM analysis interface hidden',
-            action: 'hide_bom_analysis',
         };
     }
 
@@ -700,44 +608,23 @@ class VoiceFunctionRegistry {
         }
 
         console.log('showCommercialTerms called with args:', args);
-        console.log('Setting current step to 3');
+        console.log('Navigating to Step 3 Commercial Terms in main wizard');
 
-        // Close other UI elements first
-        this.callbacks.setShowSystemInfo(false);
-        this.callbacks.setShowUploadForm(false);
-
-        // Set current step to 3 for commercial terms
-        this.callbacks.setCurrentStep(3);
+        // Use voiceActionService to navigate to Step 3 in the main wizard
+        await this.callbacks.voiceActionService.executeVoiceCommand(
+            'navigate_to_step',
+            { step: 3, destination: 'commercial-terms' }
+        );
 
         // Also update internal state
         this.conversationState.currentStep = 3;
         this.updateState('STEP_CHANGED', { step: 3 });
 
-        this.callbacks.showNotification(
-            'Commercial Terms interface opened',
-            'success'
-        );
-
         return {
             success: true,
-            message: 'Commercial terms interface displayed',
+            message: 'Navigated to Commercial Terms step in the main wizard. You can now set up your payment terms, delivery location, and compliance requirements using the comprehensive form.',
             action: 'show_commercial_terms',
             reason: args.reason || 'User requested commercial terms',
-        };
-    }
-
-    private async hideCommercialTerms() {
-        if (!this.callbacks) {
-            throw new Error('Callbacks not initialized');
-        }
-
-        // Reset back to step 1
-        this.callbacks.setCurrentStep(1);
-
-        return {
-            success: true,
-            message: 'Commercial terms interface hidden',
-            action: 'hide_commercial_terms',
         };
     }
 
