@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
-import { setCurrentStep } from '../../store/rfqSlice';
-import { ArrowLeft, Upload, FileText, Settings, Eye, CheckCircle, AlertTriangle, TrendingUp, Calendar, CreditCard, MapPin, Shield, Send } from 'lucide-react';
-import { useRFQ } from '../../contexts/RFQContext';
-import { StepConfig } from '../../types';
-import StepIndicator from '../common/StepIndicator';
-import Button from '../common/Button';
-import Card from '../common/Card';
-import Loading from '../common/Loading';
-import Step1DefineRequirement from '../forms/Step1DefineRequirement';
-import Step2SmartBOMReview from '../forms/Step2SmartBOMReview';
-import Step3CommercialTerms from '../forms/Step3CommercialTerms';
-import Step4PreviewRFQ from '../forms/Step4PreviewRFQ';
+import { RootState } from '../store';
+import { setCurrentStep } from '../store/rfqSlice';
+import { ArrowLeft, Upload, FileText, Settings, Eye } from 'lucide-react';
+import { useRFQ } from '../contexts/RFQContext';
+import { StepConfig } from '../types';
+import StepIndicator from '../components/common/StepIndicator';
+import Button from '../components/common/Button';
+import Card from '../components/common/Card';
+import Loading from '../components/common/Loading';
+import Step1DefineRequirement from '../components/forms/Step1DefineRequirement';
+import Step2SmartBOMReview from '../components/forms/Step2SmartBOMReview';
+import Step3CommercialTerms from '../components/forms/Step3CommercialTerms';
+import Step4PreviewRFQ from '../components/forms/Step4PreviewRFQ';
 
 interface RFQWizardProps {
   rfqId?: string;
@@ -25,11 +25,6 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
   const currentStep = useSelector((state: RootState) => state.rfq.currentStep);
 
   const { currentRFQ, loading, error, fetchRFQ } = useRFQ();
-
-  const [selectedAnalysisType, setSelectedAnalysisType] = useState<string>('');
-  const [selectedLeadTime, setSelectedLeadTime] = useState<string>('6-8 weeks');
-  const [selectedPaymentTerms, setSelectedPaymentTerms] = useState<string>('Net 30');
-  const [selectedCompliance, setSelectedCompliance] = useState<string[]>(['ISO 9001', 'RoHS']);
 
   useEffect(() => {
     if (rfqId && rfqId !== 'new') {
@@ -88,14 +83,6 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
     if (currentStep > 1) {
       dispatch(setCurrentStep(currentStep - 1));
     }
-  };
-
-  const handleComplianceToggle = (cert: string) => {
-    setSelectedCompliance(prev =>
-      prev.includes(cert)
-        ? prev.filter(c => c !== cert)
-        : [...prev, cert]
-    );
   };
 
   const getStepIcon = (stepNumber: number) => {

@@ -14,7 +14,6 @@ import {
     Minus,
     ChevronRight,
     Star,
-    Clock,
     Target,
     Zap
 } from 'lucide-react';

@@ -345,7 +345,7 @@ Always call the appropriate function based on user requests.`,
                         <AudioVisualization
                             isListening={connected && !isMuted}
                             isSpeaking={isSpeaking}
-                            audioLevel={volume || 0}
+                            audioLevel={isSpeaking ? (volume || 0) : (inVolume || 0)}
                             size={220}
                             className="mb-6"
                         />

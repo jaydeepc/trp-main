@@ -92,19 +92,19 @@ const AudioVisualization: React.FC<AudioVisualizationProps> = ({
     const idleColor = { r: 59, g: 130, b: 246 }; // Blue
     const listeningColor = { r: 59, g: 130, b: 246 }; // Blue
     const speakingColor = { r: 20, g: 184, b: 166 }; // Teal
-    
+
     let targetColor = idleColor;
     if (state === 'listening') {
       targetColor = listeningColor;
     } else if (state === 'speaking') {
       targetColor = speakingColor;
     }
-    
+
     // Smooth color interpolation
     const r = Math.round(idleColor.r + (targetColor.r - idleColor.r) * transitionFactor);
     const g = Math.round(idleColor.g + (targetColor.g - idleColor.g) * transitionFactor);
     const b = Math.round(idleColor.b + (targetColor.b - idleColor.b) * transitionFactor);
-    
+
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
 
@@ -126,26 +126,30 @@ const AudioVisualization: React.FC<AudioVisualizationProps> = ({
     const centerY = size / 2;
 
     // Smooth transition logic
-    const isCurrentlyActive = isListening || isSpeaking;
-    
+    const isCurrentlyActive = (isListening && audioLevel > 0.1) || isSpeaking;
+
     if (isCurrentlyActive) {
       lastActiveRef.current = timeRef.current;
     }
-    
+
     // Calculate smooth transition factor (0 = idle, 1 = fully active)
     const timeSinceActive = timeRef.current - lastActiveRef.current;
     const fadeOutDuration = 1.5; // 1.5 seconds fade out
-    
+
     let targetTransition = isCurrentlyActive ? 1 : Math.max(0, 1 - (timeSinceActive / fadeOutDuration));
-    
+
     // Smooth interpolation towards target
     const transitionSpeed = 0.05;
-    setTransitionFactor(prev => prev + (targetTransition - prev) * transitionSpeed);
+    setTransitionFactor(prev => {
+      const newValue = prev + (targetTransition - prev) * transitionSpeed;
+      // Clamp to avoid floating point precision issues
+      return Math.max(0, Math.min(1, newValue));
+    });
 
     // Determine base state for color mixing
     let primaryState: 'idle' | 'listening' | 'speaking' = 'idle';
     if (isSpeaking) primaryState = 'speaking';
-    else if (isListening || transitionFactor > 0.1) primaryState = 'listening';
+    else if ((isListening && audioLevel > 0.1) || transitionFactor > 0.1) primaryState = 'listening';
 
     // Animation parameters based on transition
     const baseRadius = size * 0.35;
@@ -189,7 +193,7 @@ const AudioVisualization: React.FC<AudioVisualizationProps> = ({
       // Keep consistent opacity
       let particleOpacity = particle.opacity;
       if (primaryState === 'listening') {
-        particleOpacity *= (Math.sin(particle.phase) * 0.2 + 0.8); // Gentle shimmer
+        particleOpacity *= (Math.sin(particle.phase) * 0.3 + 0.8); // Gentle shimmer
       } else if (primaryState === 'speaking') {
         particleOpacity *= (Math.sin(particle.phase * 2) * 0.3 + 0.7); // Slightly more dynamic
       }
@@ -231,18 +235,18 @@ const AudioVisualization: React.FC<AudioVisualizationProps> = ({
 
     // Get device pixel ratio for crisp rendering on high DPI screens
     const dpr = window.devicePixelRatio || 1;
-    
+
     // Set actual canvas size (high resolution)
     canvas.width = size * dpr;
     canvas.height = size * dpr;
-    
+
     // Scale context for high DPI
     ctx.scale(dpr, dpr);
-    
+
     // Set CSS size (what user sees)
     canvas.style.width = `${size}px`;
     canvas.style.height = `${size}px`;
-    
+
     // Enable anti-aliasing
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';

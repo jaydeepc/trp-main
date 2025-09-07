@@ -3,9 +3,9 @@ import { Provider as ReduxProvider } from 'react-redux';
 import { store } from './store';
 import { LiveAPIProvider } from "./contexts/LiveAPIContext";
 import { RFQProvider, useRFQ } from "./contexts/RFQContext";
-import Layout from "./components/layout/Layout";
-import Dashboard from "./components/pages/Dashboard";
-import RFQWizard from "./components/pages/RFQWizard";
+import Layout from "./layout/Layout";
+import Dashboard from "./pages/Dashboard";
+import RFQWizard from "./pages/RFQWizard";
 import { useEffect } from "react";
 import voiceAppCommandBus from "./services/VoiceAppCommandBus";
 
