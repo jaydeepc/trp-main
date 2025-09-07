@@ -4,7 +4,6 @@ import { useDispatch } from 'react-redux';
 import { initializeVoice, disconnectVoice } from '../../store/voiceSlice';
 import { Mic, MicOff, PhoneOff, Sparkles } from 'lucide-react';
 import { useLiveAPIContext } from '../../contexts/LiveAPIContext';
-import { useCommercialTermsContext, CommercialTermsData } from '../../contexts/CommercialTermsContext';
 import { AudioRecorder } from '../../lib/audio-recorder';
 import AudioVisualization from './AudioVisualization';
 import Button from './Button';
@@ -12,10 +11,6 @@ import Toast from './Toast';
 import useInitialEffect from '../../hooks/useInitialEffect';
 import voiceFunctionRegistry from '../../services/voiceFunctionRegistry';
 import voiceActionService from '../../services/voiceActionService';
-import UploadFormWindow from '../voice/UploadFormWindow';
-import BOMAnalysisWindow from '../voice/BOMAnalysisWindow';
-import CommercialTermsWindow from '../voice/CommercialTermsWindow';
-import RFQPreviewWindow from '../voice/RFQPreviewWindow';
 import FloatingOverlayManager from './FloatingOverlayManager';
 import DetailWindow from '../voice/DetailWindow';
 
@@ -24,7 +19,6 @@ const VoiceInterfaceSidebar: React.FC = () => {
     const dispatch = useDispatch();
 
     const { client, connected, connect, disconnect, volume, setConfig, config, sendText } = useLiveAPIContext();
-    const { updateField: updateCommercialTermsField } = useCommercialTermsContext();
 
     const [isMuted, setIsMuted] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -34,69 +28,19 @@ const VoiceInterfaceSidebar: React.FC = () => {
     const [audioRecorder] = useState(() => new AudioRecorder());
     const [isInitialized, setIsInitialized] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
-    const [isTransitioning, setIsTransitioning] = useState(false);
 
     // UI State for voice functions
-    const [showUploadForm, setShowUploadForm] = useState(false);
     const [showSystemInfo, setShowSystemInfo] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState<string | null>(null);
-    const [currentStep, setCurrentStep] = useState(1);
-    const [notifications, setNotifications] = useState<Array<{
-        id: string;
-        message: string;
-        type: 'info' | 'success' | 'error';
-        timestamp: Date;
-    }>>([]);
 
     // Track if any UI elements should be shown (determines if floating windows appear)
-    const hasFloatingElements = showUploadForm || showSystemInfo || showDetailModal || currentStep === 2 || currentStep === 3 || currentStep === 4;
+    const hasFloatingElements = showSystemInfo || showDetailModal;
 
-    // Get conversation state for uploaded files
-    const conversationState = voiceFunctionRegistry.getConversationState();
-
-    // Notification helper
-    const showNotification = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
-        const notification = {
-            id: `notification-${Date.now()}`,
-            message,
-            type,
-            timestamp: new Date()
-        };
-
-        setNotifications(prev => [...prev, notification]);
-
-        // Auto-remove notification after 5 seconds
-        setTimeout(() => {
-            setNotifications(prev => prev.filter(n => n.id !== notification.id));
-        }, 5000);
-
-        console.log(`Notification shown: ${message} (${type})`);
-    };
-
-    // Files update helper
-    const updateFiles = (files: any[]) => {
-        console.log('Files updated:', files);
-        voiceFunctionRegistry.updateState('FILES_UPDATED', files);
-    };
-
-    // Mutual exclusion logic for floating windows
-    useEffect(() => {
-        // When BOM analysis opens (currentStep === 2), close other windows
-        if (currentStep === 2) {
-            setShowDetailModal(null);
-            setShowSystemInfo(false);
-            setShowUploadForm(false);
-        }
-    }, [currentStep]);
 
     useEffect(() => {
         // When DetailWindow opens, close other windows
         if (showDetailModal) {
             setShowSystemInfo(false);
-            setShowUploadForm(false);
-            if (currentStep !== 1) {
-                setCurrentStep(1);
-            }
         }
     }, [showDetailModal]);
 
@@ -104,23 +48,8 @@ const VoiceInterfaceSidebar: React.FC = () => {
         // When SystemInfo opens, close other windows
         if (showSystemInfo) {
             setShowDetailModal(null);
-            setShowUploadForm(false);
-            if (currentStep !== 1) {
-                setCurrentStep(1);
-            }
         }
     }, [showSystemInfo]);
-
-    useEffect(() => {
-        // When UploadForm opens, close other windows
-        if (showUploadForm) {
-            setShowDetailModal(null);
-            setShowSystemInfo(false);
-            if (currentStep !== 1) {
-                setCurrentStep(1);
-            }
-        }
-    }, [showUploadForm]);
 
     // Initialize voice action service and voice function registry
     useInitialEffect(() => {
@@ -129,29 +58,14 @@ const VoiceInterfaceSidebar: React.FC = () => {
 
         console.log('🔧 Initializing voice function registry...');
 
-        // Wrapper function to handle type conversion
-        const handleCommercialTermsFieldUpdate = (field: string, value: any) => {
-            // Ensure field is a valid key of CommercialTermsData
-            if (field === 'desiredLeadTime' || field === 'paymentTerms' || field === 'deliveryLocation' ||
-                field === 'complianceRequirements' || field === 'additionalRequirements') {
-                updateCommercialTermsField(field as keyof CommercialTermsData, value);
-            } else {
-                console.warn(`Invalid commercial terms field: ${field}`);
-            }
-        };
 
         voiceFunctionRegistry.initialize({
             voiceActionService,
             dispatch,
-            setShowUploadForm,
-            setCurrentStep,
-            updateFiles,
-            showNotification,
             setShowSystemInfo,
-            setShowDetailModal,
-            updateCommercialTermsField: handleCommercialTermsFieldUpdate
+            setShowDetailModal
         });
-    }, [navigate, updateCommercialTermsField]);
+    }, [navigate]);
 
     // Set config and connect - using useInitialEffect to prevent multiple calls
     useInitialEffect(() => {
@@ -224,7 +138,6 @@ Always call the appropriate function based on user requests.`,
         }
 
         setIsConnecting(true);
-        setIsTransitioning(true);
 
         console.log('🔗 Attempting initial connection...');
         try {
@@ -240,7 +153,6 @@ Always call the appropriate function based on user requests.`,
 
                 // Wait for fade in transition then send greeting
                 setTimeout(() => {
-                    setIsTransitioning(false);
                     const initialGreeting = "Hello!";
                     console.log('Sending initial greeting to Robbie...');
                     sendText(initialGreeting);
@@ -251,7 +163,6 @@ Always call the appropriate function based on user requests.`,
             console.error('❌ Connection failed:', err.message || err);
             setError('Failed to connect to voice service');
             setIsConnecting(false);
-            setIsTransitioning(false);
         }
     };
 
@@ -481,37 +392,6 @@ Always call the appropriate function based on user requests.`,
             {/* Floating Windows Overlay */}
             {hasFloatingElements && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-6">
-                    {showUploadForm && (
-                        <UploadFormWindow
-                            onClose={() => voiceFunctionRegistry.executeFunction('hide_upload_form')}
-                            onFilesChange={updateFiles}
-                            sendText={sendText}
-                        />
-                    )}
-
-                    {currentStep === 2 && (
-                        <BOMAnalysisWindow
-                            onClose={() => voiceFunctionRegistry.executeFunction('hide_bom_analysis')}
-                            uploadedFiles={conversationState.uploadedFiles}
-                        />
-                    )}
-
-                    {currentStep === 3 && (
-                        <CommercialTermsWindow
-                            onClose={() => voiceFunctionRegistry.executeFunction('hide_commercial_terms')}
-                            onNext={() => setCurrentStep(4)}
-                            uploadedFiles={conversationState.uploadedFiles}
-                        />
-                    )}
-
-                    {currentStep === 4 && (
-                        <RFQPreviewWindow
-                            onClose={() => setCurrentStep(1)}
-                            onNext={() => setCurrentStep(1)}
-                            uploadedFiles={conversationState.uploadedFiles}
-                        />
-                    )}
-
                     {showSystemInfo && (
                         <FloatingOverlayManager onClose={() => setShowSystemInfo(false)} />
                     )}
@@ -533,25 +413,6 @@ Always call the appropriate function based on user requests.`,
                     isVisible={!!error}
                     onClose={() => setError('')}
                 />
-            )}
-
-            {/* Notifications */}
-            {notifications.length > 0 && (
-                <div className="fixed top-20 right-6 z-50 space-y-2">
-                    {notifications.map((notification) => (
-                        <div
-                            key={notification.id}
-                            className={`px-4 py-3 rounded-xl backdrop-blur-sm border ${notification.type === 'error'
-                                ? 'bg-red-500/20 border-red-500/40 text-red-100'
-                                : notification.type === 'success'
-                                    ? 'bg-green-500/20 border-green-500/40 text-green-100'
-                                    : 'bg-blue-500/20 border-blue-500/40 text-blue-100'
-                                }`}
-                        >
-                            {notification.message}
-                        </div>
-                    ))}
-                </div>
             )}
         </>
     );

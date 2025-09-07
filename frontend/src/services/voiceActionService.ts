@@ -58,18 +58,6 @@ class VoiceActionService {
                 'showSystemInfo',
                 params
             );
-        } else if (functionName === 'navigate_to_step') {
-            // Navigate to specific step in the main wizard using bus commands
-            const { step, destination } = params;
-            console.log(
-                `Navigating to step ${step} (${destination}) via command bus`
-            );
-
-            // Call command bus to navigate
-            return await voiceAppCommandBus.executeAppCommand(
-                'navigateToStep',
-                params
-            );
         } else {
             console.warn(`Unknown voice command: ${functionName}`);
             return {
