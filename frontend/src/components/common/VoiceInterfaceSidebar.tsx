@@ -142,6 +142,7 @@ const VoiceInterfaceSidebar: React.FC = () => {
 
         voiceFunctionRegistry.initialize({
             voiceActionService,
+            dispatch,
             setShowUploadForm,
             setCurrentStep,
             updateFiles,
