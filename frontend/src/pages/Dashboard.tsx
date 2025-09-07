@@ -4,12 +4,12 @@ import {
   BarChart3, Sparkles, Brain, Target, Globe,
   Activity, DollarSign, Users, Award, ArrowUpRight
 } from 'lucide-react';
-import { useRFQ } from '../../contexts/RFQContext';
-import Button from '../common/Button';
-import Card from '../common/Card';
-import SupplierTrustGraph from '../common/SupplierTrustGraph';
-import StaticMetricCard from '../common/StaticMetricCard';
-import InfoTooltip from '../common/InfoTooltip';
+import { useRFQ } from '../contexts/RFQContext';
+import Button from '../components/common/Button';
+import Card from '../components/common/Card';
+import SupplierTrustGraph from '../components/common/SupplierTrustGraph';
+import StaticMetricCard from '../components/common/StaticMetricCard';
+import InfoTooltip from '../components/common/InfoTooltip';
 
 interface DashboardProps {
   onCreateRFQ: () => void;

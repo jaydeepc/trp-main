@@ -1,6 +1,6 @@
 import React from 'react';
-import Header from '../common/Header';
-import VoiceInterfaceSidebar from '../common/VoiceInterfaceSidebar';
+import Header from '../components/common/Header';
+import VoiceInterfaceSidebar from '../components/common/VoiceInterfaceSidebar';
 
 interface LayoutProps {
     handleNavigateToDashboard: () => void;

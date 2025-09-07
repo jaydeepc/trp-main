@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { CheckCircle, AlertTriangle, XCircle, TrendingUp, TrendingDown, Info, Edit3, Sparkles, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, TrendingUp, TrendingDown, Info, Sparkles, Download } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import InfoTooltip from '../common/InfoTooltip';
 import { RootState } from '../../store';
@@ -26,9 +26,6 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
   const [notes, setNotes] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedComponent, setSelectedComponent] = useState<string>('1'); // Default to first component
-  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
-  const [editingCell, setEditingCell] = useState<{ rowId: string, column: string } | null>(null);
-  const [editValue, setEditValue] = useState<string>('');
 
   const handleContinue = async () => {
     try {
@@ -98,64 +95,6 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
     }
   };
 
-
-  // Excel-like sorting functionality
-  const handleSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const getSortedComponents = () => {
-    if (!sortConfig) return components;
-
-    return [...components].sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortConfig.key) {
-        case 'partName':
-          aValue = a.partName;
-          bValue = b.partName;
-          break;
-        case 'partNumber':
-          aValue = a.partNumber;
-          bValue = b.partNumber;
-          break;
-        case 'quantity':
-          aValue = a.quantity;
-          bValue = b.quantity;
-          break;
-        case 'zbcShouldCost':
-          aValue = parseFloat(a.zbcShouldCost?.replace(/[$,]/g, '') || '0');
-          bValue = parseFloat(b.zbcShouldCost?.replace(/[$,]/g, '') || '0');
-          break;
-        case 'confidence':
-          aValue = a.confidence || 0;
-          bValue = b.confidence || 0;
-          break;
-        case 'riskLevel':
-          const riskOrder = { Low: 1, Medium: 2, High: 3 };
-          aValue = riskOrder[a.riskFlag?.level as keyof typeof riskOrder] || 4;
-          bValue = riskOrder[b.riskFlag?.level as keyof typeof riskOrder] || 4;
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-  };
-
-  const sortedComponents = getSortedComponents();
-
   // Excel export functionality
   const exportToExcel = useCallback(() => {
     // Create CSV content (simple Excel compatibility)
@@ -178,7 +117,7 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
 
     const csvContent = [
       headers.join(','),
-      ...sortedComponents.map((component: any, index: number) => [
+      ...components.map((component: any, index: number) => [
         index + 1,
         `"${component.partName}"`,
         component.partNumber,
@@ -206,34 +145,7 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
-  }, [sortedComponents]);
-
-  // Inline editing functionality
-  const handleCellDoubleClick = (rowId: string, column: string, currentValue: string) => {
-    setEditingCell({ rowId, column });
-    setEditValue(currentValue);
-  };
-
-  const handleCellEdit = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      // Save the edit
-      setEditingCell(null);
-      setEditValue('');
-    } else if (e.key === 'Escape') {
-      // Cancel the edit
-      setEditingCell(null);
-      setEditValue('');
-    }
-  };
-
-  const renderSortIcon = (column: string) => {
-    if (!sortConfig || sortConfig.key !== column) {
-      return <ArrowUpDown className="w-3 h-3 opacity-30" />;
-    }
-    return sortConfig.direction === 'asc'
-      ? <ArrowUp className="w-3 h-3 text-blue-600" />
-      : <ArrowDown className="w-3 h-3 text-blue-600" />;
-  };
+  }, [components]);
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -251,7 +163,7 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-4">
             <h3 className="text-lg font-semibold text-dark-slate-gray">Smart BOM Data</h3>
-            <span className="text-sm text-medium-gray">({sortedComponents.length} components)</span>
+            <span className="text-sm text-medium-gray">({components.length} components)</span>
           </div>
           <Button
             onClick={exportToExcel}
