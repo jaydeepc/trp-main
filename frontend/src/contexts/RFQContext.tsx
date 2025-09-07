@@ -271,14 +271,10 @@ export function RFQProvider({ children }: RFQProviderProps) {
         if (componentSuppliers && componentSuppliers.length > 0) {
           componentAnalysis += `Available suppliers (${componentSuppliers.length}): `;
 
-          componentSuppliers.slice(0, 3).forEach((supplier: any, supplierIndex: number) => {
-            componentAnalysis += `${supplier.name} (${supplier.region}) - $${supplier.cost}, Trust Score: ${supplier.trustScore}/10, Risk: ${supplier.riskLevel}`;
-            if (supplierIndex < Math.min(2, componentSuppliers.length - 1)) componentAnalysis += '; ';
+          componentSuppliers.forEach((supplier: any, supplierIndex: number) => {
+            componentAnalysis += `${supplier.name} (${supplier.region}) - $${supplier.cost}, Trust Score: ${supplier.trustScore}/10, Risk: ${supplier.riskLevel}, Certifications: ${supplier.certifications?.join(', ') || 'None'}`;
+            if (supplierIndex < componentSuppliers.length - 1) componentAnalysis += '; ';
           });
-
-          if (componentSuppliers.length > 3) {
-            componentAnalysis += `; Plus ${componentSuppliers.length - 3} more suppliers available`;
-          }
         }
         componentAnalysis += `.\n\n`;
       });
