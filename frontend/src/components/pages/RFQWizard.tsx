@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import { setCurrentStep } from '../../store/rfqSlice';
 import { ArrowLeft, Upload, FileText, Settings, Eye, CheckCircle, AlertTriangle, TrendingUp, Calendar, CreditCard, MapPin, Shield, Send } from 'lucide-react';
 import { useRFQ } from '../../contexts/RFQContext';
 import { StepConfig } from '../../types';
@@ -17,8 +20,12 @@ interface RFQWizardProps {
 }
 
 const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
+  const dispatch = useDispatch();
+
+  const currentStep = useSelector((state: RootState) => state.rfq.currentStep);
+
   const { currentRFQ, loading, error, fetchRFQ } = useRFQ();
-  const [currentStep, setCurrentStep] = useState(1);
+
   const [selectedAnalysisType, setSelectedAnalysisType] = useState<string>('');
   const [selectedLeadTime, setSelectedLeadTime] = useState<string>('6-8 weeks');
   const [selectedPaymentTerms, setSelectedPaymentTerms] = useState<string>('Net 30');
@@ -29,12 +36,6 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
       fetchRFQ(rfqId);
     }
   }, [rfqId, fetchRFQ]);
-
-  useEffect(() => {
-    if (currentRFQ) {
-      setCurrentStep(currentRFQ.currentStep || 1);
-    }
-  }, [currentRFQ]);
 
   const steps: StepConfig[] = [
     {
@@ -73,19 +74,19 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
 
   const handleStepClick = (step: number) => {
     if (step <= currentStep) {
-      setCurrentStep(step);
+      dispatch(setCurrentStep(step));
     }
   };
 
   const handleNextStep = () => {
     if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
+      dispatch(setCurrentStep(currentStep + 1));
     }
   };
 
   const handlePreviousStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      dispatch(setCurrentStep(currentStep - 1));
     }
   };
 
