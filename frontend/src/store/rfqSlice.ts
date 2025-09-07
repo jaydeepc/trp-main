@@ -40,12 +40,21 @@ interface Supplier {
     riskLevel: 'Low' | 'Medium' | 'High';
 }
 
+export interface CommercialTermsData {
+    desiredLeadTime: string;
+    paymentTerms: string;
+    deliveryLocation: string;
+    complianceRequirements: string[];
+    additionalRequirements: string;
+}
+
 export interface RFQState {
     components: Component[];
     suppliers: Record<string, Supplier[]>;
     insights: string[];
     currentRFQId?: string;
     currentStep: number;
+    commercialTerms: CommercialTermsData;
     isLoading: boolean;
     error?: string;
 }
@@ -55,6 +64,13 @@ const initialState: RFQState = {
     suppliers: {},
     insights: [],
     currentStep: 1,
+    commercialTerms: {
+        desiredLeadTime: '',
+        paymentTerms: '',
+        deliveryLocation: '',
+        complianceRequirements: [],
+        additionalRequirements: '',
+    },
     isLoading: false,
 };
 
@@ -108,6 +124,42 @@ const rfqSlice = createSlice({
             state.currentStep = action.payload;
             console.log('📊 Redux: Current step updated to', action.payload);
         },
+        updateCommercialTerms: (state, action: PayloadAction<Partial<CommercialTermsData>>) => {
+            state.commercialTerms = { ...state.commercialTerms, ...action.payload };
+            console.log('📊 Redux: Commercial terms updated', action.payload);
+        },
+        setLeadTime: (state, action: PayloadAction<string>) => {
+            state.commercialTerms.desiredLeadTime = action.payload;
+            console.log('📊 Redux: Lead time set to', action.payload);
+        },
+        setPaymentTerms: (state, action: PayloadAction<string>) => {
+            state.commercialTerms.paymentTerms = action.payload;
+            console.log('📊 Redux: Payment terms set to', action.payload);
+        },
+        setDeliveryLocation: (state, action: PayloadAction<string>) => {
+            state.commercialTerms.deliveryLocation = action.payload;
+            console.log('📊 Redux: Delivery location set to', action.payload);
+        },
+        setComplianceRequirements: (state, action: PayloadAction<string[]>) => {
+            state.commercialTerms.complianceRequirements = action.payload;
+            console.log('📊 Redux: Compliance requirements set to', action.payload);
+        },
+        addComplianceRequirement: (state, action: PayloadAction<string>) => {
+            if (!state.commercialTerms.complianceRequirements.includes(action.payload)) {
+                state.commercialTerms.complianceRequirements.push(action.payload);
+                console.log('📊 Redux: Added compliance requirement', action.payload);
+            }
+        },
+        removeComplianceRequirement: (state, action: PayloadAction<string>) => {
+            state.commercialTerms.complianceRequirements = state.commercialTerms.complianceRequirements.filter(
+                req => req !== action.payload
+            );
+            console.log('📊 Redux: Removed compliance requirement', action.payload);
+        },
+        setAdditionalRequirements: (state, action: PayloadAction<string>) => {
+            state.commercialTerms.additionalRequirements = action.payload;
+            console.log('📊 Redux: Additional requirements set to', action.payload);
+        },
     },
 });
 
@@ -119,6 +171,14 @@ export const {
     clearError,
     setCurrentRFQ,
     setCurrentStep,
+    updateCommercialTerms,
+    setLeadTime,
+    setPaymentTerms,
+    setDeliveryLocation,
+    setComplianceRequirements,
+    addComplianceRequirement,
+    removeComplianceRequirement,
+    setAdditionalRequirements,
 } = rfqSlice.actions;
 
 export default rfqSlice.reducer;

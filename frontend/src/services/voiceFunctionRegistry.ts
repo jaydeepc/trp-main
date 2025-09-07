@@ -3,6 +3,14 @@
 
 import { FunctionDeclaration, SchemaType } from '@google/generative-ai';
 import { mockBOMAnalysisResults } from '../data/mockBOMData';
+import {
+    setLeadTime,
+    setPaymentTerms,
+    setDeliveryLocation,
+    addComplianceRequirement,
+    removeComplianceRequirement,
+    setAdditionalRequirements,
+} from '../store/rfqSlice';
 
 export interface FunctionDefinition {
     name: string;
@@ -37,6 +45,7 @@ export interface UploadedFile {
 
 export interface StateUpdateCallbacks {
     voiceActionService: any;
+    dispatch: any;
     setShowUploadForm: (show: boolean) => void;
     setCurrentStep: (step: number) => void;
     updateFiles: (files: UploadedFile[]) => void;
@@ -596,7 +605,8 @@ class VoiceFunctionRegistry {
 
         return {
             success: true,
-            message: 'Navigated to BOM Analysis step in the main wizard. You can now analyze your bill of materials and make any necessary adjustments.',
+            message:
+                'Navigated to BOM Analysis step in the main wizard. You can now analyze your bill of materials and make any necessary adjustments.',
             action: 'show_bom_analysis',
             reason: args.reason || 'User requested BOM analysis',
         };
@@ -622,7 +632,8 @@ class VoiceFunctionRegistry {
 
         return {
             success: true,
-            message: 'Navigated to Commercial Terms step in the main wizard. You can now set up your payment terms, delivery location, and compliance requirements using the comprehensive form.',
+            message:
+                'Navigated to Commercial Terms step in the main wizard. You can now set up your payment terms, delivery location, and compliance requirements using the comprehensive form.',
             action: 'show_commercial_terms',
             reason: args.reason || 'User requested commercial terms',
         };
@@ -897,37 +908,18 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
         };
     }
 
-    // Commercial Terms Function Implementations
+    // Commercial Terms Function Implementations with Redux
     private async setLeadTime(args: { leadTime: string }) {
         if (!this.callbacks) {
             throw new Error('Callbacks not initialized');
         }
 
-        // Store the lead time in conversation context
-        if (!this.conversationState.context.commercialTerms) {
-            this.conversationState.context.commercialTerms = {};
-        }
-        this.conversationState.context.commercialTerms.desiredLeadTime =
-            args.leadTime;
-
-        // Update the UI through shared context
-        if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField(
-                'desiredLeadTime',
-                args.leadTime
-            );
-        }
-
-        this.callbacks.showNotification(
-            `Lead time set to ${args.leadTime}`,
-            'success'
-        );
+        // Dispatch Redux action directly
+        this.callbacks.dispatch(setLeadTime(args.leadTime));
 
         return {
             success: true,
-            message: `I've set the desired lead time to ${args.leadTime}. What would you like to set for payment terms? The options are Net 30, Net 60, Milestone-based, 2/10 Net 30, Cash on Delivery, or Letter of Credit.`,
-            action: 'set_lead_time',
-            leadTime: args.leadTime,
+            message: `I've set the desired lead time to ${args.leadTime}. What would you like to set for payment terms?`,
             nextStep: 'payment_terms',
         };
     }
@@ -937,31 +929,12 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             throw new Error('Callbacks not initialized');
         }
 
-        // Store the payment terms in conversation context
-        if (!this.conversationState.context.commercialTerms) {
-            this.conversationState.context.commercialTerms = {};
-        }
-        this.conversationState.context.commercialTerms.paymentTerms =
-            args.paymentTerms;
-
-        // Update the UI through shared context
-        if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField(
-                'paymentTerms',
-                args.paymentTerms
-            );
-        }
-
-        this.callbacks.showNotification(
-            `Payment terms set to ${args.paymentTerms}`,
-            'success'
-        );
+        // Dispatch Redux action directly
+        this.callbacks.dispatch(setPaymentTerms(args.paymentTerms));
 
         return {
             success: true,
             message: `Perfect! I've set payment terms to ${args.paymentTerms}. Now, where would you like the components delivered? Please provide the delivery location.`,
-            action: 'set_payment_terms',
-            paymentTerms: args.paymentTerms,
             nextStep: 'delivery_location',
         };
     }
@@ -971,31 +944,12 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             throw new Error('Callbacks not initialized');
         }
 
-        // Store the delivery location in conversation context
-        if (!this.conversationState.context.commercialTerms) {
-            this.conversationState.context.commercialTerms = {};
-        }
-        this.conversationState.context.commercialTerms.deliveryLocation =
-            args.location;
-
-        // Update the UI through shared context
-        if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField(
-                'deliveryLocation',
-                args.location
-            );
-        }
-
-        this.callbacks.showNotification(
-            `Delivery location set to ${args.location}`,
-            'success'
-        );
+        // Dispatch Redux action directly
+        this.callbacks.dispatch(setDeliveryLocation(args.location));
 
         return {
             success: true,
             message: `Great! I've set the delivery location to ${args.location}. Now let's discuss compliance requirements. Do you need any specific certifications like ISO 9001, AS9100, RoHS, REACH, or others? You can tell me which ones you need, or say "none" if no specific compliance is required.`,
-            action: 'set_delivery_location',
-            location: args.location,
             nextStep: 'compliance_requirements',
         };
     }
@@ -1005,53 +959,12 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             throw new Error('Callbacks not initialized');
         }
 
-        // Initialize compliance array if needed
-        if (!this.conversationState.context.commercialTerms) {
-            this.conversationState.context.commercialTerms = {};
-        }
-        if (
-            !this.conversationState.context.commercialTerms
-                .complianceRequirements
-        ) {
-            this.conversationState.context.commercialTerms.complianceRequirements =
-                [];
-        }
-
-        // Add requirement if not already present
-        const requirements =
-            this.conversationState.context.commercialTerms
-                .complianceRequirements;
-        if (!requirements.includes(args.requirement)) {
-            requirements.push(args.requirement);
-        }
-
-        // Update the UI through shared context
-        if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField(
-                'complianceRequirements',
-                requirements
-            );
-        }
-
-        this.callbacks.showNotification(
-            `Added ${args.requirement} to compliance requirements`,
-            'success'
-        );
-
-        const currentRequirements =
-            this.conversationState.context.commercialTerms
-                .complianceRequirements;
-        const requirementsList =
-            currentRequirements.length > 0
-                ? currentRequirements.join(', ')
-                : 'none';
+        // Dispatch Redux action directly
+        this.callbacks.dispatch(addComplianceRequirement(args.requirement));
 
         return {
             success: true,
-            message: `I've added ${args.requirement} to your compliance requirements. Current requirements: ${requirementsList}. Would you like to add any other compliance requirements, or shall we move on to additional requirements?`,
-            action: 'add_compliance_requirement',
-            requirement: args.requirement,
-            currentRequirements: currentRequirements,
+            message: `I've added ${args.requirement} to your compliance requirements. Would you like to add any other compliance requirements, or shall we move on to additional requirements?`,
         };
     }
 
@@ -1060,48 +973,12 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             throw new Error('Callbacks not initialized');
         }
 
-        // Remove requirement if present
-        if (
-            this.conversationState.context.commercialTerms
-                ?.complianceRequirements
-        ) {
-            const requirements =
-                this.conversationState.context.commercialTerms
-                    .complianceRequirements;
-            const index = requirements.indexOf(args.requirement);
-            if (index > -1) {
-                requirements.splice(index, 1);
-            }
-        }
-
-        const currentRequirements =
-            this.conversationState.context.commercialTerms
-                ?.complianceRequirements || [];
-
-        // Update the UI through shared context
-        if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField(
-                'complianceRequirements',
-                currentRequirements
-            );
-        }
-
-        this.callbacks.showNotification(
-            `Removed ${args.requirement} from compliance requirements`,
-            'success'
-        );
-
-        const requirementsList =
-            currentRequirements.length > 0
-                ? currentRequirements.join(', ')
-                : 'none';
+        // Dispatch Redux action directly
+        this.callbacks.dispatch(removeComplianceRequirement(args.requirement));
 
         return {
             success: true,
-            message: `I've removed ${args.requirement} from your compliance requirements. Current requirements: ${requirementsList}.`,
-            action: 'remove_compliance_requirement',
-            requirement: args.requirement,
-            currentRequirements: currentRequirements,
+            message: `I've removed ${args.requirement} from your compliance requirements.`,
         };
     }
 
@@ -1110,31 +987,12 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             throw new Error('Callbacks not initialized');
         }
 
-        // Store additional requirements
-        if (!this.conversationState.context.commercialTerms) {
-            this.conversationState.context.commercialTerms = {};
-        }
-        this.conversationState.context.commercialTerms.additionalRequirements =
-            args.requirements;
-
-        // Update the UI through shared context
-        if (this.callbacks.updateCommercialTermsField) {
-            this.callbacks.updateCommercialTermsField(
-                'additionalRequirements',
-                args.requirements
-            );
-        }
-
-        this.callbacks.showNotification(
-            'Additional requirements updated',
-            'success'
-        );
+        // Dispatch Redux action directly
+        this.callbacks.dispatch(setAdditionalRequirements(args.requirements));
 
         return {
             success: true,
             message: `Perfect! I've recorded your additional requirements: "${args.requirements}". Let me summarize what we've configured for your commercial terms.`,
-            action: 'set_additional_requirements',
-            requirements: args.requirements,
             nextStep: 'summary',
         };
     }

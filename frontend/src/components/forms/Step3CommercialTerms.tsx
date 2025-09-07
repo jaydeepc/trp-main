@@ -1,4 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import { 
+  setLeadTime, 
+  setPaymentTerms, 
+  setDeliveryLocation, 
+  addComplianceRequirement, 
+  removeComplianceRequirement, 
+  setAdditionalRequirements 
+} from '../../store/rfqSlice';
 import { Calendar, CreditCard, MapPin, Shield, Plus, X, Info } from 'lucide-react';
 import { RFQ, CommercialTerms } from '../../types';
 import { useRFQ } from '../../contexts/RFQContext';
@@ -17,15 +27,10 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
   onPrevious,
 }) => {
   const { updateStep, loading } = useRFQ();
-
-  const [formData, setFormData] = useState<CommercialTerms>({
-    desiredLeadTime: rfq.commercialTerms?.desiredLeadTime || '',
-    paymentTerms: rfq.commercialTerms?.paymentTerms || 'Net 30',
-    deliveryLocation: rfq.commercialTerms?.deliveryLocation || '',
-    complianceRequirements: rfq.commercialTerms?.complianceRequirements || [],
-    additionalRequirements: rfq.commercialTerms?.additionalRequirements || '',
-  });
-
+  const dispatch = useDispatch();
+  
+  // Use Redux state instead of local state
+  const formData = useSelector((state: RootState) => state.rfq.commercialTerms);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const paymentTermsOptions = [
@@ -59,10 +64,21 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
   ];
 
   const handleInputChange = (field: keyof CommercialTerms, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    // Dispatch Redux actions based on field
+    switch (field) {
+      case 'desiredLeadTime':
+        dispatch(setLeadTime(value));
+        break;
+      case 'paymentTerms':
+        dispatch(setPaymentTerms(value));
+        break;
+      case 'deliveryLocation':
+        dispatch(setDeliveryLocation(value));
+        break;
+      case 'additionalRequirements':
+        dispatch(setAdditionalRequirements(value));
+        break;
+    }
 
     // Clear error when user starts typing
     if (errors[field]) {
@@ -75,11 +91,14 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
 
   const handleComplianceToggle = (requirement: string) => {
     const current = formData.complianceRequirements;
-    const updated = current.includes(requirement)
-      ? current.filter(r => r !== requirement)
-      : [...current, requirement];
-
-    handleInputChange('complianceRequirements', updated);
+    
+    if (current.includes(requirement)) {
+      // Remove requirement
+      dispatch(removeComplianceRequirement(requirement));
+    } else {
+      // Add requirement
+      dispatch(addComplianceRequirement(requirement));
+    }
   };
 
   const validateForm = (): boolean => {
