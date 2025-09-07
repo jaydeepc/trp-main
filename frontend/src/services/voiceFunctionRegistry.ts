@@ -2,7 +2,6 @@
 // Handles automatic function calling based on voice input
 
 import { FunctionDeclaration, SchemaType } from '@google/generative-ai';
-import { mockBOMAnalysisResults } from '../data/mockBOMData';
 import {
     setLeadTime,
     setPaymentTerms,
@@ -10,6 +9,7 @@ import {
     addComplianceRequirement,
     removeComplianceRequirement,
     setAdditionalRequirements,
+    setCurrentStep,
 } from '../store/rfqSlice';
 
 export interface FunctionDefinition {
@@ -46,17 +46,8 @@ export interface UploadedFile {
 export interface StateUpdateCallbacks {
     voiceActionService: any;
     dispatch: any;
-    setShowUploadForm: (show: boolean) => void;
-    setCurrentStep: (step: number) => void;
-    updateFiles: (files: UploadedFile[]) => void;
-    showNotification: (
-        message: string,
-        type?: 'info' | 'success' | 'error'
-    ) => void;
     setShowSystemInfo: (show: boolean) => void;
     setShowDetailModal: (featureId: string | null) => void;
-    updateCommercialTermsField?: (field: string, value: any) => void;
-    setCommercialTermsData?: (data: any) => void;
 }
 
 class VoiceFunctionRegistry {
@@ -287,17 +278,6 @@ class VoiceFunctionRegistry {
         });
 
         this.registerFunction({
-            name: 'hide_rfq_preview',
-            description: 'Hide the RFQ preview interface',
-            parameters: {
-                type: 'object',
-                properties: {},
-                required: [],
-            },
-            function: this.hideRFQPreview.bind(this),
-        });
-
-        this.registerFunction({
             name: 'navigate_to',
             description: 'Navigate to different sections of the application',
             parameters: {
@@ -305,77 +285,13 @@ class VoiceFunctionRegistry {
                 properties: {
                     destination: {
                         type: 'string',
-                        enum: [
-                            'dashboard',
-                            'rfq-wizard',
-                            'bom-review',
-                            'commercial-terms',
-                            'preview',
-                        ],
+                        enum: ['dashboard', 'rfq-wizard'],
                         description: 'Where to navigate to',
-                    },
-                    step: {
-                        type: 'number',
-                        description:
-                            'Specific step number (for wizard navigation)',
                     },
                 },
                 required: ['destination'],
             },
             function: this.navigateTo.bind(this),
-        });
-
-        // State Query Functions
-        this.registerFunction({
-            name: 'get_uploaded_files',
-            description: 'Get information about files the user has uploaded',
-            parameters: {
-                type: 'object',
-                properties: {},
-                required: [],
-            },
-            function: this.getUploadedFiles.bind(this),
-        });
-
-        this.registerFunction({
-            name: 'get_current_view',
-            description:
-                'Get information about what the user is currently viewing',
-            parameters: {
-                type: 'object',
-                properties: {},
-                required: [],
-            },
-            function: this.getCurrentView.bind(this),
-        });
-
-        this.registerFunction({
-            name: 'get_conversation_context',
-            description:
-                'Get the current conversation context and application state',
-            parameters: {
-                type: 'object',
-                properties: {},
-                required: [],
-            },
-            function: this.getConversationContext.bind(this),
-        });
-
-        // File Management Functions
-        this.registerFunction({
-            name: 'clear_uploaded_files',
-            description: 'Clear all uploaded files and reset the upload state',
-            parameters: {
-                type: 'object',
-                properties: {
-                    confirm: {
-                        type: 'boolean',
-                        description: 'Confirmation to clear files',
-                    },
-                },
-                required: ['confirm'],
-            },
-            function: this.clearUploadedFiles.bind(this),
         });
 
         this.registerFunction({
@@ -593,11 +509,8 @@ class VoiceFunctionRegistry {
         console.log('showBOMAnalysis called with args:', args);
         console.log('Navigating to Step 2 BOM Analysis in main wizard');
 
-        // Use voiceActionService to navigate to Step 2 in the main wizard
-        await this.callbacks.voiceActionService.executeVoiceCommand(
-            'navigate_to_step',
-            { step: 2, destination: 'bom-analysis' }
-        );
+        // Dispatch Redux action
+        this.callbacks.dispatch(setCurrentStep(2));
 
         // Also update internal state
         this.conversationState.currentStep = 2;
@@ -620,11 +533,8 @@ class VoiceFunctionRegistry {
         console.log('showCommercialTerms called with args:', args);
         console.log('Navigating to Step 3 Commercial Terms in main wizard');
 
-        // Use voiceActionService to navigate to Step 3 in the main wizard
-        await this.callbacks.voiceActionService.executeVoiceCommand(
-            'navigate_to_step',
-            { step: 3, destination: 'commercial-terms' }
-        );
+        // Dispatch Redux action
+        this.callbacks.dispatch(setCurrentStep(3));
 
         // Also update internal state
         this.conversationState.currentStep = 3;
@@ -645,45 +555,21 @@ class VoiceFunctionRegistry {
         }
 
         console.log('showRFQPreview called with args:', args);
-        console.log('Setting current step to 4');
+        console.log('Navigating to Step 4 RFQ Preview in main wizard');
 
-        // Close other UI elements first
-        this.callbacks.setShowSystemInfo(false);
-        this.callbacks.setShowUploadForm(false);
-
-        // Set current step to 4 for RFQ preview
-        this.callbacks.setCurrentStep(4);
+        // Dispatch Redux action
+        this.callbacks.dispatch(setCurrentStep(4));
 
         // Also update internal state
         this.conversationState.currentStep = 4;
         this.updateState('STEP_CHANGED', { step: 4 });
 
-        this.callbacks.showNotification(
-            'RFQ Preview interface opened',
-            'success'
-        );
-
         return {
             success: true,
             message:
-                'RFQ preview interface displayed. You can now review the complete summary of your request for quote.',
+                'Navigated to RFQ Preview step in the main wizard. You can now review the complete summary of your request for quote including all configured details.',
             action: 'show_rfq_preview',
             reason: args.reason || 'User requested RFQ preview',
-        };
-    }
-
-    private async hideRFQPreview() {
-        if (!this.callbacks) {
-            throw new Error('Callbacks not initialized');
-        }
-
-        // Reset back to step 1
-        this.callbacks.setCurrentStep(1);
-
-        return {
-            success: true,
-            message: 'RFQ preview interface hidden',
-            action: 'hide_rfq_preview',
         };
     }
 
@@ -701,12 +587,6 @@ class VoiceFunctionRegistry {
                 'navigate_to',
                 args
             );
-        } else if (args.destination === 'bom-review') {
-            this.callbacks.setCurrentStep(2);
-        } else if (args.destination === 'commercial-terms') {
-            this.callbacks.setCurrentStep(3);
-        } else if (args.destination === 'preview') {
-            this.callbacks.setCurrentStep(4);
         } else {
             throw new Error(`Invalid destination: ${args.destination}`);
         }
@@ -722,66 +602,6 @@ class VoiceFunctionRegistry {
         };
     }
 
-    private async getUploadedFiles() {
-        return {
-            files: this.conversationState.uploadedFiles.map((file) => ({
-                id: file.id,
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                uploadedAt: file.uploadedAt,
-                status: file.status,
-            })),
-            count: this.conversationState.uploadedFiles.length,
-            hasFiles: this.conversationState.uploadedFiles.length > 0,
-        };
-    }
-
-    private async getCurrentView() {
-        return {
-            view: this.conversationState.currentView,
-            step: this.conversationState.currentStep,
-            availableActions: this.getAvailableActions(),
-            context: this.conversationState.context,
-        };
-    }
-
-    private async getConversationContext() {
-        return {
-            state: this.getConversationState(),
-            availableActions: this.getAvailableActions(),
-            recentActions: Object.keys(this.conversationState.context).slice(
-                -5
-            ),
-        };
-    }
-
-    private async clearUploadedFiles(args: { confirm: boolean }) {
-        if (!args.confirm) {
-            return {
-                success: false,
-                message: 'Confirmation required to clear files',
-                requiresConfirmation: true,
-            };
-        }
-
-        this.conversationState.uploadedFiles = [];
-
-        if (this.callbacks) {
-            this.callbacks.updateFiles([]);
-            this.callbacks.showNotification(
-                'All uploaded files cleared',
-                'info'
-            );
-        }
-
-        return {
-            success: true,
-            message: 'All uploaded files cleared',
-            filesCleared: true,
-        };
-    }
-
     private async showSystemInfo(args: { query_type?: string }) {
         if (!this.callbacks) {
             throw new Error('Callbacks not initialized');
@@ -791,11 +611,6 @@ class VoiceFunctionRegistry {
 
         // Show the SystemInfo floating window
         this.callbacks.setShowSystemInfo(true);
-
-        this.callbacks.showNotification(
-            'System information displayed',
-            'success'
-        );
 
         // Update conversation state to track this action
         this.updateState('SHOW_SYSTEM_INFO', { query_type: args.query_type });
@@ -840,9 +655,7 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
 
         console.log('showFeatureDetails called with args:', args);
 
-        // Close other UI elements first
         this.callbacks.setShowSystemInfo(false);
-        this.callbacks.setShowUploadForm(false);
 
         // Show the DetailModal
         this.callbacks.setShowDetailModal(args.feature_id);
@@ -852,14 +665,6 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             feature_id: args.feature_id,
             query_context: args.query_context,
         });
-
-        this.callbacks.showNotification(
-            `Detailed information about ${args.feature_id.replace(
-                '-',
-                ' '
-            )} displayed`,
-            'success'
-        );
 
         // Create a detailed response based on the feature
         const featureResponses: Record<string, string> = {
@@ -894,17 +699,6 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             feature_id: args.feature_id,
             query_context: args.query_context,
             shouldShowModal: true,
-        };
-    }
-
-    private async sayHi(args: { greeting: string }) {
-        console.log('hi');
-
-        return {
-            success: true,
-            message: 'Function completed!',
-            greeting: args.greeting,
-            response: `Hello! You said: ${args.greeting}`,
         };
     }
 
@@ -995,25 +789,6 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             message: `Perfect! I've recorded your additional requirements: "${args.requirements}". Let me summarize what we've configured for your commercial terms.`,
             nextStep: 'summary',
         };
-    }
-
-    private getAvailableActions(): string[] {
-        const actions = [
-            'say_hi',
-            'show_upload_form',
-            'hide_upload_form',
-            'get_uploaded_files',
-        ];
-
-        if (this.conversationState.uploadedFiles.length > 0) {
-            actions.push('clear_uploaded_files', 'navigate_to');
-        }
-
-        if (this.conversationState.currentView === 'voice-landing') {
-            actions.push('navigate_to');
-        }
-
-        return actions;
     }
 }
 

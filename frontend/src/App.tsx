@@ -1,10 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { Provider as ReduxProvider, useDispatch } from 'react-redux';
+import { Provider as ReduxProvider } from 'react-redux';
 import { store } from './store';
-import { setCurrentStep } from './store/rfqSlice';
 import { LiveAPIProvider } from "./contexts/LiveAPIContext";
 import { RFQProvider, useRFQ } from "./contexts/RFQContext";
-import { CommercialTermsProvider } from "./contexts/CommercialTermsContext";
 import Layout from "./components/layout/Layout";
 import Dashboard from "./components/pages/Dashboard";
 import RFQWizard from "./components/pages/RFQWizard";
@@ -63,13 +61,11 @@ function App() {
   return (
     <ReduxProvider store={store}>
       <LiveAPIProvider url={uri} apiKey={API_KEY}>
-        <CommercialTermsProvider>
+        <RFQProvider>
           <Router>
-            <RFQProvider>
-              <AppContent />
-            </RFQProvider>
+            <AppContent />
           </Router>
-        </CommercialTermsProvider>
+        </RFQProvider>
       </LiveAPIProvider>
     </ReduxProvider>
   );
@@ -78,7 +74,6 @@ function App() {
 // Component that has access to navigation inside Router context
 const AppContent: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   const { createRFQ } = useRFQ();
 
@@ -136,26 +131,6 @@ const AppContent: React.FC = () => {
         success: true,
         message: `Navigated to ${destination}`,
         data: { destination, route }
-      };
-    });
-
-    // Register step navigation command for RFQ wizard
-    voiceAppCommandBus.registerAppCommand('navigateToStep', async ({ step, destination }) => {
-      console.log(`📍 Voice navigation to step ${step} (${destination})`);
-
-      // Check if we're in the RFQ wizard context
-      const currentPath = window.location.pathname;
-      if (!currentPath.includes('rfq-wizard')) {
-        console.log('⚠️ Not in RFQ wizard context - navigation may not work');
-      }
-
-      // Dispatch to Redux to update the current step
-      dispatch(setCurrentStep(step));
-
-      return {
-        success: true,
-        message: `Navigated to step ${step} (${destination})`,
-        data: { step, destination }
       };
     });
 

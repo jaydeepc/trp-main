@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import {
+  setLeadTime,
+  setPaymentTerms,
+  setDeliveryLocation,
+  addComplianceRequirement,
+  removeComplianceRequirement,
+  setAdditionalRequirements,
+  CommercialTermsData
+} from '../../store/rfqSlice';
 import { Calendar, CreditCard, MapPin, Shield, Plus, X, Info } from 'lucide-react';
 import Button from '../common/Button';
-import { useCommercialTermsContext, CommercialTermsData } from '../../contexts/CommercialTermsContext';
 
 interface CommercialTermsProps {
   onNext: () => void;
@@ -14,11 +24,12 @@ const CommercialTerms: React.FC<CommercialTermsProps> = ({
   onCancel,
   bomData = []
 }) => {
+  const dispatch = useDispatch();
+
+  const formData = useSelector((state: RootState) => state.rfq.commercialTerms);
+
   const [loading, setLoading] = useState({ isLoading: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
-  // Use shared context instead of local state
-  const { formData, updateField } = useCommercialTermsContext();
 
   const paymentTermsOptions = [
     { value: 'Net 30', label: 'Net 30 Days', description: 'Payment due within 30 days' },
@@ -51,9 +62,22 @@ const CommercialTerms: React.FC<CommercialTermsProps> = ({
   ];
 
   const handleInputChange = (field: keyof CommercialTermsData, value: any) => {
-    // Use context update function
-    updateField(field, value);
-    
+    // Dispatch Redux actions based on field
+    switch (field) {
+      case 'desiredLeadTime':
+        dispatch(setLeadTime(value));
+        break;
+      case 'paymentTerms':
+        dispatch(setPaymentTerms(value));
+        break;
+      case 'deliveryLocation':
+        dispatch(setDeliveryLocation(value));
+        break;
+      case 'additionalRequirements':
+        dispatch(setAdditionalRequirements(value));
+        break;
+    }
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -65,11 +89,14 @@ const CommercialTerms: React.FC<CommercialTermsProps> = ({
 
   const handleComplianceToggle = (requirement: string) => {
     const current = formData.complianceRequirements;
-    const updated = current.includes(requirement)
-      ? current.filter(r => r !== requirement)
-      : [...current, requirement];
     
-    handleInputChange('complianceRequirements', updated);
+    if (current.includes(requirement)) {
+      // Remove requirement
+      dispatch(removeComplianceRequirement(requirement));
+    } else {
+      // Add requirement
+      dispatch(addComplianceRequirement(requirement));
+    }
   };
 
   const validateForm = (): boolean => {
@@ -114,191 +141,191 @@ const CommercialTerms: React.FC<CommercialTermsProps> = ({
         </p>
       </div>
 
-        <div className="space-y-8">
-          {/* Lead Time */}
-          <div>
-            <label className="flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
-              <Calendar className="w-5 h-5 text-accent-teal" />
-              <span>Desired Lead Time</span>
-            </label>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-              {leadTimePresets.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => handleInputChange('desiredLeadTime', preset)}
-                  className={`
+      <div className="space-y-8">
+        {/* Lead Time */}
+        <div>
+          <label className="flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
+            <Calendar className="w-5 h-5 text-accent-teal" />
+            <span>Desired Lead Time</span>
+          </label>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+            {leadTimePresets.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => handleInputChange('desiredLeadTime', preset)}
+                className={`
                     p-3 rounded-lg border-2 text-sm font-medium transition-all duration-200
                     ${formData.desiredLeadTime === preset
-                      ? 'border-accent-teal bg-blue-50 text-primary-blue'
-                      : 'border-gray-200 hover:border-gray-300 text-dark-slate-gray'
-                    }
+                    ? 'border-accent-teal bg-blue-50 text-primary-blue'
+                    : 'border-gray-200 hover:border-gray-300 text-dark-slate-gray'
+                  }
                   `}
-                >
-                  {preset}
-                </button>
-              ))}
-            </div>
-            
-            <input
-              type="text"
-              value={formData.desiredLeadTime}
-              onChange={(e) => handleInputChange('desiredLeadTime', e.target.value)}
-              placeholder="Or enter custom lead time (e.g., '10-12 weeks')"
-              className={`input-field ${errors.desiredLeadTime ? 'border-red-500' : ''}`}
-            />
-            {errors.desiredLeadTime && (
-              <p className="text-red-600 text-sm mt-1">{errors.desiredLeadTime}</p>
-            )}
+              >
+                {preset}
+              </button>
+            ))}
           </div>
 
-          {/* Payment Terms */}
-          <div>
-            <label className="flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
-              <CreditCard className="w-5 h-5 text-accent-teal" />
-              <span>Payment Terms</span>
-            </label>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {paymentTermsOptions.map((option) => (
-                <div
-                  key={option.value}
-                  className={`
+          <input
+            type="text"
+            value={formData.desiredLeadTime}
+            onChange={(e) => handleInputChange('desiredLeadTime', e.target.value)}
+            placeholder="Or enter custom lead time (e.g., '10-12 weeks')"
+            className={`input-field ${errors.desiredLeadTime ? 'border-red-500' : ''}`}
+          />
+          {errors.desiredLeadTime && (
+            <p className="text-red-600 text-sm mt-1">{errors.desiredLeadTime}</p>
+          )}
+        </div>
+
+        {/* Payment Terms */}
+        <div>
+          <label className="flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
+            <CreditCard className="w-5 h-5 text-accent-teal" />
+            <span>Payment Terms</span>
+          </label>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {paymentTermsOptions.map((option) => (
+              <div
+                key={option.value}
+                className={`
                     p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
                     ${formData.paymentTerms === option.value
-                      ? 'border-accent-teal bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                    }
+                    ? 'border-accent-teal bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                  }
                   `}
-                  onClick={() => handleInputChange('paymentTerms', option.value)}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={`
+                onClick={() => handleInputChange('paymentTerms', option.value)}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={`
                       w-4 h-4 rounded-full border-2 flex items-center justify-center
                       ${formData.paymentTerms === option.value
-                        ? 'border-accent-teal bg-accent-teal'
-                        : 'border-gray-300'
-                      }
-                    `}>
-                      {formData.paymentTerms === option.value && (
-                        <div className="w-2 h-2 bg-white rounded-full" />
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-dark-slate-gray">{option.label}</h4>
-                      <p className="text-sm text-medium-gray">{option.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Delivery Location */}
-          <div>
-            <label className="flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
-              <MapPin className="w-5 h-5 text-accent-teal" />
-              <span>Delivery Location</span>
-            </label>
-            
-            <input
-              type="text"
-              value={formData.deliveryLocation}
-              onChange={(e) => handleInputChange('deliveryLocation', e.target.value)}
-              placeholder="Enter delivery address or location (e.g., 'San Francisco, CA, USA')"
-              className={`input-field ${errors.deliveryLocation ? 'border-red-500' : ''}`}
-            />
-            {errors.deliveryLocation && (
-              <p className="text-red-600 text-sm mt-1">{errors.deliveryLocation}</p>
-            )}
-          </div>
-
-          {/* Compliance Requirements */}
-          <div>
-            <label className="flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
-              <Shield className="w-5 h-5 text-accent-teal" />
-              <span>Compliance Requirements</span>
-            </label>
-            
-            <p className="text-medium-gray mb-4">
-              Select all applicable certifications and compliance standards required for your components.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {complianceOptions.map((option) => (
-                <div
-                  key={option.value}
-                  className={`
-                    p-3 rounded-lg border-2 cursor-pointer transition-all duration-200
-                    ${formData.complianceRequirements.includes(option.value)
-                      ? 'border-accent-teal bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-accent-teal bg-accent-teal'
+                      : 'border-gray-300'
                     }
-                  `}
-                  onClick={() => handleComplianceToggle(option.value)}
-                >
-                  <div className="flex items-start space-x-3">
-                    <div className={`
-                      w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5
-                      ${formData.complianceRequirements.includes(option.value)
-                        ? 'border-accent-teal bg-accent-teal'
-                        : 'border-gray-300'
-                      }
                     `}>
-                      {formData.complianceRequirements.includes(option.value) && (
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-dark-slate-gray text-sm">{option.label}</h4>
-                      <p className="text-xs text-medium-gray">{option.description}</p>
-                    </div>
+                    {formData.paymentTerms === option.value && (
+                      <div className="w-2 h-2 bg-white rounded-full" />
+                    )}
                   </div>
-                </div>
-              ))}
-            </div>
-            
-            {formData.complianceRequirements.length > 0 && (
-              <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                <h4 className="font-semibold text-green-800 mb-2">Selected Requirements:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {formData.complianceRequirements.map((req) => (
-                    <span
-                      key={req}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
-                    >
-                      {req}
-                      <button
-                        onClick={() => handleComplianceToggle(req)}
-                        className="ml-2 text-green-600 hover:text-green-800"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
+                  <div>
+                    <h4 className="font-semibold text-dark-slate-gray">{option.label}</h4>
+                    <p className="text-sm text-medium-gray">{option.description}</p>
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Additional Requirements */}
-          <div>
-            <label className="flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
-              <Plus className="w-5 h-5 text-accent-teal" />
-              <span>Additional Requirements (Optional)</span>
-            </label>
-            
-            <textarea
-              value={formData.additionalRequirements}
-              onChange={(e) => handleInputChange('additionalRequirements', e.target.value)}
-              placeholder="Specify any additional requirements, special handling instructions, or custom specifications..."
-              className="input-field h-24 resize-none"
-            />
+            ))}
           </div>
         </div>
+
+        {/* Delivery Location */}
+        <div>
+          <label className="flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
+            <MapPin className="w-5 h-5 text-accent-teal" />
+            <span>Delivery Location</span>
+          </label>
+
+          <input
+            type="text"
+            value={formData.deliveryLocation}
+            onChange={(e) => handleInputChange('deliveryLocation', e.target.value)}
+            placeholder="Enter delivery address or location (e.g., 'San Francisco, CA, USA')"
+            className={`input-field ${errors.deliveryLocation ? 'border-red-500' : ''}`}
+          />
+          {errors.deliveryLocation && (
+            <p className="text-red-600 text-sm mt-1">{errors.deliveryLocation}</p>
+          )}
+        </div>
+
+        {/* Compliance Requirements */}
+        <div>
+          <label className="flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
+            <Shield className="w-5 h-5 text-accent-teal" />
+            <span>Compliance Requirements</span>
+          </label>
+
+          <p className="text-medium-gray mb-4">
+            Select all applicable certifications and compliance standards required for your components.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {complianceOptions.map((option) => (
+              <div
+                key={option.value}
+                className={`
+                    p-3 rounded-lg border-2 cursor-pointer transition-all duration-200
+                    ${formData.complianceRequirements.includes(option.value)
+                    ? 'border-accent-teal bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                  }
+                  `}
+                onClick={() => handleComplianceToggle(option.value)}
+              >
+                <div className="flex items-start space-x-3">
+                  <div className={`
+                      w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5
+                      ${formData.complianceRequirements.includes(option.value)
+                      ? 'border-accent-teal bg-accent-teal'
+                      : 'border-gray-300'
+                    }
+                    `}>
+                    {formData.complianceRequirements.includes(option.value) && (
+                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-dark-slate-gray text-sm">{option.label}</h4>
+                    <p className="text-xs text-medium-gray">{option.description}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {formData.complianceRequirements.length > 0 && (
+            <div className="mt-4 p-3 bg-green-50 rounded-lg">
+              <h4 className="font-semibold text-green-800 mb-2">Selected Requirements:</h4>
+              <div className="flex flex-wrap gap-2">
+                {formData.complianceRequirements.map((req) => (
+                  <span
+                    key={req}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
+                  >
+                    {req}
+                    <button
+                      onClick={() => handleComplianceToggle(req)}
+                      className="ml-2 text-green-600 hover:text-green-800"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Additional Requirements */}
+        <div>
+          <label className="flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
+            <Plus className="w-5 h-5 text-accent-teal" />
+            <span>Additional Requirements (Optional)</span>
+          </label>
+
+          <textarea
+            value={formData.additionalRequirements}
+            onChange={(e) => handleInputChange('additionalRequirements', e.target.value)}
+            placeholder="Specify any additional requirements, special handling instructions, or custom specifications..."
+            className="input-field h-24 resize-none"
+          />
+        </div>
+      </div>
 
       {/* Action Buttons */}
       <div className="flex justify-between mt-8">
@@ -309,7 +336,7 @@ const CommercialTerms: React.FC<CommercialTermsProps> = ({
         >
           Cancel
         </Button>
-        
+
         <Button
           onClick={handleContinue}
           loading={loading.isLoading}
