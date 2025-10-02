@@ -15,7 +15,7 @@ class APIService {
         this.api = axios.create({
             baseURL:
                 process.env.REACT_APP_API_URL || 'http://localhost:5001/api',
-            timeout: 30000, // 30 seconds for file uploads
+            timeout: 120000, // 120 seconds for complex BOM processing with Gemini 2.5 Pro
             headers: {
                 'Content-Type': 'application/json',
             },
