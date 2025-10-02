@@ -221,41 +221,35 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
     setIsAnalyzing(true);
 
     try {
-      console.log('🔄 Triggering BOM analysis with requirements...');
+      console.log('🔄 Triggering supplier research...');
 
-      // Call BOM analysis API with requirements
-      const result = await api.analyzeBOM(rfq.id, {
-        desiredLeadTime: localLeadTime,
-        paymentTerms: localPaymentTerms,
-        deliveryLocation: localRegion,
-        complianceRequirements: localCompliance,
-        additionalRequirements: localAdditional
-      });
+      // Call supplier research API
+      const result = await api.generateSupplierResearch(rfq.id);
 
-      console.log('✅ BOM analysis complete:', result);
+      console.log('✅ Supplier research complete:', result);
 
-      // Store analyzed BOM data in Redux
+      // Store supplier research data in Redux
       dispatch(setRFQData({
-        components: result.components || [],
-        suppliers: result.suppliers || {},
-        insights: result.insights || []
+        components: result.supplierResearch || [],
+        suppliers: result.summary || {},
+        insights: [`Processed ${result.totalComponents} components in ${(result.processingTime / 1000).toFixed(1)}s`]
       }));
-      console.log('📊 Redux: Stored analyzed BOM data -', result.components?.length, 'components');
+      console.log('📊 Redux: Stored supplier research data -', result.supplierResearch?.length, 'components');
 
       voiceAppCommandBus.sendVoiceFeedback('step2Complete', {
         complianceCount: localCompliance.length,
         hasLeadTime: !!localLeadTime,
         hasPaymentTerms: !!localPaymentTerms,
         hasRegion: !!localRegion,
-        bomAnalyzed: true
+        supplierResearchComplete: true
       });
 
-      console.log('✅ Step 2 complete: Requirements defined and BOM analyzed');
+      console.log('✅ Step 2 complete: Requirements defined and supplier research completed');
       onNext();
 
     } catch (error: any) {
-      console.error('❌ BOM analysis failed:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to analyze BOM';
+      console.error('❌ Supplier research failed:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to generate supplier research';
       setAnalysisError(errorMessage);
 
       voiceAppCommandBus.sendVoiceFeedback('analysisError', {
@@ -616,9 +610,9 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
                   <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                   <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Analyzing BOM</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Researching Suppliers</h3>
                 <p className="text-gray-600">
-                  Processing your requirements and generating smart BOM analysis...
+                  Processing your components and finding alternative suppliers...
                 </p>
               </div>
             </div>
@@ -631,7 +625,7 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
             <div className="flex items-start space-x-3">
               <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
               <div className="flex-1">
-                <h4 className="font-semibold text-red-800 mb-1">Analysis Failed</h4>
+                <h4 className="font-semibold text-red-800 mb-1">Supplier Research Failed</h4>
                 <p className="text-sm text-red-700">{analysisError}</p>
               </div>
               <button
@@ -651,7 +645,7 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
           </Button>
 
           <Button onClick={handleNext} disabled={!isValid || isAnalyzing}>
-            {isAnalyzing ? 'Analyzing...' : 'Continue to BOM Analysis'}
+            {isAnalyzing ? 'Researching...' : 'Continue to Supplier Research'}
           </Button>
         </div>
 

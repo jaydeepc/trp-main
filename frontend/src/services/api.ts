@@ -296,6 +296,40 @@ class APIService {
         }
     }
 
+    // Supplier Research endpoints
+    async generateSupplierResearch(id: string): Promise<{
+        id: string;
+        rfqId: string;
+        rfqNumber: string;
+        userId: string;
+        processingTime: number;
+        totalComponents: number;
+        supplierResearch: any[];
+        summary: any;
+        metadata: any;
+    }> {
+        const response = await this.api.post(`/supplier-research/${id}`);
+        return this.handleResponse(response);
+    }
+
+    async getSupplierResearch(id: string): Promise<any> {
+        const response = await this.api.get(`/supplier-research/${id}`);
+        return this.handleResponse(response);
+    }
+
+    async getSupplierResearchHistory(params?: {
+        page?: number;
+        limit?: number;
+    }): Promise<PaginatedResponse<any>> {
+        const response = await this.api.get('/supplier-research', { params });
+        return this.handleResponse(response);
+    }
+
+    async deleteSupplierResearch(id: string): Promise<void> {
+        const response = await this.api.delete(`/supplier-research/${id}`);
+        this.handleResponse(response);
+    }
+
     // Analytics endpoints
     async getDashboardAnalytics(): Promise<DashboardAnalytics> {
         const response = await this.api.get('/rfqs/analytics/dashboard');
