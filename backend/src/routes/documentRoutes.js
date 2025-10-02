@@ -1,8 +1,23 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const documentProcessor = require('../services/documentProcessor');
+const { validateFiles } = require('../middleware/fileValidation');
+const documentController = require('../controllers/documentController');
 
-// POST /api/documents/process - Process uploaded document
+// Configure multer for memory storage (files stored in memory as buffers)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB per file
+    files: 10 // Max 10 files
+  }
+});
+
+// POST /api/documents/extract - Extract data from multiple uploaded documents
+router.post('/extract', upload.array('files', 10), validateFiles, documentController.extractDocuments);
+
+// POST /api/documents/process - Process uploaded document (OLD WORKFLOW - kept for compatibility)
 router.post('/process', documentProcessor.getUploadMiddleware(), async (req, res) => {
   try {
     if (!req.file) {
@@ -13,19 +28,19 @@ router.post('/process', documentProcessor.getUploadMiddleware(), async (req, res
     }
 
     const { analysisType = 'auto' } = req.body;
-    
+
     console.log(`📄 Processing document: ${req.file.originalname} (${req.file.size} bytes)`);
-    
+
     // Process the document
     const result = await documentProcessor.processDocument(req.file, analysisType);
-    
+
     // Generate Smart BoM
     const smartBoM = documentProcessor.generateSmartBoM(
       result.analysis,
       result.suggestions,
       result.marketPrices
     );
-    
+
     // Return comprehensive response
     res.json({
       success: true,
@@ -46,10 +61,10 @@ router.post('/process', documentProcessor.getUploadMiddleware(), async (req, res
         }
       }
     });
-    
+
   } catch (error) {
     console.error('Document processing error:', error);
-    
+
     res.status(500).json({
       error: 'Document processing failed',
       message: error.message,
@@ -65,44 +80,34 @@ router.get('/supported-types', (req, res) => {
     data: {
       categories: {
         'Engineering Design': {
-          description: 'CAD files and technical drawings for ZBC generation',
-          extensions: ['.step', '.stp', '.dwg', '.dxf', '.iges', '.igs', '.pdf'],
+          description: 'CAD files, technical drawings, and SolidWorks files',
+          extensions: ['.step', '.stp', '.dwg', '.dxf', '.iges', '.igs', '.sldasm', '.sldprt', '.slddrw', '.pdf'],
           maxSize: '50MB',
-          analysisType: 'GENERATED_ZBC'
+          analysisType: 'Design'
         },
-        'ZBC Report': {
-          description: 'Professional cost analysis reports for ZBC extraction',
-          extensions: ['.pdf', '.docx', '.doc', '.xlsx'],
+        'BOM & Specifications': {
+          description: 'Bill of Materials, spreadsheets, and specifications',
+          extensions: ['.xlsx', '.xls', '.csv', '.pdf', '.docx', '.doc'],
           maxSize: '50MB',
-          analysisType: 'EXTRACTED_ZBC'
+          analysisType: 'BOM'
         },
-        'Bill of Materials': {
-          description: 'BoM spreadsheets and component lists',
-          extensions: ['.xlsx', '.xls', '.csv'],
+        'Images': {
+          description: 'Technical images, photos, handwritten notes',
+          extensions: ['.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif', '.webp'],
           maxSize: '50MB',
-          analysisType: 'BOM_PROCESSING'
+          analysisType: 'Design'
         },
-        'Technical Images': {
-          description: 'Engineering drawings and technical diagrams',
-          extensions: ['.png', '.jpg', '.jpeg', '.tiff', '.bmp'],
+        'Archives': {
+          description: 'ZIP files containing multiple documents',
+          extensions: ['.zip'],
           maxSize: '50MB',
-          analysisType: 'GENERATED_ZBC'
+          analysisType: 'Multiple'
         }
       },
       limits: {
         maxFileSize: '50MB',
-        maxFiles: 1,
-        allowedMimeTypes: [
-          'application/pdf',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'application/vnd.ms-excel',
-          'text/csv',
-          'image/png',
-          'image/jpeg',
-          'image/tiff',
-          'application/step',
-          'application/iges'
-        ]
+        maxFiles: 10,
+        supportedFormats: 'Images, PDFs, Excel, CSV, Word, CAD (DWG, DXF), SolidWorks (.sldasm, .sldprt, .slddrw), ZIP archives'
       }
     }
   });
@@ -117,9 +122,9 @@ router.post('/validate', documentProcessor.getUploadMiddleware(), (req, res) => 
         error: 'No file provided'
       });
     }
-    
+
     const fileCategory = documentProcessor.getFileCategory(req.file.originalname, req.file.mimetype);
-    
+
     res.json({
       valid: true,
       data: {
@@ -127,12 +132,12 @@ router.post('/validate', documentProcessor.getUploadMiddleware(), (req, res) => 
         fileSize: req.file.size,
         fileType: req.file.mimetype,
         category: fileCategory,
-        estimatedProcessingTime: process.env.USE_MOCK_DATA === 'true' ? 
-          `${process.env.MOCK_DELAY_MS || 1500}ms` : 
+        estimatedProcessingTime: process.env.USE_MOCK_DATA === 'true' ?
+          `${process.env.MOCK_DELAY_MS || 1500}ms` :
           'Variable (AI processing)'
       }
     });
-    
+
   } catch (error) {
     res.status(400).json({
       valid: false,

@@ -143,6 +143,27 @@ class APIService {
         return this.handleResponse(response);
     }
 
+    async analyzeBOM(
+        id: string,
+        requirements: {
+            desiredLeadTime: string;
+            paymentTerms: string;
+            deliveryLocation: string;
+            complianceRequirements: string[];
+            additionalRequirements?: string;
+        }
+    ): Promise<{
+        components: any[];
+        suppliers: any;
+        insights: string[];
+    }> {
+        const response = await this.api.put(
+            `/rfqs/${id}/analyse`,
+            requirements
+        );
+        return this.handleResponse(response);
+    }
+
     async updateRFQStep2(
         id: string,
         data: {
@@ -196,6 +217,51 @@ class APIService {
             },
         });
         return response.data;
+    }
+
+    async extractDocuments(
+        files: File[],
+        rfqId?: string
+    ): Promise<{
+        documentTypes: string[];
+        components: any[];
+        projectInfo?: {
+            projectName?: string;
+            projectNumber?: string;
+            date?: string;
+            budget?: number;
+            industry?: string;
+        };
+        technicalRequirements?: {
+            materials: string[];
+            finishes: string[];
+            tolerances?: string;
+            standards: string[];
+            testingRequired?: string;
+        };
+        metadata: {
+            confidence: number;
+            extractionNotes?: string;
+            fileNames?: string[];
+            fileCount?: number;
+            processingTime?: string;
+        };
+    }> {
+        const formData = new FormData();
+        files.forEach((file) => {
+            formData.append('files', file);
+        });
+
+        if (rfqId) {
+            formData.append('rfqId', rfqId);
+        }
+
+        const response = await this.api.post('/documents/extract', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data.data;
     }
 
     async getSupportedFileTypes(): Promise<any> {
