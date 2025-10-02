@@ -1,7 +1,6 @@
 const geminiService = require('./geminiService');
 const mockService = require('./mockService');
 const bomProcessor = require('./bomProcessor');
-const logger = require('./loggerService');
 const multer = require('multer');
 const path = require('path');
 
@@ -83,7 +82,7 @@ class DocumentProcessor {
       const fileType = path.extname(fileName).toLowerCase();
       const fileCategory = this.getFileCategory(fileName, file.mimetype);
       
-      logger.logBOMProcessing('DOCUMENT_START', `Processing document: ${fileName} (${fileCategory})`);
+      console.log(`Processing document: ${fileName} (${fileCategory})`);
       
       let result;
       let processingMode = 'gemini';
@@ -91,7 +90,7 @@ class DocumentProcessor {
       
       // FORCE GEMINI PROCESSING - NO MOCK DATA
       console.log('🚀 FORCING REAL GEMINI PROCESSING - NO MOCK DATA');
-      logger.logBOMProcessing('FORCE_REAL', 'Bypassing all mock data logic, forcing Gemini API');
+      console.log('Bypassing all mock data logic, forcing Gemini API');
       
       try {
         console.log('🤖 Processing with Gemini AI...');
@@ -99,10 +98,10 @@ class DocumentProcessor {
         processingMode = 'gemini';
         useRealData = true;
         
-        logger.logBOMProcessing('GEMINI_SUCCESS', 'Successfully processed with Gemini API');
+        console.log('Successfully processed with Gemini API');
         
       } catch (error) {
-        logger.logError('GEMINI_FAILED', error, { fileName, fileCategory });
+        console.error('GEMINI_FAILED', error, { fileName, fileCategory });
         console.error('❌ Gemini processing failed:', error);
         throw error; // Don't fallback to mock - throw the error
       }
@@ -133,7 +132,7 @@ class DocumentProcessor {
         }));
       }
       
-      logger.logBOMProcessing('DOCUMENT_COMPLETE', 'Document processing completed successfully', {
+      console.log('Document processing completed successfully', {
         processingMode,
         componentCount: result.analysis?.components?.length || 0
       });
@@ -141,7 +140,7 @@ class DocumentProcessor {
       return result;
       
     } catch (error) {
-      logger.logError('DOCUMENT_ERROR', error, { fileName: file.originalname });
+      console.error('DOCUMENT_ERROR', error, { fileName: file.originalname });
       console.error('Document processing error:', error);
       throw new Error(`Failed to process document: ${error.message}`);
     }
@@ -218,7 +217,7 @@ class DocumentProcessor {
     const fileName = file.originalname;
     const fileType = path.extname(fileName).toLowerCase();
     
-    logger.logBOMProcessing('START', 'Beginning real BOM processing with Gemini', {
+    console.log('Beginning real BOM processing with Gemini', {
       fileName,
       fileType,
       fileCategory,
@@ -231,24 +230,23 @@ class DocumentProcessor {
       
       // STEP 1: Convert CSV/Excel to JSON (like Python csv.DictReader)
       if (fileCategory === 'bom' && (fileType === '.csv' || fileType === '.xlsx' || fileType === '.xls')) {
-        logger.logBOMProcessing('CSV_CONVERSION', 'Converting BOM file to JSON');
+        console.log('Converting BOM file to JSON');
         
         bomJsonData = await bomProcessor.convertToJSON(file.buffer, fileName, fileType);
         
-        logger.logBOMProcessing('CSV_CONVERSION_SUCCESS', 'BOM file converted to JSON successfully', {
+        console.log('BOM file converted to JSON successfully', {
           rowCount: bomJsonData.length,
-          columns: bomJsonData.length > 0 ? Object.keys(bomJsonData[0]) : [],
-          sampleData: bomJsonData.slice(0, 3) // First 3 rows for debugging
+          columns: bomJsonData.length > 0 ? Object.keys(bomJsonData[0]) : []
         });
         
         // STEP 2: Send JSON data to Gemini with RSR Agent prompt
-        logger.logGeminiAPI('BOM_PROCESSING', 'Sending BOM JSON to Gemini API with RSR Agent prompt');
+        console.log('Sending BOM JSON to Gemini API with RSR Agent prompt');
         
         const geminiResponse = await geminiService.processBOMFile(bomJsonData, fileName, fileType);
 
         console.log(geminiResponse);
         
-        logger.logGeminiAPI('BOM_PROCESSING_SUCCESS', 'Gemini API returned BOM analysis', {
+        console.log('Gemini API returned BOM analysis', {
           responseLength: geminiResponse.length,
           responsePreview: geminiResponse.substring(0, 500) + '...'
         });
@@ -265,11 +263,11 @@ class DocumentProcessor {
           }
           
           analysisResult = JSON.parse(cleanedResponse);
-          logger.logBOMProcessing('GEMINI_PARSE_SUCCESS', 'Successfully parsed Gemini response', {
+          console.log('Successfully parsed Gemini response', {
             componentCount: analysisResult.length || 0
           });
         } catch (parseError) {
-          logger.logError('GEMINI_PARSE_ERROR', parseError, { 
+          console.error('GEMINI_PARSE_ERROR', parseError, { 
             geminiResponse: geminiResponse.substring(0, 500) + '...',
             cleanedResponse: cleanedResponse ? cleanedResponse.substring(0, 500) + '...' : 'undefined'
           });
@@ -280,7 +278,7 @@ class DocumentProcessor {
         // Handle other file types (ZBC, CAD, etc.)
         switch (fileCategory) {
           case 'zbc-report':
-            logger.logBOMProcessing('ZBC_PROCESSING', 'Processing ZBC report');
+            console.log('Processing ZBC report');
             const zbcText = await geminiService.extractZBCReport(file.buffer, fileName, fileType);
             analysisResult = JSON.parse(zbcText);
             break;
@@ -289,7 +287,7 @@ class DocumentProcessor {
           case 'technical-document':
           case 'image-document':
           default:
-            logger.logBOMProcessing('CAD_PROCESSING', 'Processing engineering design');
+            console.log('Processing engineering design');
             const cadText = await geminiService.analyzeEngineeringDesign(file.buffer, fileName, fileType);
             analysisResult = JSON.parse(cadText);
             break;
@@ -311,10 +309,10 @@ class DocumentProcessor {
         marketPrices: { priceAnalysis: [] }, // Will be populated if needed
         processingTime: 'Variable (Gemini API)',
         timestamp: new Date().toISOString(),
-        rawBOMData: bomJsonData // Include original JSON for debugging
+        rawBOMData: bomJsonData
       };
       
-      logger.logBOMProcessing('PROCESSING_COMPLETE', 'BOM processing completed successfully', {
+      console.log('BOM processing completed successfully', {
         componentCount: result.analysis.components.length,
         processingMode: 'real-gemini'
       });
@@ -322,14 +320,14 @@ class DocumentProcessor {
       return result;
       
     } catch (error) {
-      logger.logError('PROCESSING_ERROR', error, {
+      console.error('PROCESSING_ERROR', error, {
         fileName,
         fileCategory,
         fileType
       });
       
       // NO FALLBACK TO MOCK DATA - THROW ERROR INSTEAD
-      logger.logBOMProcessing('NO_FALLBACK', 'Refusing to use mock data - throwing error instead');
+      console.log('Refusing to use mock data - throwing error instead');
       throw new Error(`Real Gemini processing failed: ${error.message}. No mock data fallback allowed.`);
     }
   }

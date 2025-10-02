@@ -125,7 +125,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/api/rfqs', require('./routes/rfqRoutes'));
 app.use('/api/documents', require('./routes/documentRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/debug', require('./routes/debugRoutes'));
+app.use('/api/supplier-research', require('./routes/supplierResearchRoutes'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
