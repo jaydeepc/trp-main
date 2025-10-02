@@ -1,5 +1,9 @@
 # Voice + AI Architecture Documentation
 
+> 📚 **See Also:** 
+> - [Complete Project Architecture](./project-robbie-architecture.md) for full system documentation
+> - [Voice-App Command Bus](./voice-app-architecture.md) for bidirectional communication pattern
+
 This document outlines the complete architecture for integrating Gemini Live voice capabilities with the Project Robbie procurement platform.
 
 ## Overview

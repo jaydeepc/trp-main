@@ -121,12 +121,11 @@ router.get('/:id', authenticateUser, async (req, res) => {
   }
 });
 
-// PUT /api/rfqs/:id/analyse - Upload and analyse document
-router.put('/:id/analyse', authenticateUser, documentProcessor.getUploadMiddleware(), async (req, res) => {
+// PUT /api/rfqs/:id/analyse - Analyze extracted components with requirements
+router.put('/:id/analyse', authenticateUser, async (req, res) => {
   try {
     const rfq = await RFQ.findOne({
       _id: req.params.id,
-      userId: req.userId
     });
 
     if (!rfq) {
@@ -135,19 +134,40 @@ router.put('/:id/analyse', authenticateUser, documentProcessor.getUploadMiddlewa
       });
     }
 
-    if (!req.file) {
+    // Get requirements from request body
+    const {
+      desiredLeadTime,
+      paymentTerms,
+      deliveryLocation,
+      complianceRequirements,
+      additionalRequirements
+    } = req.body;
+
+    // Validate requirements
+    if (!desiredLeadTime || !paymentTerms || !deliveryLocation) {
       return res.status(400).json({
-        error: 'No file uploaded',
-        message: 'Please select a file to upload'
+        error: 'Missing required fields',
+        message: 'Lead time, payment terms, and delivery location are required'
       });
     }
 
-    console.log(`🔄 Processing document: ${req.file.originalname}`);
+    // Check if we have extracted data
+    if (!rfq.extractedDocumentData || !rfq.extractedDocumentData.components || rfq.extractedDocumentData.components.length === 0) {
+      return res.status(400).json({
+        error: 'No extracted data found',
+        message: 'Please upload and extract documents first'
+      });
+    }
 
-    // Simulate processing delay (10 seconds like frontend expects)
+    console.log(`🔄 Analyzing BOM with requirements for RFQ ${rfq._id}`);
+    console.log(`   Components: ${rfq.extractedDocumentData.components.length}`);
+    console.log(`   Compliance: ${complianceRequirements?.length || 0} requirements`);
+    console.log(`   Region: ${deliveryLocation}`);
+
+    // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 20000));
 
-    // Get mock BOM analysis data from frontend
+    // Get mock BOM analysis data
     const mockData = getMockData();
 
     // Convert mock components to smartBoM format expected by RFQ model
@@ -170,27 +190,23 @@ router.put('/:id/analyse', authenticateUser, documentProcessor.getUploadMiddlewa
       predictedMarketRange: component.predictedMarketRange
     }));
 
-    // Create processing info
-    const processingInfo = {
-      fileName: req.file.originalname,
-      fileType: req.file.mimetype,
-      fileCategory: 'BOM',
-      fileSize: req.file.size,
-      processingMode: 'mock', // Valid enum: ['mock', 'gemini']
-      analysisType: 'BOM_PROCESSING', // Valid enum: ['GENERATED_ZBC', 'EXTRACTED_ZBC', 'BOM_PROCESSING']
-      processingTime: '10.2s',
-      confidence: '94.2%',
-      componentsFound: mockData.components.length
+    // Save requirements to RFQ
+    rfq.commercialTerms = {
+      desiredLeadTime,
+      paymentTerms,
+      deliveryLocation,
+      complianceRequirements: complianceRequirements || [],
+      additionalRequirements
     };
 
-    // Update RFQ with processed data
-    rfq.sourceDocument = {
-      fileName: processingInfo.fileName,
-      fileType: processingInfo.fileType,
-      fileCategory: processingInfo.fileCategory,
-      fileSize: processingInfo.fileSize,
-      processingMode: processingInfo.processingMode,
-      analysisType: processingInfo.analysisType
+    // Create processing info
+    const processingInfo = {
+      processingMode: 'mock',
+      analysisType: 'BOM_PROCESSING',
+      processingTime: '20s',
+      confidence: '94.2%',
+      componentsFound: mockData.components.length,
+      extractedComponentsUsed: rfq.extractedDocumentData.components.length
     };
 
     rfq.components = smartBoM;
@@ -210,13 +226,15 @@ router.put('/:id/analyse', authenticateUser, documentProcessor.getUploadMiddlewa
       processingInfo
     };
 
-    rfq.markStepComplete(1, {
-      documentProcessed: true,
-      componentsCount: smartBoM.length
+    rfq.markStepComplete(2, {
+      requirementsDefined: true,
+      bomAnalyzed: true,
+      componentsCount: smartBoM.length,
+      complianceCount: complianceRequirements?.length || 0
     });
 
     rfq.status = 'in-progress';
-    rfq.currentStep = 2;
+    rfq.currentStep = 3;
 
     await rfq.save();
 

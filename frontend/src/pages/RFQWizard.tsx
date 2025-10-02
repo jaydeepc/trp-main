@@ -9,10 +9,11 @@ import StepIndicator from '../components/common/StepIndicator';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import Loading from '../components/common/Loading';
-import Step1DefineRequirement from '../components/forms/Step1DefineRequirement';
-import Step2SmartBOMReview from '../components/forms/Step2SmartBOMReview';
+import UploadDocuments from '../components/forms/UploadDocuments';
+import RequirementsForm from '../components/forms/RequirementsForm';
+import BOMAnalysis from '../components/forms/BOMAnalysis';
 import Step3CommercialTerms from '../components/forms/Step3CommercialTerms';
-import Step4PreviewRFQ from '../components/forms/Step4PreviewRFQ';
+import RFQPreview from '../components/forms/RFQPreview';
 
 interface RFQWizardProps {
   rfqId?: string;
@@ -35,35 +36,43 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
   const steps: StepConfig[] = [
     {
       number: 1,
-      title: 'Define Requirement',
-      description: 'Upload documents',
+      title: 'Upload Documents',
+      description: 'Upload BOMs & specs',
       isCompleted: currentStep > 1,
       isActive: currentStep === 1,
       isAccessible: true,
     },
     {
       number: 2,
-      title: 'Smart BoM Review',
-      description: 'Review AI insights',
+      title: 'Requirements',
+      description: 'Define requirements',
       isCompleted: currentStep > 2,
       isActive: currentStep === 2,
       isAccessible: currentStep >= 2,
     },
     {
       number: 3,
-      title: 'Commercial Terms',
-      description: 'Define terms',
+      title: 'BOM Analysis',
+      description: 'Review Smart BOM',
       isCompleted: currentStep > 3,
       isActive: currentStep === 3,
       isAccessible: currentStep >= 3,
     },
     {
       number: 4,
-      title: 'Preview & Send',
-      description: 'Final review',
+      title: 'Commercial Terms',
+      description: 'Define terms',
       isCompleted: currentStep > 4,
       isActive: currentStep === 4,
       isAccessible: currentStep >= 4,
+    },
+    {
+      number: 5,
+      title: 'Preview & Send',
+      description: 'Final review',
+      isCompleted: currentStep > 5,
+      isActive: currentStep === 5,
+      isAccessible: currentStep >= 5,
     },
   ];
 
@@ -74,7 +83,7 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
   };
 
   const handleNextStep = () => {
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       dispatch(setCurrentStep(currentStep + 1));
     }
   };
@@ -90,10 +99,12 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
       case 1:
         return <Upload className="w-5 h-5" />;
       case 2:
-        return <FileText className="w-5 h-5" />;
-      case 3:
         return <Settings className="w-5 h-5" />;
+      case 3:
+        return <FileText className="w-5 h-5" />;
       case 4:
+        return <Settings className="w-5 h-5" />;
+      case 5:
         return <Eye className="w-5 h-5" />;
       default:
         return null;
@@ -148,7 +159,7 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
     switch (currentStep) {
       case 1:
         return (
-          <Step1DefineRequirement
+          <UploadDocuments
             rfq={currentRFQ}
             onNext={handleNextStep}
             onCancel={onBackToDashboard}
@@ -157,16 +168,16 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
 
       case 2:
         return (
-          <Step2SmartBOMReview
+          <RequirementsForm
             rfq={currentRFQ}
             onNext={handleNextStep}
-            onPrevious={handlePreviousStep}
+            onBack={handlePreviousStep}
           />
         );
 
       case 3:
         return (
-          <Step3CommercialTerms
+          <BOMAnalysis
             rfq={currentRFQ}
             onNext={handleNextStep}
             onPrevious={handlePreviousStep}
@@ -175,7 +186,16 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
 
       case 4:
         return (
-          <Step4PreviewRFQ
+          <Step3CommercialTerms
+            rfq={currentRFQ}
+            onNext={handleNextStep}
+            onPrevious={handlePreviousStep}
+          />
+        );
+
+      case 5:
+        return (
+          <RFQPreview
             rfq={currentRFQ}
             onPrevious={handlePreviousStep}
             onComplete={onBackToDashboard}
@@ -210,7 +230,7 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
                   Smart RFQ Creation
                 </h1>
                 <p className="text-medium-gray">
-                  {currentRFQ.rfqNumber} • Step {currentStep} of 4
+                  {currentRFQ.rfqNumber} • Step {currentStep} of 5
                 </p>
               </div>
             </div>

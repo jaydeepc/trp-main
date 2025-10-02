@@ -41,14 +41,14 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
             {/* Step Label */}
             <div className="mt-2 text-center">
               <p className={`
-                text-sm font-medium
+                text-sm font-medium mx-auto
                 ${step.isActive ? 'text-primary-blue' : ''}
                 ${step.isCompleted ? 'text-green-600' : ''}
                 ${!step.isCompleted && !step.isActive ? 'text-medium-gray' : ''}
               `}>
                 {step.title}
               </p>
-              <p className="text-xs text-medium-gray mt-1 max-w-24 leading-tight">
+              <p className="text-xs text-medium-gray mt-1 max-w-24 leading-tight mx-auto">
                 {step.description}
               </p>
             </div>

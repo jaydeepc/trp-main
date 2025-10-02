@@ -1,5 +1,7 @@
 # Voice-App Bidirectional Architecture
 
+> 📚 **See Also:** [Complete Project Architecture](./project-robbie-architecture.md) for full system documentation
+
 ## 🎯 The Real Challenge
 
 **Voice Assistant needs to handle MANY functions with BIDIRECTIONAL communication:**

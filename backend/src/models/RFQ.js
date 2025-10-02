@@ -15,10 +15,10 @@ const ComponentSchema = new mongoose.Schema({
   material: String,
   dimensions: String,
   process: String,
-  
+
   // AI Suggestions
   aiSuggestedAlternative: String,
-  
+
   // Compliance
   complianceStatus: {
     type: String,
@@ -33,7 +33,7 @@ const ComponentSchema = new mongoose.Schema({
     text: String,
     icon: String
   }],
-  
+
   // Risk Assessment
   riskFlag: {
     level: {
@@ -47,13 +47,13 @@ const ComponentSchema = new mongoose.Schema({
       default: 'gray'
     }
   },
-  
+
   // Supplier Information
   aiRecommendedRegion: String,
-  
+
   // Pricing
   predictedMarketRange: String,
-  
+
   // ZBC Data
   zbcShouldCost: String,
   zbcVariance: String,
@@ -61,11 +61,11 @@ const ComponentSchema = new mongoose.Schema({
     type: String,
     enum: ['AI Generated', 'Professional Report', 'Manual Entry']
   },
-  
+
   // Metadata
   confidence: Number,
   notes: String,
-  
+
   // Raw analysis data (for detailed views)
   rawData: {
     component: mongoose.Schema.Types.Mixed,
@@ -108,22 +108,22 @@ const RFQSchema = new mongoose.Schema({
     required: true,
     index: true
   },
-  
+
   // RFQ Identification
   rfqNumber: {
     type: String,
     unique: true,
     required: false // Will be generated in pre-save middleware
   },
-  
+
   // Status
   status: {
     type: String,
     enum: ['draft', 'in-progress', 'completed', 'sent', 'cancelled'],
     default: 'draft'
   },
-  
-  // Document Processing Information
+
+  // Document Processing Information (OLD WORKFLOW)
   sourceDocument: {
     fileName: String,
     fileType: String,
@@ -138,13 +138,60 @@ const RFQSchema = new mongoose.Schema({
       enum: ['GENERATED_ZBC', 'EXTRACTED_ZBC', 'BOM_PROCESSING']
     }
   },
-  
+
+  // Source Documents
+  sourceDocuments: [{
+    fileName: String,
+    fileType: String,
+    fileSize: Number,
+    source: {
+      type: String,
+      enum: ['direct', 'zip']
+    },
+    zipSource: String
+  }],
+
+  // Extracted Document Data
+  extractedDocumentData: {
+    documentTypes: [{
+      type: String,
+      enum: ['BOM', 'Design', 'Specification', 'Quotation', 'Other']
+    }],
+    components: [{
+      partNumber: String,
+      description: String,
+      quantity: Number,
+      specifications: mongoose.Schema.Types.Mixed
+    }],
+    projectInfo: {
+      projectName: String,
+      projectDescription: String,
+      industry: String,
+      application: String
+    },
+    technicalRequirements: {
+      materials: [String],
+      processes: [String],
+      standards: [String],
+      tolerances: String,
+      finishes: [String]
+    },
+    metadata: {
+      confidence: Number,
+      extractionNotes: String,
+      filesProcessed: Number,
+      originalFiles: Number,
+      zipFilesExtracted: Number,
+      extractedAt: Date
+    }
+  },
+
   // Smart BoM Components
   components: [ComponentSchema],
-  
+
   // Commercial Terms
   commercialTerms: CommercialTermsSchema,
-  
+
   // Analysis Results (raw data from AI processing)
   analysisResults: {
     analysis: mongoose.Schema.Types.Mixed,
@@ -152,7 +199,7 @@ const RFQSchema = new mongoose.Schema({
     marketPrices: mongoose.Schema.Types.Mixed,
     processingInfo: mongoose.Schema.Types.Mixed
   },
-  
+
   // Summary Statistics
   summary: {
     totalComponents: {
@@ -170,7 +217,7 @@ const RFQSchema = new mongoose.Schema({
       default: 0
     }
   },
-  
+
   // Workflow Steps
   currentStep: {
     type: Number,
@@ -178,13 +225,13 @@ const RFQSchema = new mongoose.Schema({
     min: 1,
     max: 4
   },
-  
+
   completedSteps: [{
     step: Number,
     completedAt: Date,
     data: mongoose.Schema.Types.Mixed
   }],
-  
+
   // Timestamps
   createdAt: {
     type: Date,
@@ -195,7 +242,7 @@ const RFQSchema = new mongoose.Schema({
     default: Date.now
   },
   sentAt: Date,
-  
+
   // Additional metadata
   tags: [String],
   priority: {
@@ -203,7 +250,7 @@ const RFQSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high', 'urgent'],
     default: 'medium'
   },
-  
+
   // Version control for drafts
   version: {
     type: Number,
@@ -220,7 +267,7 @@ RFQSchema.index({ createdAt: -1 });
 RFQSchema.index({ 'sourceDocument.analysisType': 1 });
 
 // Pre-save middleware to generate RFQ number
-RFQSchema.pre('save', async function(next) {
+RFQSchema.pre('save', async function (next) {
   if (this.isNew && !this.rfqNumber) {
     const count = await this.constructor.countDocuments();
     const date = new Date();
@@ -228,28 +275,28 @@ RFQSchema.pre('save', async function(next) {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     this.rfqNumber = `RFQ-${year}${month}-${String(count + 1).padStart(4, '0')}`;
   }
-  
+
   // Update summary statistics
   this.summary.totalComponents = this.components.length;
   this.summary.highRiskComponents = this.components.filter(c => c.riskFlag.level === 'High').length;
   this.summary.complianceIssues = this.components.filter(c => c.complianceStatus === 'non-compliant').length;
-  
+
   // Calculate average ZBC variance
   const variances = this.components
     .map(c => c.zbcVariance)
     .filter(v => v && v !== 'N/A')
     .map(v => parseFloat(v.replace('%', '')));
-  
+
   if (variances.length > 0) {
     this.summary.averageZBCVariance = variances.reduce((a, b) => a + b, 0) / variances.length;
   }
-  
+
   this.updatedAt = new Date();
   next();
 });
 
 // Instance methods
-RFQSchema.methods.toSummary = function() {
+RFQSchema.methods.toSummary = function () {
   return {
     id: this._id.toString(),
     rfqNumber: this.rfqNumber,
@@ -266,20 +313,20 @@ RFQSchema.methods.toSummary = function() {
   };
 };
 
-RFQSchema.methods.markStepComplete = function(step, data = {}) {
+RFQSchema.methods.markStepComplete = function (step, data = {}) {
   this.completedSteps.push({
     step,
     completedAt: new Date(),
     data
   });
-  
+
   if (step > this.currentStep) {
     this.currentStep = step;
   }
 };
 
 // Static methods
-RFQSchema.statics.findByUser = function(userId, status = null) {
+RFQSchema.statics.findByUser = function (userId, status = null) {
   const query = { userId };
   if (status) {
     query.status = status;
@@ -287,7 +334,7 @@ RFQSchema.statics.findByUser = function(userId, status = null) {
   return this.find(query).sort({ updatedAt: -1 });
 };
 
-RFQSchema.statics.getAnalyticsData = function(userId) {
+RFQSchema.statics.getAnalyticsData = function (userId) {
   return this.aggregate([
     { $match: { userId } },
     {
