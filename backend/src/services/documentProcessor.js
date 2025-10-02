@@ -1,5 +1,7 @@
 const geminiService = require('./geminiService');
 const mockService = require('./mockService');
+const bomProcessor = require('./bomProcessor');
+const logger = require('./loggerService');
 const multer = require('multer');
 const path = require('path');
 
@@ -74,53 +76,35 @@ class DocumentProcessor {
     return 'unknown';
   }
 
-  // Main document processing function with smart hybrid approach
+  // Main document processing function - FORCE REAL GEMINI PROCESSING
   async processDocument(file, analysisType = 'auto') {
     try {
       const fileName = file.originalname;
       const fileType = path.extname(fileName).toLowerCase();
       const fileCategory = this.getFileCategory(fileName, file.mimetype);
       
-      console.log(`📄 Processing document: ${fileName} (${fileCategory})`);
+      logger.logBOMProcessing('DOCUMENT_START', `Processing document: ${fileName} (${fileCategory})`);
       
       let result;
-      let processingMode = 'mock';
-      let geminiAnalysis = null;
-      let confidence = 0;
-      let useRealData = false;
+      let processingMode = 'gemini';
+      let useRealData = true;
       
-      // Always try Gemini analysis first if enabled
-      if (this.enableGeminiAnalysis && !this.useMockData) {
-        try {
-          console.log('🤖 Analyzing document with Gemini AI...');
-          geminiAnalysis = await this.analyzeWithGemini(file, fileCategory, analysisType);
-          
-          // Calculate confidence score
-          confidence = this.calculateConfidence(geminiAnalysis, fileCategory);
-          console.log(`📊 Gemini analysis confidence: ${confidence}%`);
-          
-          // Decide whether to use real data or fallback to mock
-          if (confidence >= this.confidenceThreshold) {
-            console.log('✅ High confidence - Using real Gemini data');
-            result = await this.processWithGemini(file, fileCategory, analysisType);
-            processingMode = 'gemini';
-            useRealData = true;
-          } else {
-            console.log('⚠️ Low confidence - Using enhanced mock data');
-            result = await mockService.processDocument(fileName, fileType, analysisType);
-            processingMode = 'mock-enhanced';
-            useRealData = false;
-          }
-        } catch (error) {
-          console.error('Gemini analysis failed:', error);
-          console.log('🔄 Falling back to mock data');
-          result = await mockService.processDocument(fileName, fileType, analysisType);
-          processingMode = 'mock-fallback';
-        }
-      } else {
-        console.log('🎭 Using mock data (Gemini disabled or forced mock mode)');
-        result = await mockService.processDocument(fileName, fileType, analysisType);
-        processingMode = 'mock';
+      // FORCE GEMINI PROCESSING - NO MOCK DATA
+      console.log('🚀 FORCING REAL GEMINI PROCESSING - NO MOCK DATA');
+      logger.logBOMProcessing('FORCE_REAL', 'Bypassing all mock data logic, forcing Gemini API');
+      
+      try {
+        console.log('🤖 Processing with Gemini AI...');
+        result = await this.processWithGemini(file, fileCategory, analysisType);
+        processingMode = 'gemini';
+        useRealData = true;
+        
+        logger.logBOMProcessing('GEMINI_SUCCESS', 'Successfully processed with Gemini API');
+        
+      } catch (error) {
+        logger.logError('GEMINI_FAILED', error, { fileName, fileCategory });
+        console.error('❌ Gemini processing failed:', error);
+        throw error; // Don't fallback to mock - throw the error
       }
       
       // Enhance result with comprehensive metadata
@@ -131,26 +115,33 @@ class DocumentProcessor {
         fileSize: file.size,
         processingMode,
         useRealData,
-        geminiConfidence: confidence,
+        geminiConfidence: 100, // Force high confidence
         confidenceThreshold: this.confidenceThreshold,
         analysisType: analysisType,
         timestamp: new Date().toISOString(),
-        geminiEnabled: this.enableGeminiAnalysis,
-        mockForced: this.useMockData
+        geminiEnabled: true,
+        mockForced: false,
+        realProcessingForced: true
       };
       
       // Add data source indicators to components
       if (result.analysis && result.analysis.components) {
         result.analysis.components = result.analysis.components.map(comp => ({
           ...comp,
-          dataSource: useRealData ? 'gemini' : 'mock',
-          confidence: useRealData ? confidence : 'N/A'
+          dataSource: 'gemini',
+          confidence: 100
         }));
       }
+      
+      logger.logBOMProcessing('DOCUMENT_COMPLETE', 'Document processing completed successfully', {
+        processingMode,
+        componentCount: result.analysis?.components?.length || 0
+      });
       
       return result;
       
     } catch (error) {
+      logger.logError('DOCUMENT_ERROR', error, { fileName: file.originalname });
       console.error('Document processing error:', error);
       throw new Error(`Failed to process document: ${error.message}`);
     }
@@ -222,61 +213,124 @@ class DocumentProcessor {
     return Math.min(Math.max(confidence, 0), 100);
   }
 
-  // Process with Gemini AI
+  // Process with Gemini AI - REAL IMPLEMENTATION
   async processWithGemini(file, fileCategory, analysisType) {
     const fileName = file.originalname;
     const fileType = path.extname(fileName).toLowerCase();
     
-    let analysisResult;
+    logger.logBOMProcessing('START', 'Beginning real BOM processing with Gemini', {
+      fileName,
+      fileType,
+      fileCategory,
+      fileSize: file.size
+    });
     
     try {
-      // Route to appropriate Gemini service based on file category
-      switch (fileCategory) {
-        case 'zbc-report':
-          console.log('🔍 Extracting ZBC data from report');
-          const zbcText = await geminiService.extractZBCReport(file.buffer, fileName, fileType);
-          analysisResult = JSON.parse(zbcText);
-          break;
+      let bomJsonData = null;
+      let analysisResult = null;
+      
+      // STEP 1: Convert CSV/Excel to JSON (like Python csv.DictReader)
+      if (fileCategory === 'bom' && (fileType === '.csv' || fileType === '.xlsx' || fileType === '.xls')) {
+        logger.logBOMProcessing('CSV_CONVERSION', 'Converting BOM file to JSON');
+        
+        bomJsonData = await bomProcessor.convertToJSON(file.buffer, fileName, fileType);
+        
+        logger.logBOMProcessing('CSV_CONVERSION_SUCCESS', 'BOM file converted to JSON successfully', {
+          rowCount: bomJsonData.length,
+          columns: bomJsonData.length > 0 ? Object.keys(bomJsonData[0]) : [],
+          sampleData: bomJsonData.slice(0, 3) // First 3 rows for debugging
+        });
+        
+        // STEP 2: Send JSON data to Gemini with RSR Agent prompt
+        logger.logGeminiAPI('BOM_PROCESSING', 'Sending BOM JSON to Gemini API with RSR Agent prompt');
+        
+        const geminiResponse = await geminiService.processBOMFile(bomJsonData, fileName, fileType);
+
+        console.log(geminiResponse);
+        
+        logger.logGeminiAPI('BOM_PROCESSING_SUCCESS', 'Gemini API returned BOM analysis', {
+          responseLength: geminiResponse.length,
+          responsePreview: geminiResponse.substring(0, 500) + '...'
+        });
+        
+        try {
+          // Clean the Gemini response by removing markdown code blocks
+          let cleanedResponse = geminiResponse.trim();
           
-        case 'bom':
-          console.log('📋 Processing BoM file');
-          const bomText = await geminiService.processBOMFile(file.buffer, fileName, fileType);
-          analysisResult = JSON.parse(bomText);
-          break;
+          // Remove markdown code block markers if present
+          if (cleanedResponse.startsWith('```json')) {
+            cleanedResponse = cleanedResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+          } else if (cleanedResponse.startsWith('```')) {
+            cleanedResponse = cleanedResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+          }
           
-        case 'cad':
-        case 'technical-document':
-        case 'image-document':
-        default:
-          console.log('🔧 Analyzing engineering design');
-          const cadText = await geminiService.analyzeEngineeringDesign(file.buffer, fileName, fileType);
-          analysisResult = JSON.parse(cadText);
-          break;
+          analysisResult = JSON.parse(cleanedResponse);
+          logger.logBOMProcessing('GEMINI_PARSE_SUCCESS', 'Successfully parsed Gemini response', {
+            componentCount: analysisResult.length || 0
+          });
+        } catch (parseError) {
+          logger.logError('GEMINI_PARSE_ERROR', parseError, { 
+            geminiResponse: geminiResponse.substring(0, 500) + '...',
+            cleanedResponse: cleanedResponse ? cleanedResponse.substring(0, 500) + '...' : 'undefined'
+          });
+          throw new Error('Failed to parse Gemini response as JSON');
+        }
+        
+      } else {
+        // Handle other file types (ZBC, CAD, etc.)
+        switch (fileCategory) {
+          case 'zbc-report':
+            logger.logBOMProcessing('ZBC_PROCESSING', 'Processing ZBC report');
+            const zbcText = await geminiService.extractZBCReport(file.buffer, fileName, fileType);
+            analysisResult = JSON.parse(zbcText);
+            break;
+            
+          case 'cad':
+          case 'technical-document':
+          case 'image-document':
+          default:
+            logger.logBOMProcessing('CAD_PROCESSING', 'Processing engineering design');
+            const cadText = await geminiService.analyzeEngineeringDesign(file.buffer, fileName, fileType);
+            analysisResult = JSON.parse(cadText);
+            break;
+        }
       }
       
-      // Generate additional insights using Gemini
-      console.log('💡 Generating AI suggestions');
-      const suggestionsText = await geminiService.generateSuggestions(analysisResult.components || []);
-      const suggestions = JSON.parse(suggestionsText);
-      
-      console.log('📈 Predicting market prices');
-      const marketPricesText = await geminiService.predictMarketPrices(analysisResult.components || []);
-      const marketPrices = JSON.parse(marketPricesText);
-      
-      return {
-        analysis: analysisResult,
-        suggestions,
-        marketPrices,
+      // STEP 3: Return the processed data in the expected format
+      const result = {
+        analysis: {
+          components: Array.isArray(analysisResult) ? analysisResult : (analysisResult.components || []),
+          analysisType: 'REAL_GEMINI_PROCESSING',
+          documentInfo: {
+            fileName,
+            fileType,
+            processedDate: new Date().toISOString()
+          }
+        },
+        suggestions: { suggestions: [] }, // Will be populated if needed
+        marketPrices: { priceAnalysis: [] }, // Will be populated if needed
         processingTime: 'Variable (Gemini API)',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        rawBOMData: bomJsonData // Include original JSON for debugging
       };
       
-    } catch (error) {
-      console.error('Gemini processing error:', error);
+      logger.logBOMProcessing('PROCESSING_COMPLETE', 'BOM processing completed successfully', {
+        componentCount: result.analysis.components.length,
+        processingMode: 'real-gemini'
+      });
       
-      // Fallback to mock data if Gemini fails
-      console.log('⚠️ Falling back to mock data due to Gemini error');
-      return await mockService.processDocument(fileName, fileType, analysisType);
+      return result;
+      
+    } catch (error) {
+      logger.logError('PROCESSING_ERROR', error, {
+        fileName,
+        fileCategory,
+        fileType
+      });
+      
+      // NO FALLBACK TO MOCK DATA - THROW ERROR INSTEAD
+      logger.logBOMProcessing('NO_FALLBACK', 'Refusing to use mock data - throwing error instead');
+      throw new Error(`Real Gemini processing failed: ${error.message}. No mock data fallback allowed.`);
     }
   }
 

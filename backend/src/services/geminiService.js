@@ -5,11 +5,12 @@ class GeminiService {
     this.ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     this.defaultModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
     this.complexModel = process.env.GEMINI_MODEL_COMPLEX || 'gemini-1.5-pro';
+    this.bomModel = process.env.GEMINI_MODEL_BOM || 'gemini-2.5-flash';
   }
 
   getModelForTask(taskType) {
     const models = {
-      'bom-extraction': this.defaultModel,
+      'bom-extraction': this.bomModel, // Use the new working model for BOM processing
       'cad-analysis': this.complexModel,
       'zbc-calculation': this.complexModel,
       'zbc-extraction': this.defaultModel,
@@ -184,54 +185,97 @@ Extract all numerical values accurately and preserve any methodology notes or as
     return await this.generateContent(prompt, 'zbc-extraction');
   }
 
-  // BoM File Processing
-  async processBOMFile(fileBuffer, fileName, fileType) {
+  // BoM File Processing with RSR Agent
+  async processBOMFile(bomJsonData, fileName, fileType) {
     const prompt = `
-You are an expert procurement analyst for precision manufacturing. Analyze the uploaded BoM document.
+System Directive:
+This is a high-priority task for the Robbie Agent System. The mission is to perform intensive supplier research based on a user-provided Bill of Materials (BOM).
 
-File: ${fileName} (${fileType})
+Primary Activated Persona:
+Robbie Supplier Research (RSR) Agent. You are responsible for executing all research, analysis, and data compilation stages of this task. The final output from you will serve as critical intelligence for other agents in the system, such as the Robbie Suppliers Onboarding (RSO) Agent, who may use this data to identify and contact potential new manufacturers.
 
-Extract comprehensive Bill of Materials data:
+Mission Goal:
+Transform a standard BOM into an actionable "Smart BOM" by identifying, vetting, and classifying global alternative suppliers for each component according to the specific criteria outlined below.
 
-For each component identified, provide:
-- Part Name/Description
-- Part Number (if available)
-- Quantity required
-- Material specification
-- Dimensions (if available)
-- Manufacturing process hints
-- Any compliance markings or certifications mentioned
-- Supplier information (if present)
+⸻
 
-Format response as structured JSON:
-{
-  "documentInfo": {
-    "fileName": "${fileName}",
-    "type": "${fileType}",
-    "processedDate": "${new Date().toISOString()}"
-  },
-  "components": [
-    {
-      "partName": "string",
-      "partNumber": "string",
-      "quantity": number,
-      "material": "string",
-      "dimensions": "string",
-      "process": "string",
-      "compliance": ["array of strings"],
-      "supplier": "string (if available)",
-      "notes": "string"
-    }
-  ],
-  "summary": {
-    "totalComponents": number,
-    "documentType": "string",
-    "confidence": number,
-    "extractionNotes": ["array"]
-  }
-}
+INPUTS FOR THE MISSION
+	•	Bill of Materials (BOM): The BOM data is provided below in JSON format.
+	•	Baseline Reference Websites: For establishing baseline price and specifications, use reliable websites in the order listed (e.g., Robu.in, Electronicscomp.com, etc.). If a 'Source' URL is provided in the BOM, that is the primary reference for that item.
 
-If the document contains tables, extract all relevant data. If it's an image, use OCR capabilities to read text and identify components.
+⸻
+
+STAGE 1: BASELINE ANALYSIS (RSR Agent Task)
+
+For each item in the BOM:
+	1.	Identify & Document: Use the Baseline Reference Websites to locate each component.
+	2.	Establish Baseline: Record:
+	•	primaryCategory
+	•	manufacturer
+	•	keySpecifications
+	•	baselinePriceINR
+	•	sourceURL (must be a real, verifiable working URL)
+	•	productPageURL (must be a real, verifiable working URL)
+
+Important: If no real URL exists, set sourceURL and productPageURL to null. Do not fabricate URLs.
+
+⸻
+
+STAGE 2: GLOBAL DEEP SEARCH (RSR Agent Task)
+
+For each benchmarked component:
+	1.	Initiate Deep Search: Perform a relentless search for alternative OEMs and reputable suppliers.
+	2.	Geographic Scope: Include India, China, South Korea, Taiwan, Hong Kong, UK, Vietnam, Japan, Germany, Italy. Prioritize India-based OEMs.
+	3.	Specialized Focus for Drones: Intensify search for specialized components (airspeed sensors, PDB/UBEC variants, landing gear sets, gimbals, HD FPV systems, barometers, telemetry radios, antennas, fasteners, etc.).
+	4.	Supplier Requirements: All supplier URLs (supplierURL and productPageURL) must be real, verified links. If not available, use null.
+
+⸻
+
+STAGE 3: CLASSIFICATION & FINANCIAL ANALYSIS (RSR Agent Task)
+
+For each alternative supplier:
+	1.	Evaluate: Compare the alternative directly to the Stage 1 baseline component.
+	2.	Classify: Assign to exactly one of the 10 categories: 
+Number	Classification
+1	Better Quality but similar price
+2	Better Quality but lower price
+3	Better Quality but higher price
+4	Better Quality, higher price and higher reliability
+5	Better Quality, lower price and more established company
+6	Better Quality, higher price and a more established company
+7	Better Quality, lower price and better support
+8	Better Quality, higher price and better support
+9	Better Quality, lower price and better returns and warranty support
+10	Better Quality, higher price and better returns and warranty support
+ 3.	Calculate Landed Cost:
+	•	Use the local currency price and a realistic exchange rate.
+	•	Include estimated shipping and customs duties.
+	•	Record landedCostINR with fields:
+	•	localCurrencyPrice
+	•	exchangeRateUsed
+	•	estimatedShippingINR
+	•	estimatedCustomsINR
+	•	totalLandedCostINR
+
+⸻
+
+OUTPUT SPECIFICATIONS
+	1.	Return a JSON array of all parts, each containing:
+	•	partName
+	•	description
+	•	quantity
+	•	unitCostINR
+	•	totalCostINR
+	•	baselineAnalysis (with all fields above)
+	•	alternativeSuppliers (with all fields above and real URLs)
+	2.	Ensure the JSON is well-formatted, human-readable, and fully verifiable.
+	3.	If no real supplier URL is found, set the URL field to null.
+	4.	Do not add explanations, commentary, or fabricated data.
+
+⸻
+
+BOM DATA (JSON FORMAT):
+${JSON.stringify(bomJsonData, null, 2)}
 `;
 
     return await this.generateContent(prompt, 'bom-extraction');
