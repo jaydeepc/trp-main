@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { CheckCircle, AlertTriangle, XCircle, TrendingUp, TrendingDown, Info, Sparkles, Download } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, TrendingUp, TrendingDown, Info, Sparkles, Download, Table, Grid } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import InfoTooltip from '../common/InfoTooltip';
 import { RootState } from '../../store';
@@ -8,6 +8,7 @@ import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import SupplierTrustGraph from '../common/SupplierTrustGraph';
+import BOMResultsTable from '../common/BOMResultsTable';
 
 interface Step2SmartBOMReviewProps {
   rfq: RFQ;
@@ -26,6 +27,7 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
   const [notes, setNotes] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedComponent, setSelectedComponent] = useState<string>('1'); // Default to first component
+  const [viewMode, setViewMode] = useState<'detailed' | 'excel'>('detailed');
 
   const handleContinue = async () => {
     try {
@@ -159,20 +161,48 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
           </p>
         </div>
 
-        {/* Header with Export Button */}
+        {/* Header with View Toggle and Export Button */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-4">
             <h3 className="text-lg font-semibold text-dark-slate-gray">Smart BOM Data</h3>
             <span className="text-sm text-medium-gray">({components.length} components)</span>
           </div>
-          <Button
-            onClick={exportToExcel}
-            variant="secondary"
-            icon={<Download className="w-4 h-4" />}
-            className="bg-green-600 hover:bg-green-700 text-white border-green-600"
-          >
-            Export to Excel
-          </Button>
+          <div className="flex items-center space-x-3">
+            {/* View Toggle */}
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('detailed')}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                  viewMode === 'detailed'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Grid className="w-4 h-4" />
+                <span>Detailed</span>
+              </button>
+              <button
+                onClick={() => setViewMode('excel')}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                  viewMode === 'excel'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Table className="w-4 h-4" />
+                <span>Excel View</span>
+              </button>
+            </div>
+            
+            <Button
+              onClick={exportToExcel}
+              variant="secondary"
+              icon={<Download className="w-4 h-4" />}
+              className="bg-green-600 hover:bg-green-700 text-white border-green-600"
+            >
+              Export to Excel
+            </Button>
+          </div>
         </div>
 
         {/* Summary Stats */}
@@ -204,212 +234,222 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
           </Card>
         </div>
 
-        {/* Smart BoM Table - Redesigned */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900 min-w-[200px]">
-                    <div className="flex items-center space-x-2">
-                      <span>Component</span>
-                      <InfoTooltip
-                        title="Component Information"
-                        description="Part details and specifications"
-                        businessValue="Core component identification"
-                        position="bottom"
-                      />
-                    </div>
-                  </th>
-                  <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-16">Qty</th>
-                  <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900 min-w-[180px]">
-                    <div className="flex items-center space-x-2">
-                      <Sparkles className="w-4 h-4 text-blue-600" />
-                      <span>AI Insights</span>
-                    </div>
-                  </th>
-                  <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-24">
-                    <div className="flex items-center justify-center space-x-1">
-                      <span>Status</span>
-                    </div>
-                  </th>
-                  <th className="px-4 py-4 text-right text-sm font-semibold text-gray-900 min-w-[120px]">
-                    <div className="flex items-center justify-end space-x-2">
-                      <TrendingUp className="w-4 h-4 text-green-600" />
-                      <span>Cost Analysis</span>
-                    </div>
-                  </th>
-                  <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-20">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {components.map((component: any, index: number) => (
-                  <React.Fragment key={component.id}>
-                    <tr className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                      {/* Component Column */}
-                      <td className="px-4 py-4">
-                        <div className="space-y-1">
-                          <div className="font-semibold text-gray-900 text-sm">
-                            {component.partName}
-                          </div>
-                          <div className="text-xs text-gray-500 font-mono">
-                            {component.partNumber}
-                          </div>
-                          <div className="text-xs text-gray-600">
-                            {component.material}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Quantity Column */}
-                      <td className="px-4 py-4 text-center">
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-semibold rounded-full">
-                          {component.quantity}
-                        </span>
-                      </td>
-
-                      {/* AI Insights Column */}
-                      <td className="px-4 py-4">
-                        <div className="space-y-2">
-                          <div className="text-sm text-blue-700 font-medium line-clamp-2">
-                            {component.aiSuggestedAlternative}
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="text-xs text-gray-500">Confidence:</div>
-                            <div className="flex items-center space-x-1">
-                              <div className="w-12 bg-gray-200 rounded-full h-1.5">
-                                <div
-                                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-                                  style={{ width: `${component.confidence}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-xs font-medium text-blue-600">{component.confidence}%</span>
+        {/* Conditional Rendering Based on View Mode */}
+        {viewMode === 'detailed' ? (
+          /* Detailed View - Original Table */
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900 min-w-[200px]">
+                      <div className="flex items-center space-x-2">
+                        <span>Component</span>
+                        <InfoTooltip
+                          title="Component Information"
+                          description="Part details and specifications"
+                          businessValue="Core component identification"
+                          position="bottom"
+                        />
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-16">Qty</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900 min-w-[180px]">
+                      <div className="flex items-center space-x-2">
+                        <Sparkles className="w-4 h-4 text-blue-600" />
+                        <span>AI Insights</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-24">
+                      <div className="flex items-center justify-center space-x-1">
+                        <span>Status</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-right text-sm font-semibold text-gray-900 min-w-[120px]">
+                      <div className="flex items-center justify-end space-x-2">
+                        <TrendingUp className="w-4 h-4 text-green-600" />
+                        <span>Cost Analysis</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-20">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {components.map((component: any, index: number) => (
+                    <React.Fragment key={component.id}>
+                      <tr className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
+                        {/* Component Column */}
+                        <td className="px-4 py-4">
+                          <div className="space-y-1">
+                            <div className="font-semibold text-gray-900 text-sm">
+                              {component.partName}
                             </div>
-                          </div>
-                          <div className="text-xs text-gray-600">
-                            📍 {component.aiRecommendedRegion}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Status Column */}
-                      <td className="px-4 py-4">
-                        <div className="flex flex-col items-center space-y-2">
-                          <div className="flex items-center space-x-1">
-                            {getComplianceIcon(component.complianceStatus)}
-                          </div>
-                          <span className={`${getRiskBadgeClass(component.riskFlag.level)} text-xs px-2 py-1`}>
-                            {component.riskFlag.level}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Cost Analysis Column */}
-                      <td className="px-4 py-4 text-right">
-                        <div className="space-y-1">
-                          <div className="text-sm text-gray-600">
-                            Market: <span className="font-medium">{component.predictedMarketRange}</span>
-                          </div>
-                          <div className="text-sm">
-                            ZBC: <span className="font-bold text-primary-blue">{component.zbcShouldCost}</span>
-                          </div>
-                          <div className={`flex items-center justify-end space-x-1 text-sm ${getZBCVarianceClass(component.zbcVariance)}`}>
-                            {getZBCVarianceIcon(component.zbcVariance)}
-                            <span className="font-semibold">{component.zbcVariance}</span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Actions Column */}
-                      <td className="px-4 py-4 text-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleRowExpansion(component.id)}
-                          className="text-xs"
-                        >
-                          {expandedRows.has(component.id) ? '▲' : '▼'}
-                        </Button>
-                      </td>
-                    </tr>
-
-                    {/* Expanded Row Details */}
-                    {expandedRows.has(component.id) && (
-                      <tr>
-                        <td colSpan={6} className="px-4 py-4 bg-gray-50 border-t border-gray-100">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* Compliance Details */}
-                            <div>
-                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                                <span>Compliance & Certifications</span>
-                              </h5>
-                              <div className="space-y-2">
-                                {component.complianceFlags?.map((flag: any, index: number) => (
-                                  <div key={index} className="flex items-center space-x-2">
-                                    <span className="text-sm">{flag.icon}</span>
-                                    <span className="text-sm text-gray-700">{flag.text}</span>
-                                  </div>
-                                ))}
-                              </div>
+                            <div className="text-xs text-gray-500 font-mono">
+                              {component.partNumber}
                             </div>
-
-                            {/* Cost Breakdown */}
-                            <div>
-                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
-                                <TrendingUp className="w-4 h-4 text-green-600" />
-                                <span>Detailed Cost Analysis</span>
-                              </h5>
-                              <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">Market Low:</span>
-                                  <span className="font-medium">{component.predictedMarketRange.split(' - ')[0]}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">Market High:</span>
-                                  <span className="font-medium">{component.predictedMarketRange.split(' - ')[1]}</span>
-                                </div>
-                                <div className="flex justify-between border-t pt-2">
-                                  <span className="text-gray-600">ZBC Should-Cost:</span>
-                                  <span className="font-bold text-primary-blue">{component.zbcShouldCost}</span>
-                                </div>
-                                <div className="text-xs text-gray-500 mt-2">
-                                  Source: {component.zbcSource}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* AI Recommendations */}
-                            <div>
-                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
-                                <Sparkles className="w-4 h-4 text-blue-600" />
-                                <span>AI Recommendations</span>
-                              </h5>
-                              <div className="space-y-2 text-sm">
-                                <div>
-                                  <span className="text-gray-600">Alternative:</span>
-                                  <p className="text-blue-700 font-medium mt-1">{component.aiSuggestedAlternative}</p>
-                                </div>
-                                <div>
-                                  <span className="text-gray-600">Recommended Region:</span>
-                                  <p className="text-gray-900 font-medium mt-1">{component.aiRecommendedRegion}</p>
-                                </div>
-                                <div className="flex justify-between items-center pt-2 border-t">
-                                  <span className="text-gray-600">AI Confidence:</span>
-                                  <span className="font-semibold text-blue-600">{component.confidence}%</span>
-                                </div>
-                              </div>
+                            <div className="text-xs text-gray-600">
+                              {component.material}
                             </div>
                           </div>
                         </td>
+
+                        {/* Quantity Column */}
+                        <td className="px-4 py-4 text-center">
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-semibold rounded-full">
+                            {component.quantity}
+                          </span>
+                        </td>
+
+                        {/* AI Insights Column */}
+                        <td className="px-4 py-4">
+                          <div className="space-y-2">
+                            <div className="text-sm text-blue-700 font-medium line-clamp-2">
+                              {component.aiSuggestedAlternative}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <div className="text-xs text-gray-500">Confidence:</div>
+                              <div className="flex items-center space-x-1">
+                                <div className="w-12 bg-gray-200 rounded-full h-1.5">
+                                  <div
+                                    className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                                    style={{ width: `${component.confidence}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs font-medium text-blue-600">{component.confidence}%</span>
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-600">
+                              📍 {component.aiRecommendedRegion}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Status Column */}
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col items-center space-y-2">
+                            <div className="flex items-center space-x-1">
+                              {getComplianceIcon(component.complianceStatus)}
+                            </div>
+                            <span className={`${getRiskBadgeClass(component.riskFlag.level)} text-xs px-2 py-1`}>
+                              {component.riskFlag.level}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Cost Analysis Column */}
+                        <td className="px-4 py-4 text-right">
+                          <div className="space-y-1">
+                            <div className="text-sm text-gray-600">
+                              Market: <span className="font-medium">{component.predictedMarketRange}</span>
+                            </div>
+                            <div className="text-sm">
+                              ZBC: <span className="font-bold text-primary-blue">{component.zbcShouldCost}</span>
+                            </div>
+                            <div className={`flex items-center justify-end space-x-1 text-sm ${getZBCVarianceClass(component.zbcVariance)}`}>
+                              {getZBCVarianceIcon(component.zbcVariance)}
+                              <span className="font-semibold">{component.zbcVariance}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Actions Column */}
+                        <td className="px-4 py-4 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleRowExpansion(component.id)}
+                            className="text-xs"
+                          >
+                            {expandedRows.has(component.id) ? '▲' : '▼'}
+                          </Button>
+                        </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
+
+                      {/* Expanded Row Details */}
+                      {expandedRows.has(component.id) && (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-4 bg-gray-50 border-t border-gray-100">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              {/* Compliance Details */}
+                              <div>
+                                <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                  <span>Compliance & Certifications</span>
+                                </h5>
+                                <div className="space-y-2">
+                                  {component.complianceFlags?.map((flag: any, index: number) => (
+                                    <div key={index} className="flex items-center space-x-2">
+                                      <span className="text-sm">{flag.icon}</span>
+                                      <span className="text-sm text-gray-700">{flag.text}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Cost Breakdown */}
+                              <div>
+                                <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                                  <TrendingUp className="w-4 h-4 text-green-600" />
+                                  <span>Detailed Cost Analysis</span>
+                                </h5>
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Market Low:</span>
+                                    <span className="font-medium">{component.predictedMarketRange.split(' - ')[0]}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Market High:</span>
+                                    <span className="font-medium">{component.predictedMarketRange.split(' - ')[1]}</span>
+                                  </div>
+                                  <div className="flex justify-between border-t pt-2">
+                                    <span className="text-gray-600">ZBC Should-Cost:</span>
+                                    <span className="font-bold text-primary-blue">{component.zbcShouldCost}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-2">
+                                    Source: {component.zbcSource}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* AI Recommendations */}
+                              <div>
+                                <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                                  <Sparkles className="w-4 h-4 text-blue-600" />
+                                  <span>AI Recommendations</span>
+                                </h5>
+                                <div className="space-y-2 text-sm">
+                                  <div>
+                                    <span className="text-gray-600">Alternative:</span>
+                                    <p className="text-blue-700 font-medium mt-1">{component.aiSuggestedAlternative}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-600">Recommended Region:</span>
+                                    <p className="text-gray-900 font-medium mt-1">{component.aiRecommendedRegion}</p>
+                                  </div>
+                                  <div className="flex justify-between items-center pt-2 border-t">
+                                    <span className="text-gray-600">AI Confidence:</span>
+                                    <span className="font-semibold text-blue-600">{component.confidence}%</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Excel View - New BOMResultsTable Component */
+          <BOMResultsTable 
+            bomData={components} 
+            isLoading={loading.isLoading}
+            error={null}
+          />
+        )}
 
         {/* Supplier Trust Graph Section */}
         <div className="mt-12">
