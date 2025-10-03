@@ -26,6 +26,7 @@ interface RequirementsFormProps {
 const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack }) => {
   const dispatch = useDispatch();
   const { commercialTerms, uploadedFiles } = useSelector((state: RootState) => state.rfq);
+  const { sendText } = useSelector((state: RootState) => state.voice);
 
   const [localCompliance, setLocalCompliance] = useState<string[]>(commercialTerms.complianceRequirements);
   const [localLeadTime, setLocalLeadTime] = useState(commercialTerms.desiredLeadTime);
@@ -39,6 +40,27 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
   const [isAccordionOpen, setIsAccordionOpen] = useState(true);
 
   const extractedData = useSelector((state: RootState) => state.rfq.extractedData);
+
+  // Sync local state with Redux when Redux changes (e.g., from voice commands)
+  useEffect(() => {
+    setLocalLeadTime(commercialTerms.desiredLeadTime);
+  }, [commercialTerms.desiredLeadTime]);
+
+  useEffect(() => {
+    setLocalPaymentTerms(commercialTerms.paymentTerms);
+  }, [commercialTerms.paymentTerms]);
+
+  useEffect(() => {
+    setLocalRegion(commercialTerms.deliveryLocation);
+  }, [commercialTerms.deliveryLocation]);
+
+  useEffect(() => {
+    setLocalCompliance(commercialTerms.complianceRequirements);
+  }, [commercialTerms.complianceRequirements]);
+
+  useEffect(() => {
+    setLocalAdditional(commercialTerms.additionalRequirements);
+  }, [commercialTerms.additionalRequirements]);
 
   const COMPLIANCE_OPTIONS = [
     { value: 'ISO 9001', label: 'ISO 9001', description: 'Quality Management System' },
@@ -147,6 +169,22 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
       };
     });
 
+    voiceAppCommandBus.registerAppCommand('analyzeBOM', async () => {
+      console.log('📡 Voice Command: analyzeBOM triggered');
+      if (!localLeadTime || !localPaymentTerms || !localRegion) {
+        return {
+          success: false,
+          message: 'Please fill in all required fields (lead time, payment terms, and region) before triggering analysis'
+        };
+      }
+      // Trigger the analysis by calling handleNext
+      handleNext();
+      return {
+        success: true,
+        message: 'BOM analysis triggered successfully'
+      };
+    });
+
     voiceAppCommandBus.updateContext('currentStep', 2);
     voiceAppCommandBus.updateContext('requirements', {
       compliance: localCompliance,
@@ -163,6 +201,7 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
       voiceAppCommandBus.unregisterAppCommand('setPaymentTerms');
       voiceAppCommandBus.unregisterAppCommand('setRegion');
       voiceAppCommandBus.unregisterAppCommand('getRequirements');
+      voiceAppCommandBus.unregisterAppCommand('analyzeBOM');
     };
   }, [localCompliance, localLeadTime, localPaymentTerms, localRegion, localAdditional, dispatch]);
 
@@ -184,29 +223,60 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
       action: newCompliance.includes(complianceValue) ? 'added' : 'removed',
       totalCount: newCompliance.length
     });
+
+    // Inform Gemini about the selection
+    if (sendText) {
+      const action = newCompliance.includes(complianceValue) ? 'selected' : 'removed';
+      const currentList = newCompliance.length > 0 ? newCompliance.join(', ') : 'None';
+      sendText(`User ${action} ${complianceValue} compliance requirement. Current compliance requirements selected: ${currentList}`);
+    }
   };
 
   const handleLeadTimeChange = (value: string) => {
     setLocalLeadTime(value);
     dispatch(setLeadTime(value));
     voiceAppCommandBus.sendVoiceFeedback('leadTimeChanged', { leadTime: value });
+
+    // Inform Gemini about the selection
+    if (sendText) {
+      sendText(`User selected lead time: ${value}`);
+    }
   };
 
   const handlePaymentTermsChange = (value: string) => {
     setLocalPaymentTerms(value);
     dispatch(setPaymentTerms(value));
     voiceAppCommandBus.sendVoiceFeedback('paymentTermsChanged', { paymentTerms: value });
+
+    // Inform Gemini about the selection
+    if (sendText) {
+      const option = PAYMENT_TERMS_OPTIONS.find(opt => opt.value === value);
+      const description = option ? ` (${option.description})` : '';
+      sendText(`User selected payment terms: ${value}${description}`);
+    }
   };
 
   const handleRegionChange = (value: string) => {
     setLocalRegion(value);
     dispatch(setDeliveryLocation(value));
     voiceAppCommandBus.sendVoiceFeedback('regionChanged', { region: value });
+
+    // Inform Gemini about the selection
+    if (sendText) {
+      const option = REGION_OPTIONS.find(opt => opt.value === value);
+      const description = option ? ` (${option.description})` : '';
+      sendText(`User selected delivery location: ${value}${description}`);
+    }
   };
 
   const handleAdditionalChange = (value: string) => {
     setLocalAdditional(value);
     dispatch(setAdditionalRequirements(value));
+
+    // Inform Gemini about additional requirements (only if non-empty to avoid noise)
+    if (sendText && value.trim()) {
+      sendText(`User added special requirements: ${value}`);
+    }
   };
 
   const handleNext = async () => {
@@ -235,6 +305,32 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
         insights: [`Processed ${result.totalComponents} components in ${(result.processingTime / 1000).toFixed(1)}s`]
       }));
       console.log('📊 Redux: Stored supplier research data -', result.supplierResearch?.length, 'components');
+
+      // Send detailed summary to voice using Redux sendText
+      //       if (sendText && result.components) {
+      //         const totalComponents = result.components.length;
+      //         const complianceStr = localCompliance.length > 0
+      //           ? localCompliance.join(', ')
+      //           : 'No specific compliance requirements';
+
+      //         const summaryMessage = `BOM analysis complete! I've analyzed ${totalComponents} components with your requirements:
+      // • Compliance: ${complianceStr}
+      // • Lead time: ${localLeadTime}
+      // • Payment: ${localPaymentTerms}
+      // • Delivery Location: ${localRegion}
+
+      // The analyzed components include supplier recommendations, cost optimization insights, and compliance status. You can now review the detailed BOM analysis in the next step.
+
+      // Data:
+      // ${JSON.stringify({
+      //           components: result.components || [],
+      //           suppliers: result.suppliers || {},
+      //           insights: result.insights || []
+      //         })}`;
+
+      //         console.log('🎙️ Sending voice summary via Redux sendText');
+      //         sendText(summaryMessage);
+      //       }
 
       voiceAppCommandBus.sendVoiceFeedback('step2Complete', {
         complianceCount: localCompliance.length,
@@ -605,7 +701,7 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
             <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl">
               <div className="text-center">
-                <div className="mt-4 flex items-center justify-center space-x-2">
+                <div className="mb-4 flex items-center justify-center space-x-2">
                   <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                   <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                   <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>

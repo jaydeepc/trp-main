@@ -1,11 +1,11 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
 
 class GeminiService {
   constructor() {
-    this.ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    this.defaultModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
-    this.complexModel = process.env.GEMINI_MODEL_COMPLEX || 'gemini-1.5-pro';
-    this.bomModel = process.env.GEMINI_MODEL_BOM || 'gemini-2.5-flash';
+    this.ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    this.defaultModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    this.complexModel = process.env.GEMINI_MODEL_COMPLEX || 'gemini-2.5-pro';
+    this.bomModel = process.env.GEMINI_MODEL_BOM || 'gemini-2.5-pro';
   }
 
   getModelForTask(taskType) {
@@ -23,27 +23,31 @@ class GeminiService {
   async generateContent(prompt, taskType = 'default', useGoogleSearch = false) {
     try {
       const modelName = this.getModelForTask(taskType);
-      
+
       // Configure model with or without Google Search tool
-      const modelConfig = { model: modelName };
+      const config = {};
       if (useGoogleSearch) {
-        modelConfig.tools = [{ google_search: {} }];
+        config.tools = [{ googleSearch: {} }];
         console.log('🔍 Google Search tool enabled for', taskType);
       }
-      
-      const model = this.ai.getGenerativeModel(modelConfig);
-      
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      
-      // Log grounding metadata if available
-      if (response.candidates?.[0]?.groundingMetadata) {
-        const metadata = response.candidates[0].groundingMetadata;
-        console.log('🔍 Search queries used:', metadata.webSearchQueries);
-        console.log('📄 Sources found:', metadata.groundingChunks?.length || 0);
-      }
-      
-      return response.text();
+
+      // const model = this.ai.getGenerativeModel(modelConfig);
+
+      const result = await this.ai.models.generateContent({
+        model: modelName,
+        contents: prompt,
+        config: config
+      });
+      console.log(result.text);
+
+      // // Log grounding metadata if available
+      // if (response.candidates?.[0]?.groundingMetadata) {
+      //   const metadata = response.candidates[0].groundingMetadata;
+      //   console.log('🔍 Search queries used:', metadata.webSearchQueries);
+      //   console.log('📄 Sources found:', metadata.groundingChunks?.length || 0);
+      // }
+
+      return result.text;
     } catch (error) {
       console.error(`Gemini API Error (${taskType}):`, error);
       throw new Error(`Failed to process ${taskType}: ${error.message}`);

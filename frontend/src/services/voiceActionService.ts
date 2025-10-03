@@ -20,7 +20,7 @@ class VoiceActionService {
             return await voiceAppCommandBus.executeAppCommand('createRFQ');
         } else if (functionName === 'analyse_bom') {
             return await voiceAppCommandBus.executeAppCommand(
-                'triggerAnalysis',
+                'analyzeBOM',
                 params
             );
         } else if (functionName === 'set_lead_time') {
