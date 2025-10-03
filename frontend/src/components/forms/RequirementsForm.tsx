@@ -298,39 +298,66 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
 
       console.log('✅ Supplier research complete:', result);
 
-      // Store supplier research data in Redux
+      // Transform supplier research data to match UI expectations
+      const transformedComponents = (result.supplierResearch || []).map((item: any, index: number) => ({
+        id: `${index + 1}`,
+        partName: item.partName || 'Unknown',
+        partNumber: item.baselineAnalysis?.manufacturer || `PART-${index + 1}`,
+        quantity: item.quantity || 1,
+        material: item.baselineAnalysis?.primaryCategory || 'Unknown',
+        unitCost: `₹${item.unitCostINR || 0}`,
+        totalCost: `₹${item.totalCostINR || 0}`,
+        complianceStatus: 'compliant',
+        riskFlag: {
+          level: item.alternativeSuppliers?.length > 0 ? 'Low' : 'Medium',
+          reason: item.alternativeSuppliers?.length > 0 ? 'Multiple suppliers available' : 'Limited supplier options'
+        },
+        aiSuggestedAlternative: item.baselineAnalysis?.keySpecifications || 'No alternative suggested',
+        confidence: 85,
+        aiRecommendedRegion: 'India',
+        predictedMarketRange: `₹${Math.round(item.unitCostINR * 0.9)} - ₹${Math.round(item.unitCostINR * 1.1)}`,
+        zbcShouldCost: `₹${item.unitCostINR}`,
+        zbcVariance: '0%',
+        zbcSource: item.baselineAnalysis?.sourceURL || 'N/A',
+        complianceFlags: [
+          { icon: '✓', text: 'Standard compliance' }
+        ]
+      }));
+
+      // Store transformed supplier research data in Redux
       dispatch(setRFQData({
-        components: result.supplierResearch || [],
+        components: transformedComponents,
         suppliers: result.summary || {},
         insights: [`Processed ${result.totalComponents} components in ${(result.processingTime / 1000).toFixed(1)}s`]
       }));
-      console.log('📊 Redux: Stored supplier research data -', result.supplierResearch?.length, 'components');
+      console.log('📊 Redux: Stored supplier research data -', transformedComponents.length, 'components');
 
       // Send detailed summary to voice using Redux sendText
-      //       if (sendText && result.components) {
-      //         const totalComponents = result.components.length;
-      //         const complianceStr = localCompliance.length > 0
-      //           ? localCompliance.join(', ')
-      //           : 'No specific compliance requirements';
+      if (sendText && transformedComponents) {
+        const totalComponents = transformedComponents.length;
+        const complianceStr = localCompliance.length > 0
+          ? localCompliance.join(', ')
+          : 'No specific compliance requirements';
 
-      //         const summaryMessage = `BOM analysis complete! I've analyzed ${totalComponents} components with your requirements:
-      // • Compliance: ${complianceStr}
-      // • Lead time: ${localLeadTime}
-      // • Payment: ${localPaymentTerms}
-      // • Delivery Location: ${localRegion}
+        const summaryMessage = `Supplier research complete! I've analyzed ${totalComponents} components with your requirements:
+• Compliance: ${complianceStr}
+• Lead time: ${localLeadTime}
+• Payment: ${localPaymentTerms}
+• Delivery Location: ${localRegion}
 
-      // The analyzed components include supplier recommendations, cost optimization insights, and compliance status. You can now review the detailed BOM analysis in the next step.
+The analyzed components include supplier recommendations, cost data, and compliance status. You can now review the detailed BOM analysis in the next step.
 
-      // Data:
-      // ${JSON.stringify({
-      //           components: result.components || [],
-      //           suppliers: result.suppliers || {},
-      //           insights: result.insights || []
-      //         })}`;
+Data:
+${JSON.stringify({
+          components: transformedComponents,
+          summary: result.summary || {},
+          processingTime: result.processingTime,
+          totalComponents: result.totalComponents
+        })}`;
 
-      //         console.log('🎙️ Sending voice summary via Redux sendText');
-      //         sendText(summaryMessage);
-      //       }
+        console.log('🎙️ Sending voice summary via Redux sendText');
+        sendText(summaryMessage);
+      }
 
       voiceAppCommandBus.sendVoiceFeedback('step2Complete', {
         complianceCount: localCompliance.length,

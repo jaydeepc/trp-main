@@ -114,12 +114,12 @@ const rfqSlice = createSlice({
         setRFQData: (
             state,
             action: PayloadAction<{
-                components: Component[];
+                components: any[];
                 suppliers: Record<string, Supplier[]>;
                 insights: string[];
             }>
         ) => {
-            state.components = action.payload.components;
+            state.components = action.payload.components as Component[];
             state.suppliers = action.payload.suppliers;
             state.insights = action.payload.insights;
             state.isLoading = false;
