@@ -227,37 +227,37 @@ class VoiceFunctionRegistry {
         });
 
         this.registerFunction({
-            name: 'show_bom_analysis',
+            name: 'show_requirements_form',
             description:
-                'Show the BOM analysis interface to review and analyze uploaded files',
+                'Show the requirements form where user verifies BOM and defines compliance, lead time, payment terms, delivery location, and triggers BOM analysis with these requirements as context',
             parameters: {
                 type: 'object',
                 properties: {
                     reason: {
                         type: 'string',
-                        description: 'Reason for showing BOM analysis',
+                        description: 'Reason for showing requirements form',
                     },
                 },
                 required: [],
             },
-            function: this.showBOMAnalysis.bind(this),
+            function: this.showRequirementsForm.bind(this),
         });
 
         this.registerFunction({
-            name: 'show_commercial_terms',
+            name: 'show_bom_review',
             description:
-                'Show the commercial terms interface to define payment and compliance requirements',
+                'Show the Smart BOM Review interface to review analyzed components with enriched data, supplier recommendations, and AI insights',
             parameters: {
                 type: 'object',
                 properties: {
                     reason: {
                         type: 'string',
-                        description: 'Reason for showing commercial terms',
+                        description: 'Reason for showing BOM review',
                     },
                 },
                 required: [],
             },
-            function: this.showCommercialTerms.bind(this),
+            function: this.showBOMReview.bind(this),
         });
 
         this.registerFunction({
@@ -477,6 +477,24 @@ class VoiceFunctionRegistry {
             },
             function: this.setAdditionalRequirements.bind(this),
         });
+
+        // New functions for Step 2 workflow
+        this.registerFunction({
+            name: 'trigger_bom_analysis',
+            description:
+                'Trigger BOM analysis with the defined requirements as context. Must be called after requirements (lead time, payment terms, delivery location) are set. Analysis takes approximately 20 seconds.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    confirm: {
+                        type: 'boolean',
+                        description: 'User confirmation to start analysis',
+                    },
+                },
+                required: ['confirm'],
+            },
+            function: this.triggerBOMAnalysis.bind(this),
+        });
     }
 
     private async showUploadForm(args: { reason?: string; focus?: boolean }) {
@@ -501,13 +519,13 @@ class VoiceFunctionRegistry {
         };
     }
 
-    private async showBOMAnalysis(args: { reason?: string }) {
+    private async showRequirementsForm(args: { reason?: string }) {
         if (!this.callbacks) {
             throw new Error('Callbacks not initialized');
         }
 
-        console.log('showBOMAnalysis called with args:', args);
-        console.log('Navigating to Step 2 BOM Analysis in main wizard');
+        console.log('showRequirementsForm called with args:', args);
+        console.log('Navigating to Requirements Form in main wizard');
 
         // Dispatch Redux action
         this.callbacks.dispatch(setCurrentStep(2));
@@ -519,19 +537,19 @@ class VoiceFunctionRegistry {
         return {
             success: true,
             message:
-                'Navigated to BOM Analysis step in the main wizard. You can now analyze your bill of materials and make any necessary adjustments.',
-            action: 'show_bom_analysis',
-            reason: args.reason || 'User requested BOM analysis',
+                "Navigated to Requirements Form. Here you can verify your extracted BOM components and define your project requirements including compliance certifications, lead time, payment terms, and delivery location. Once requirements are set, you can trigger the AI-powered BOM analysis.",
+            action: 'show_requirements_form',
+            reason: args.reason || 'User requested requirements form',
         };
     }
 
-    private async showCommercialTerms(args: { reason?: string }) {
+    private async showBOMReview(args: { reason?: string }) {
         if (!this.callbacks) {
             throw new Error('Callbacks not initialized');
         }
 
-        console.log('showCommercialTerms called with args:', args);
-        console.log('Navigating to Step 3 Commercial Terms in main wizard');
+        console.log('showBOMReview called with args:', args);
+        console.log('Navigating to Smart BOM Review in main wizard');
 
         // Dispatch Redux action
         this.callbacks.dispatch(setCurrentStep(3));
@@ -543,9 +561,9 @@ class VoiceFunctionRegistry {
         return {
             success: true,
             message:
-                'Navigated to Commercial Terms step in the main wizard. You can now set up your payment terms, delivery location, and compliance requirements using the comprehensive form.',
-            action: 'show_commercial_terms',
-            reason: args.reason || 'User requested commercial terms',
+                'Navigated to Smart BOM Review. Here you can review all analyzed components with enriched data including AI suggestions, supplier recommendations, compliance status, risk assessments, and cost optimization opportunities.',
+            action: 'show_bom_review',
+            reason: args.reason || 'User requested BOM review',
         };
     }
 
@@ -789,6 +807,45 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             message: `Perfect! I've recorded your additional requirements: "${args.requirements}". Let me summarize what we've configured for your commercial terms.`,
             nextStep: 'summary',
         };
+    }
+
+    private async triggerBOMAnalysis(args: { confirm: boolean }) {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        console.log('triggerBOMAnalysis called with args:', args);
+
+        if (!args.confirm) {
+            return {
+                success: false,
+                message: 'BOM analysis was not confirmed. Please confirm to proceed with analysis.',
+            };
+        }
+
+        try {
+            // Execute the analyzeBOM command through VoiceAppCommandBus
+            // This will be registered by RequirementsForm component
+            const result = await this.callbacks.voiceActionService.executeVoiceCommand(
+                'analyse_bom',
+                {}
+            );
+
+            console.log('BOM analysis triggered via voiceActionService:', result);
+
+            return {
+                success: true,
+                message: 'Starting BOM analysis with your requirements as context. This will take approximately 20 seconds. I\'ll notify you when the analysis is complete with a detailed summary of the results.',
+                estimatedTime: '20 seconds',
+            };
+        } catch (error) {
+            console.error('Error triggering BOM analysis:', error);
+            return {
+                success: false,
+                message: 'Failed to trigger BOM analysis. Please ensure all required fields (lead time, payment terms, delivery location) are filled in.',
+                error: error instanceof Error ? error.message : 'Unknown error',
+            };
+        }
     }
 }
 

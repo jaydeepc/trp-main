@@ -23,6 +23,7 @@ const UploadDocuments: React.FC<UploadDocumentsProps> = ({
   onCancel,
 }) => {
   const dispatch = useDispatch();
+  const { sendText } = useSelector((state: RootState) => state.voice);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState<string | null>(null);
@@ -161,6 +162,31 @@ const UploadDocuments: React.FC<UploadDocumentsProps> = ({
         documentTypes: extractedData.documentTypes || [],
         success: true
       });
+
+      // Send summary to Gemini via Redux sendText
+      if (sendText) {
+        const fileNames = selectedFiles.map(f => f.name).join(', ');
+        const documentTypesStr = extractedData.documentTypes?.length > 0
+          ? extractedData.documentTypes.join(', ')
+          : 'procurement documents';
+
+        const summaryMessage = `Document extraction complete! I've processed ${selectedFiles.length} file(s): ${fileNames}
+
+Extracted ${componentCount} component(s) from your ${documentTypesStr}.
+
+Data:
+${JSON.stringify({
+  files: selectedFiles.map(f => ({ name: f.name, size: f.size })),
+  components: extractedData.components || [],
+  documentTypes: extractedData.documentTypes || [],
+  extractedAt: new Date().toISOString()
+})}
+
+Next, we'll gather your requirements before analyzing these components.`;
+
+        console.log('🎙️ Sending extraction summary via Redux sendText');
+        sendText(summaryMessage);
+      }
 
       console.log('✅ Step 1 complete: Extraction successful');
 
