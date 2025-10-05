@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import RFQWizard from "./pages/RFQWizard";
 import { useEffect } from "react";
 import voiceAppCommandBus from "./services/VoiceAppCommandBus";
+import './App.css';
 
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
 if (typeof API_KEY !== "string") {
@@ -59,15 +60,26 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ handleCreateRFQ }) => {
 
 function App() {
   return (
-    <ReduxProvider store={store}>
-      <LiveAPIProvider url={uri} apiKey={API_KEY}>
-        <RFQProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </RFQProvider>
-      </LiveAPIProvider>
-    </ReduxProvider>
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundImage: 'url(/background-pattern.svg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}
+    >
+      <ReduxProvider store={store}>
+        <LiveAPIProvider url={uri} apiKey={API_KEY}>
+          <RFQProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </RFQProvider>
+        </LiveAPIProvider>
+      </ReduxProvider>
+    </div>
   );
 }
 

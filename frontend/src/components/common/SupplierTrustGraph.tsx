@@ -111,62 +111,59 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
 
   return (
     <Card className={`${className} overflow-hidden`}>
-      {/* Header */}
-      <div className="p-6 pb-0">
-        <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
-            <Target className="w-6 h-6 text-white" />
+      {/* Header - Simplified */}
+      <div className="p-5 pb-0">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
+            <Target className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-surface-900">
+            <h3 className="text-lg font-semibold text-surface-900">
               Supplier Intelligence Matrix
             </h3>
-            <p className="text-surface-600 font-medium">
-              Trust vs Cost Analysis • {componentName}
+            <p className="text-sm text-surface-600">
+              Trust vs Cost Analysis
             </p>
           </div>
         </div>
 
-        {/* Enhanced Legend & Stats */}
-        <div className="space-y-4">
-          <h4 className="font-semibold text-surface-900 text-sm mt-4 -mb-2">Supplier Categories</h4>
+        {/* Compact Legend */}
+        <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2">
             {[
               { category: 'trusted', label: 'Trusted', icon: Award, count: categoryStats.trusted, click: () => selectCategory('trusted') },
               { category: 'empanelled', label: 'Empanelled', icon: Shield, count: categoryStats.empanelled, click: () => selectCategory('empanelled') },
               { category: 'new', label: 'New', icon: Zap, count: categoryStats.new, click: () => selectCategory('new') },
             ].map(({ category, label, icon: Icon, count, click }) => (
-              <div key={category} className={`flex items-center space-x-2 p-2 bg-surface-50 rounded-lg ${category === filterCategory ? 'border-2 border-primary-500 bg-primary-50' : 'border border-surface-200 hover:border-surface-300 cursor-pointer'}`} onClick={click}>
-                <div className={`w-6 h-6 bg-gradient-to-br ${getSupplierGradient(category)} rounded-lg flex items-center justify-center`}>
+              <div key={category} className={`flex items-center space-x-2 p-2 bg-surface-50 rounded-lg ${category === filterCategory ? 'border border-primary-400 bg-primary-50' : 'border border-surface-100 hover:border-surface-200 cursor-pointer'}`} onClick={click}>
+                <div className={`w-5 h-5 bg-gradient-to-br ${getSupplierGradient(category)} rounded-md flex items-center justify-center`}>
                   <Icon className="w-3 h-3 text-white" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-surface-900">{count}</div>
-                  <div className="text-xs text-surface-600">{label}</div>
+                  <div className="text-xs font-semibold text-surface-900">{count}</div>
+                  <div className="text-[10px] text-surface-600">{label}</div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
 
-        <div className="space-y-4">
-          <h4 className="font-semibold text-surface-900 text-sm mt-4 -mb-2">Market Insights</h4>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-gradient-to-r from-primary-50 to-accent-50 rounded-xl border border-primary-100">
-              <div className="text-lg font-bold text-surface-900">{avgTrustScore.toFixed(1)}/10</div>
-              <div className="text-xs text-surface-600">Avg Trust Score</div>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <div className="p-2 bg-gradient-to-r from-primary-50 to-accent-50 rounded-lg border border-primary-100">
+              <div className="text-sm font-bold text-surface-900">{avgTrustScore.toFixed(1)}/10</div>
+              <div className="text-[10px] text-surface-600">Avg Trust</div>
             </div>
-            <div className="p-3 bg-gradient-to-r from-accent-50 to-emerald-50 rounded-xl border border-accent-100">
-              <div className="text-lg font-bold text-surface-900">${(avgCost / 1000).toFixed(0)}K</div>
-              <div className="text-xs text-surface-600">Avg Cost</div>
+            <div className="p-2 bg-gradient-to-r from-accent-50 to-emerald-50 rounded-lg border border-accent-100">
+              <div className="text-sm font-bold text-surface-900">${(avgCost / 1000).toFixed(0)}K</div>
+              <div className="text-[10px] text-surface-600">Avg Cost</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Static Chart */}
-      <div className="px-6 pb-6">
-        <div className="h-96 bg-gradient-to-br from-surface-50/50 to-primary-50/30 rounded-2xl p-4 border border-surface-100">
+      {/* Chart with Insights Side by Side */}
+      <div className="px-5 py-5">
+        {/* Static Chart - 2/3 width */}
+        <div className="h-80 bg-gradient-to-br from-surface-50/50 to-primary-50/30 rounded-xl p-3 border border-surface-100">
           <style>
             {`
               .static-chart,
@@ -215,12 +212,12 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
                 opacity="0.6"
               />
 
-              {/* Axis labels */}
-              <text x={avgCostX} y={padding - 10} textAnchor="middle" className="text-xs fill-primary-600 font-medium">
-                Avg Cost
+              {/* Axis labels - Smaller */}
+              <text x={avgCostX} y={padding - 10} textAnchor="middle" className="text-[10px] fill-primary-600 font-medium">
+                Avg
               </text>
-              <text x={chartWidth - padding + 10} y={avgTrustY + 4} textAnchor="start" className="text-xs fill-accent-600 font-medium">
-                Avg Trust
+              <text x={chartWidth - padding + 10} y={avgTrustY + 4} textAnchor="start" className="text-[10px] fill-accent-600 font-medium">
+                Avg
               </text>
 
               {/* X-axis */}
@@ -340,59 +337,6 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced AI Insights */}
-      <div className="px-6 pb-6">
-        <div className="bg-gradient-to-r from-primary-500/10 via-accent-500/10 to-emerald-500/10 rounded-2xl p-6 border border-primary-200/50">
-          <div className="flex items-start space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <Brain className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-surface-900 mb-3 text-lg">
-                AI-Powered Procurement Insights
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
-                    <Target className="w-4 h-4 text-primary-600" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-surface-900 text-sm">Sweet Spot Zone</div>
-                    <div className="text-sm text-surface-600">
-                      Top-left quadrant offers optimal trust-cost balance
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-warning-100 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-warning-600" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-surface-900 text-sm">Risk vs Reward</div>
-                    <div className="text-sm text-surface-600">
-                      New suppliers may offer savings but need assessment
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-accent-100 rounded-lg flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-accent-600" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-surface-900 text-sm">Trust Premium</div>
-                    <div className="text-sm text-surface-600">
-                      Trusted suppliers ensure reliability and quality
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

@@ -14,7 +14,15 @@ import voiceActionService from '../../services/voiceActionService';
 import FloatingOverlayManager from './FloatingOverlayManager';
 import DetailWindow from '../voice/DetailWindow';
 
-const VoiceInterfaceSidebar: React.FC = () => {
+interface VoiceInterfaceSidebarProps {
+    autoStart?: boolean;
+    onAutoStartComplete?: () => void;
+}
+
+const VoiceInterfaceSidebar: React.FC<VoiceInterfaceSidebarProps> = ({
+    autoStart = false,
+    onAutoStartComplete
+}) => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -164,6 +172,15 @@ Always call the appropriate function based on user requests and current workflow
             ],
         });
     }, []);
+
+    // Handle auto-start when FAB is clicked
+    useEffect(() => {
+        if (autoStart && !isInitialized && !isConnecting) {
+            console.log('🚀 Auto-starting conversation from FAB click...');
+            handleInitialize();
+            onAutoStartComplete?.();
+        }
+    }, [autoStart, isInitialized, isConnecting, onAutoStartComplete]);
 
     // Initialize connection handler with smooth transitions
     const handleInitialize = async () => {
