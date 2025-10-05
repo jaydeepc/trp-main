@@ -46,6 +46,7 @@ export interface CommercialTermsData {
     deliveryLocation: string;
     complianceRequirements: string[];
     additionalRequirements: string;
+    supplierPriority: string;
 }
 
 export interface ExtractedDocumentData {
@@ -102,6 +103,7 @@ const initialState: RFQState = {
         deliveryLocation: '',
         complianceRequirements: [],
         additionalRequirements: '',
+        supplierPriority: '',
     },
     uploadedFiles: [],
     isLoading: false,
@@ -218,6 +220,13 @@ const rfqSlice = createSlice({
                 action.payload
             );
         },
+        setSupplierPriority: (state, action: PayloadAction<string>) => {
+            state.commercialTerms.supplierPriority = action.payload;
+            console.log(
+                '📊 Redux: Supplier priority set to',
+                action.payload
+            );
+        },
         setUploadedFiles: (
             state,
             action: PayloadAction<
@@ -270,6 +279,7 @@ export const {
     addComplianceRequirement,
     removeComplianceRequirement,
     setAdditionalRequirements,
+    setSupplierPriority,
     setUploadedFiles,
     clearUploadedFiles,
     setExtractedData,

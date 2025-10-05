@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { useDropzone } from 'react-dropzone';
-import { Upload, AlertCircle, X, File as FileIcon } from 'lucide-react';
+import { Upload, AlertCircle, X, File as FileIcon, Sparkles } from 'lucide-react';
 import { RFQ } from '../../types';
 import Button from '../common/Button';
 import Card from '../common/Card';
@@ -176,11 +176,11 @@ Extracted ${componentCount} component(s) from your ${documentTypesStr}.
 
 Data:
 ${JSON.stringify({
-  files: selectedFiles.map(f => ({ name: f.name, size: f.size })),
-  components: extractedData.components || [],
-  documentTypes: extractedData.documentTypes || [],
-  extractedAt: new Date().toISOString()
-})}
+          files: selectedFiles.map(f => ({ name: f.name, size: f.size })),
+          components: extractedData.components || [],
+          documentTypes: extractedData.documentTypes || [],
+          extractedAt: new Date().toISOString()
+        })}
 
 Next, we'll gather your requirements before analyzing these components.`;
 
@@ -215,133 +215,177 @@ Next, we'll gather your requirements before analyzing these components.`;
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <Card size="large">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-dark-slate-gray mb-2">
-            Step 1: Upload Your Documents
-          </h2>
-          <p className="text-medium-gray">
-            Upload BOMs, designs, specs, or any procurement documents (up to 10 files)
+    <div className="space-y-8">
+      {/* Premium Upload Area */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-8">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Upload your BOM, Requirements, CAD, or design files</h3>
+        {/* File Type Badges */}
+        <div className="mb-6">
+          <p className="text-sm font-medium text-gray-600 mb-3">Supported file types:</p>
+          <div className="flex flex-wrap gap-2">
+            {['PDF', 'Excel', 'Word', 'CSV', 'CAD', 'ZIP'].map((type) => (
+              <span key={type} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-300">
+                {type}
+              </span>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Up to 10 files · Max 50 MB each
           </p>
         </div>
 
-        {/* File Upload Area */}
-        <div className="mb-8">
-          <div
-            {...getRootProps()}
-            className={`
-              upload-area
-              ${isDragActive ? 'upload-area-active' : ''}
-              ${selectedFiles.length > 0 ? 'border-green-300 bg-green-50' : ''}
-            `}
-          >
-            <input {...getInputProps()} />
-            <div className="text-center">
-              {selectedFiles.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-                    <FileIcon className="w-8 h-8 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-green-800">
-                      {selectedFiles.length} File{selectedFiles.length > 1 ? 's' : ''} Selected
-                    </h3>
-                    <p className="text-sm text-green-600">
-                      Click or drag to add more (max 10 files)
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <Upload className="w-16 h-16 text-medium-gray mx-auto" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-dark-slate-gray">
-                      {isDragActive ? 'Drop your files here' : 'Upload Documents'}
-                    </h3>
-                    <p className="text-medium-gray">
-                      Drag & drop files here, or click to browse
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+        {/* Enhanced Upload Area */}
+        <div
+          {...getRootProps()}
+          className={`
+            relative group cursor-pointer transition-all duration-300 ease-out
+            ${isDragActive
+              ? 'border-primary-400 bg-gradient-to-br from-primary-50 to-accent-50 shadow-lg shadow-primary-200/50 scale-102'
+              : selectedFiles.length > 0
+                ? 'border-green-400 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg shadow-green-200/50'
+                : 'border-gray-200 bg-gradient-to-br from-gray-50 to-white hover:border-primary-300 hover:shadow-lg hover:shadow-primary-100/50'
+            }
+            border-2 border-dashed rounded-2xl p-12 text-center
+          `}
+        >
+          <input {...getInputProps()} />
 
-          {/* Selected Files List */}
-          {selectedFiles.length > 0 && (
-            <div className="mt-4 space-y-2">
-              {selectedFiles.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <FileIcon className="w-5 h-5 text-gray-600 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                      <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => removeFile(index)}
-                    className="ml-2 p-1 hover:bg-gray-200 rounded-full transition-colors"
-                    title="Remove file"
-                  >
-                    <X className="w-4 h-4 text-gray-600" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Supported File Types */}
-          <div className="mt-4 text-center">
-            <p className="text-sm text-medium-gray">
-              Supported: Images, PDFs, Excel, CSV, Word, CAD (DWG, DXF), SolidWorks, ZIP archives
-            </p>
-            <p className="text-xs text-medium-gray mt-1">
-              Up to 10 files, 50MB each
-            </p>
-          </div>
-        </div>
-
-        {/* Extraction Error */}
-        {extractionError && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
-            <div className="flex items-start">
-              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+          {/* Upload Content */}
+          {selectedFiles.length > 0 ? (
+            <div className="space-y-4">
+              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                <FileIcon className="w-10 h-10 text-white" />
+              </div>
               <div>
-                <h4 className="text-sm font-semibold text-red-800">Extraction Failed</h4>
-                <p className="text-sm text-red-700 mt-1">{extractionError}</p>
+                <h3 className="text-xl font-bold text-green-800 mb-2">
+                  Perfect! {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} ready to analyze
+                </h3>
+                <p className="text-green-600 font-medium mb-2">
+                  Drop more files or click to add additional documents
+                </p>
+                <div className="flex items-center justify-center space-x-2 text-sm text-green-500">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Robbie is ready to extract intelligent insights!</span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="space-y-6">
+              <div className={`
+                w-20 h-20 mx-auto rounded-full flex items-center justify-center transition-all duration-300
+                ${isDragActive
+                  ? 'bg-gradient-to-br from-primary-400 to-accent-600 shadow-lg shadow-primary-300/50 scale-110'
+                  : 'bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-primary-400 group-hover:to-accent-600 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary-300/50'
+                }
+              `}>
+                <Upload className={`w-10 h-10 transition-colors duration-300 ${isDragActive || 'group-hover:text-white text-gray-600'} ${isDragActive ? 'text-white' : ''}`} />
+              </div>
+              <div>
+                <h3 className={`text-xl font-bold mb-2 transition-colors duration-300 ${isDragActive ? 'text-primary-800' : 'text-gray-900 group-hover:text-primary-800'}`}>
+                  {isDragActive ? 'Drop your files here!' : 'Drag & drop files or click to browse'}
+                </h3>
+                <p className={`text-base transition-colors duration-300 ${isDragActive ? 'text-primary-600' : 'text-gray-600'}`}>
+                  {isDragActive ? 'Release to upload your documents' : 'I can cross-reference information across documents for better accuracy.'}
+                </p>
+              </div>
 
-        {/* Extraction Loading */}
-        {isExtracting && (
-          <div className="mb-6">
-            <Loading message="Understanding documents..." size="md" />
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex justify-between">
-          <Button
-            onClick={onCancel}
-            variant="secondary"
-            disabled={isExtracting}
-          >
-            Cancel
-          </Button>
-
-          <Button
-            onClick={handleNext}
-            disabled={selectedFiles.length === 0 || isExtracting}
-            loading={isExtracting}
-          >
-            {isExtracting ? 'Extracting...' : 'Next: Requirements →'}
-          </Button>
+              {/* Visual Enhancement */}
+              <div className="flex items-center justify-center space-x-2 text-sm text-gray-400">
+                <Sparkles className="w-4 h-4" />
+                <span>Robbie will analyze the documents</span>
+              </div>
+            </div>
+          )}
         </div>
-      </Card>
+
+        {/* Selected Files List */}
+        {selectedFiles.length > 0 && (
+          <div className="mt-8 space-y-3">
+            <h4 className="text-sm font-semibold text-gray-700 mb-4">Selected Files ({selectedFiles.length})</h4>
+            {selectedFiles.map((file, index) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/50 hover:shadow-sm transition-all duration-200">
+                <div className="flex items-center space-x-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-accent-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileIcon className="w-5 h-5 text-primary-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile(index);
+                  }}
+                  className="ml-3 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-200"
+                  title="Remove file"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Extraction Error */}
+      {extractionError && (
+        <div className="bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl p-6">
+          <div className="flex items-start">
+            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+            <div>
+              <h4 className="text-sm font-semibold text-red-800">Extraction Failed</h4>
+              <p className="text-sm text-red-700 mt-1">{extractionError}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Extraction Loading */}
+      {isExtracting && (
+        <div className="bg-primary-50/80 backdrop-blur-sm border border-primary-200 rounded-2xl p-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-accent-600 rounded-full flex items-center justify-center animate-pulse">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-primary-800">Robbie is analyzing your documents...</h4>
+              <p className="text-sm text-primary-600 mt-1">This usually takes 15-30 seconds depending on file complexity.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Conversational Action Buttons */}
+      <div className="flex justify-between items-center">
+        <Button
+          onClick={onCancel}
+          variant="ghost"
+          disabled={isExtracting}
+          className="text-gray-600 hover:text-gray-800"
+        >
+          ← Back to Dashboard
+        </Button>
+
+        <Button
+          onClick={handleNext}
+          disabled={selectedFiles.length === 0 || isExtracting}
+          loading={isExtracting}
+          className="bg-gradient-to-r from-primary-500 to-accent-600 hover:from-primary-600 hover:to-accent-700 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+        >
+          {isExtracting ? (
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-4 h-4 animate-pulse" />
+              <span>Analyzing Documents...</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <span>Analyze Documents</span>
+            </div>
+          )}
+        </Button>
+      </div>
     </div>
   );
 };

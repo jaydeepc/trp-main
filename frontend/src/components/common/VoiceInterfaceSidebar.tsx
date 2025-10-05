@@ -126,11 +126,10 @@ Step 1: Upload & Extract Documents
 
 Step 2: Define Requirements
 - After extraction completes, it will automatically navigate to the requirements form.
-  1. Compliance: Ask about certifications needed and use "add_compliance_requirement" for each one
-  2. Lead time: Ask "What's your desired lead time?" and use "set_lead_time" with their response. Try to use the following options if it fits the users requirements, else use any custom value they provide: "1-2 weeks", "2-4 weeks", "4-6 weeks", "6-8 weeks", "8-12 weeks", "12+ weeks"
-  3. Payment terms: Ask about payment preferences and use "set_payment_terms" with chosen option
-  4. Delivery location: Ask "Where should components be delivered?" and use "set_delivery_location"
-  5. Additional requirements: Ask about special instructions and use "set_additional_requirements" if there are any instructions ONLY. Do not call this function if there are no additional requirements.
+  1. Supplier Priority Ranking: Ask "What's most important when selecting suppliers?" and help them rank priorities like Quality, Price, Reliability, Established Company, Support, and Returns & Warranty. Use "set_priority_ranking" with their preferred order
+  2. Compliance: Ask about certifications needed and use "add_compliance_requirement" for each one
+  3. Lead time: Ask "What's your desired lead time?" and use "set_lead_time" with their response. Try to use the following options if it fits the users requirements, else use any custom value they provide: "1-2 weeks", "2-4 weeks", "4-6 weeks", "6-8 weeks", "8-12 weeks", "12+ weeks"
+  4. Additional requirements: Ask about special instructions and use "set_additional_requirements" if there are any instructions ONLY. Do not call this function if there are no additional requirements.
 - Once requirements are set, ask if they want to trigger BOM analysis: "Would you like me to analyze the BOM with these requirements?"
 - When user confirms, trigger analysis using "trigger_bom_analysis" with confirm: true
 - You will receive BOM analysis results via sendText with component details - acknowledge briefly
@@ -161,7 +160,7 @@ IMPORTANT: You have access to context-aware functions that change based on the c
 - For navigation: "navigate_to" with appropriate destinations
 - For explaining capabilities: "show_system_info"
 - For feature details: "show_feature_details" with appropriate feature_id
-- For setting requirements: set_lead_time, set_payment_terms, set_delivery_location, add_compliance_requirement, set_additional_requirements
+- For setting requirements: set_priority_ranking, set_lead_time, add_compliance_requirement, set_additional_requirements
 
 Always call the appropriate function based on user requests and current workflow stage.`,
                     },
