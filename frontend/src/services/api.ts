@@ -4,7 +4,6 @@ import {
     RFQ,
     DocumentProcessingResult,
     DashboardAnalytics,
-    User,
     PaginatedResponse,
 } from '../types';
 
@@ -60,38 +59,6 @@ class APIService {
         } else {
             throw new Error(response.data.error || 'API request failed');
         }
-    }
-
-    // Authentication endpoints
-    async login(
-        email: string,
-        password: string
-    ): Promise<{ user: User; token: string }> {
-        const response = await this.api.post('/auth/login', {
-            email,
-            password,
-        });
-        return this.handleResponse(response);
-    }
-
-    async register(userData: {
-        email: string;
-        password: string;
-        name: string;
-        company?: string;
-    }): Promise<{ user: User; token: string }> {
-        const response = await this.api.post('/auth/register', userData);
-        return this.handleResponse(response);
-    }
-
-    async getCurrentUser(): Promise<User> {
-        const response = await this.api.get('/auth/me');
-        return this.handleResponse(response);
-    }
-
-    async logout(): Promise<void> {
-        await this.api.post('/auth/logout');
-        localStorage.removeItem('auth_token');
     }
 
     // RFQ endpoints

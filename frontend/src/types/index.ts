@@ -123,24 +123,6 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// User Types
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  company: string;
-  permissions: string[];
-  preferences?: UserPreferences;
-}
-
-export interface UserPreferences {
-  theme: 'light' | 'dark';
-  notifications: boolean;
-  defaultLeadTime: string;
-  defaultPaymentTerms: string;
-}
-
 // Form Types
 export interface RFQFormData {
   step1?: {
@@ -269,7 +251,6 @@ export interface RFQContextType {
 }
 
 export interface AppContextType {
-  user: User | null;
   notifications: NotificationState[];
   addNotification: (notification: Omit<NotificationState, 'id'>) => void;
   removeNotification: (id: string) => void;
