@@ -29,7 +29,7 @@ class APIService {
                 }
 
                 // Add user ID header for MVP
-                config.headers['x-user-id'] = 'demo-user-001';
+                config.headers['x-user-id'] = 'system';
 
                 return config;
             },

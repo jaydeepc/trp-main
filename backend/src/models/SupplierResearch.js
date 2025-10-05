@@ -46,8 +46,7 @@ const componentResearchSchema = new mongoose.Schema({
 // Main SupplierResearch schema
 const supplierResearchSchema = new mongoose.Schema({
   rfqId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'RFQ',
+    type: String, // Changed from ObjectId to String to store UUID
     required: true,
     index: true
   },
@@ -66,10 +65,10 @@ const supplierResearchSchema = new mongoose.Schema({
     enum: ['processing', 'completed', 'failed'],
     default: 'completed'
   },
-  
+
   // Core research data
   supplierResearch: [componentResearchSchema],
-  
+
   // Processing metadata
   processingTime: {
     type: Number, // in milliseconds
@@ -84,7 +83,7 @@ const supplierResearchSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  
+
   // Summary statistics
   totalAlternativeSuppliers: {
     type: Number,
@@ -94,7 +93,7 @@ const supplierResearchSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  
+
   // Original components for reference
   originalComponents: [{
     partNumber: String,
@@ -102,7 +101,7 @@ const supplierResearchSchema = new mongoose.Schema({
     quantity: Number,
     specifications: mongoose.Schema.Types.Mixed
   }],
-  
+
   // Error handling
   error: {
     message: String,
@@ -121,19 +120,19 @@ supplierResearchSchema.index({ rfqNumber: 1 });
 supplierResearchSchema.index({ createdAt: -1 });
 
 // Virtual for getting research summary
-supplierResearchSchema.virtual('summary').get(function() {
+supplierResearchSchema.virtual('summary').get(function () {
   if (!this.supplierResearch || !Array.isArray(this.supplierResearch)) {
     return null;
   }
-  
+
   const totalAlternatives = this.supplierResearch.reduce((sum, component) => {
     return sum + (component.alternativeSuppliers ? component.alternativeSuppliers.length : 0);
   }, 0);
-  
+
   return {
     totalComponents: this.supplierResearch.length,
     totalAlternatives,
-    avgAlternativesPerComponent: this.supplierResearch.length > 0 ? 
+    avgAlternativesPerComponent: this.supplierResearch.length > 0 ?
       (totalAlternatives / this.supplierResearch.length).toFixed(2) : 0,
     processingTimeMinutes: (this.processingTime / 60000).toFixed(2),
     sourcesFound: this.sourcesFound,
@@ -142,37 +141,36 @@ supplierResearchSchema.virtual('summary').get(function() {
 });
 
 // Method to calculate statistics
-supplierResearchSchema.methods.calculateStatistics = function() {
+supplierResearchSchema.methods.calculateStatistics = function () {
   if (!this.supplierResearch || !Array.isArray(this.supplierResearch)) {
     return;
   }
-  
+
   const totalAlternatives = this.supplierResearch.reduce((sum, component) => {
     return sum + (component.alternativeSuppliers ? component.alternativeSuppliers.length : 0);
   }, 0);
-  
+
   this.totalAlternativeSuppliers = totalAlternatives;
-  this.averageAlternativesPerComponent = this.supplierResearch.length > 0 ? 
+  this.averageAlternativesPerComponent = this.supplierResearch.length > 0 ?
     totalAlternatives / this.supplierResearch.length : 0;
 };
 
 // Pre-save middleware to calculate statistics
-supplierResearchSchema.pre('save', function(next) {
+supplierResearchSchema.pre('save', function (next) {
   this.calculateStatistics();
   next();
 });
 
 // Static method to find by RFQ
-supplierResearchSchema.statics.findByRFQ = function(rfqId) {
-  return this.findOne({ rfqId }).populate('rfqId', 'rfqNumber status');
+supplierResearchSchema.statics.findByRFQ = function (rfqId) {
+  return this.findOne({ rfqId }); // Remove populate since rfqId is now a String UUID, not ObjectId reference
 };
 
 // Static method to find by user
-supplierResearchSchema.statics.findByUser = function(userId, limit = 10) {
+supplierResearchSchema.statics.findByUser = function (userId, limit = 10) {
   return this.find({ userId })
     .sort({ createdAt: -1 })
-    .limit(limit)
-    .populate('rfqId', 'rfqNumber status');
+    .limit(limit); // Remove populate since rfqId is now a String UUID, not ObjectId reference
 };
 
 // Ensure virtual fields are serialized

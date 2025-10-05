@@ -13,12 +13,8 @@ class RFQController {
 
       const rfq = new RFQNew({
         rfqId,
-        userId,
-        title: title || `New RFQ ${Date.now()}`,
-        description,
-        priority,
+        createdBy: userId,
         status: 'draft',
-        currentStep: 1,
         workflow: {
           currentStep: 1,
           completedSteps: [],
@@ -56,7 +52,7 @@ class RFQController {
         sortOrder = 'desc'
       } = req.query;
 
-      const query = { userId };
+      const query = { createdBy: userId };
       if (status) query.status = status;
       if (priority) query.priority = priority;
 
@@ -101,18 +97,27 @@ class RFQController {
   async getRFQ(req, res) {
     try {
       const userId = req.userId;
-      const { id } = req.params;
+      const { id } = req.params; // This is now the UUID rfqId from frontend
 
-      const rfq = await RFQNew.findOne({ _id: id, userId })
+      console.log('🔍 RFQController.getRFQ - Looking up RFQ:', { rfqId: id, userId });
+
+      const rfq = await RFQNew.findOne({ rfqId: id, createdBy: userId }) // Use rfqId and createdBy for consistency
         .populate('documents')
         .populate('bomId');
 
       if (!rfq) {
+        console.log('❌ RFQ not found for rfqId:', id);
         return res.status(404).json({
           error: 'RFQ not found',
           message: 'The requested RFQ does not exist or you do not have access to it'
         });
       }
+
+      console.log('✅ Found RFQ:', {
+        rfqId: rfq.rfqId,
+        rfqNumber: rfq.rfqNumber,
+        hasAnalysisData: !!rfq.analysisData
+      });
 
       res.json({
         success: true,
@@ -132,26 +137,32 @@ class RFQController {
   async updateRFQ(req, res) {
     try {
       const userId = req.userId;
-      const { id } = req.params;
+      const { id } = req.params; // This is now the UUID rfqId from frontend
       const updates = req.body;
+
+      console.log('🔧 RFQController.updateRFQ - Updating RFQ:', { rfqId: id, userId });
 
       // Remove fields that shouldn't be directly updated
       delete updates.userId;
       delete updates._id;
+      delete updates.rfqId; // Prevent rfqId from being changed
       delete updates.createdAt;
 
       const rfq = await RFQNew.findOneAndUpdate(
-        { _id: id, userId },
+        { rfqId: id, createdBy: userId }, // Use rfqId and createdBy for consistency
         { ...updates, updatedAt: new Date() },
         { new: true, runValidators: true }
       );
 
       if (!rfq) {
+        console.log('❌ RFQ not found for rfqId:', id);
         return res.status(404).json({
           error: 'RFQ not found',
           message: 'The requested RFQ does not exist or you do not have access to it'
         });
       }
+
+      console.log('✅ RFQ updated successfully:', rfq.rfqId);
 
       res.json({
         success: true,
@@ -172,31 +183,44 @@ class RFQController {
   async updateRequirements(req, res) {
     try {
       const userId = req.userId;
-      const { id } = req.params;
+      const { id } = req.params; // This is now the UUID rfqId from frontend
       const { requirements } = req.body;
 
-      const rfq = await RFQNew.findOne({ _id: id, userId });
+      console.log('📝 RFQController.updateRequirements:', {
+        rfqId: id,
+        userId,
+        requirements: Object.keys(requirements)
+      });
+
+      const rfq = await RFQNew.findOne({ rfqId: id, createdBy: userId }); // Use rfqId and createdBy for consistency
 
       if (!rfq) {
+        console.log('❌ RFQ not found for rfqId:', id);
         return res.status(404).json({
           error: 'RFQ not found'
         });
       }
 
+      // Update requirements
       rfq.requirements = { ...rfq.requirements, ...requirements };
+
+      // Update workflow step data
       rfq.workflow.stepData.step1 = {
         requirementsDefined: true,
         completedAt: new Date(),
         ...requirements
       };
 
+      // Mark step as completed and move to next step
       if (!rfq.workflow.completedSteps.includes(1)) {
         rfq.workflow.completedSteps.push(1);
-        rfq.currentStep = Math.max(rfq.currentStep, 2);
-        rfq.workflow.currentStep = rfq.currentStep;
+        rfq.workflow.currentStep = Math.max(rfq.workflow.currentStep, 2);
+        rfq.status = 'in-progress';
       }
 
       await rfq.save();
+
+      console.log('✅ Requirements updated successfully for RFQ:', rfq.rfqId);
 
       res.json({
         success: true,
@@ -220,7 +244,7 @@ class RFQController {
       const { id } = req.params;
       const { step, stepData } = req.body;
 
-      const rfq = await RFQNew.findOne({ _id: id, userId });
+      const rfq = await RFQNew.findOne({ rfqId: id, createdBy: userId }); // Use rfqId and createdBy for consistency
 
       if (!rfq) {
         return res.status(404).json({
@@ -238,8 +262,7 @@ class RFQController {
       // Mark step as completed
       if (!rfq.workflow.completedSteps.includes(step)) {
         rfq.workflow.completedSteps.push(step);
-        rfq.currentStep = Math.max(rfq.currentStep, step + 1);
-        rfq.workflow.currentStep = rfq.currentStep;
+        rfq.workflow.currentStep = Math.max(rfq.workflow.currentStep, step + 1);
       }
 
       // Update status based on step completion

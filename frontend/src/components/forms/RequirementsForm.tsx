@@ -318,7 +318,7 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
       const supplierPriorityIds = priorityRanking.map(item => item.id);
 
       // Save requirements to database first
-      await api.updateRequirements(rfq.id, {
+      await api.updateRequirements(rfq.rfqId, {
         supplierPriority: supplierPriorityIds,
         complianceRequirements: localCompliance,
         desiredLeadTime: localLeadTime,
@@ -326,9 +326,10 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
       });
 
       console.log('✅ Requirements saved. Now triggering supplier research...');
+      console.log('🔍 Using rfqId for supplier research:', rfq.rfqId);
 
-      // Call supplier research API
-      const result = await api.generateSupplierResearch(rfq.id);
+      // Call supplier research API using UUID rfqId (not MongoDB _id)
+      const result = await api.generateSupplierResearch(rfq.rfqId);
 
       console.log('✅ Supplier research complete:', result);
 
