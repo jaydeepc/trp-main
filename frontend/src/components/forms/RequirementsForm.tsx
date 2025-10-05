@@ -43,9 +43,9 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
     { id: 'quality', name: 'Quality', description: 'Product quality and reliability', iconName: 'quality' },
     { id: 'price', name: 'Price', description: 'Cost competitiveness', iconName: 'price' },
     { id: 'reliability', name: 'Reliability', description: 'Supplier track record', iconName: 'reliability' },
-    { id: 'established', name: 'Established Company', description: 'Company reputation and stability', iconName: 'established' },
+    { id: 'established-company', name: 'Established Company', description: 'Company reputation and stability', iconName: 'established' },
     { id: 'support', name: 'Support', description: 'Customer service and technical support', iconName: 'support' },
-    { id: 'warranty', name: 'Returns & Warranty', description: 'Return policy and warranty coverage', iconName: 'warranty' }
+    { id: 'returns-warranty', name: 'Returns & Warranty', description: 'Return policy and warranty coverage', iconName: 'warranty' }
   ]);
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
