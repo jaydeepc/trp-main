@@ -1,6 +1,9 @@
 const { processZipFiles } = require('../utils/zipExtractor');
 const { extractDocumentData } = require('../services/documentExtractor');
-const RFQ = require('../models/RFQ');
+const RFQ = require('../models/RFQNew');
+const BOM = require('../models/BOM');
+const Document = require('../models/Document');
+const { v4: uuidv4 } = require('uuid');
 
 const extractDocuments = async (req, res) => {
   try {
@@ -17,8 +20,12 @@ const extractDocuments = async (req, res) => {
 
     console.log(`🔄 Starting document extraction`);
     console.log(`📁 Files received: ${req.files.length}`);
+    console.log(`📧 Request body:`, JSON.stringify(req.body));
+    console.log(`👤 User ID: ${userId}`);
     if (rfqId) {
-      console.log(`🔗 RFQ ID: ${rfqId}`);
+      console.log(`🔗 RFQ ID received: "${rfqId}" (type: ${typeof rfqId})`);
+    } else {
+      console.log(`⚠️ NO RFQ ID received in request body`);
     }
 
     const { files: processedFiles, zipResults } = await processZipFiles(req.files);
@@ -35,52 +42,76 @@ const extractDocuments = async (req, res) => {
     const mimeTypes = processedFiles.map(f => f.mimetype);
 
     console.log(`🤖 Calling Gemini for document understanding...`);
+    const startTime = Date.now();
     const extractionResult = await extractDocumentData(fileBuffers, fileNames, mimeTypes);
+    const processingTime = Date.now() - startTime;
 
     console.log(`✅ Document extraction completed`);
     console.log(`   Document Types: ${extractionResult.extraction.documentTypes.join(', ')}`);
     console.log(`   Components Found: ${extractionResult.extraction.components.length}`);
     console.log(`   Confidence: ${extractionResult.extraction.metadata.confidence}%`);
 
-    // If RFQ ID provided, update the RFQ in database
+    // If RFQ ID provided, store documents and update RFQ
     if (rfqId) {
+      console.log(`🔍 Attempting to find RFQ with rfqId: "${rfqId}"`);
       try {
-        const rfq = await RFQ.findOne({ _id: rfqId });
+        const rfq = await RFQ.findOne({ rfqId: rfqId });
+        console.log(`📋 RFQ found:`, rfq ? `YES (${rfq.rfqId})` : 'NO');
 
         if (rfq) {
-          // Update RFQ with extracted data
-          rfq.extractedDocumentData = {
-            documentTypes: extractionResult.extraction.documentTypes,
-            components: extractionResult.extraction.components,
-            projectInfo: extractionResult.extraction.projectInfo || {},
-            technicalRequirements: extractionResult.extraction.technicalRequirements || {},
-            metadata: {
-              ...extractionResult.extraction.metadata,
-              filesProcessed: processedFiles.length,
-              originalFiles: req.files.length,
-              zipFilesExtracted: zipResults.reduce((sum, r) => sum + r.extractedCount, 0),
-              extractedAt: new Date()
-            }
-          };
+          // 1. Create Document records for each processed file
+          const documentIds = [];
+          for (const file of processedFiles) {
+            const document = new Document({
+              fileName: file.originalname,
+              originalName: file.originalname,
+              fileType: file.mimetype,
+              fileSize: file.size,
+              mimeType: file.mimetype,
+              base64Data: file.buffer.toString('base64'),
+              processingStatus: 'completed',
+              analysisResults: {
+                componentCount: extractionResult.extraction.components.length,
+                extractionConfidence: extractionResult.extraction.metadata.confidence,
+                processingTime,
+                geminiModel: extractionResult.modelMetadata.model
+              },
+              documentType: extractionResult.extraction.documentTypes[0] || 'Other',
+              metadata: {
+                uploadedBy: userId,
+                uploadedAt: new Date(),
+                processedAt: new Date(),
+                source: file.source || 'direct',
+                zipSource: file.zipSource
+              }
+            });
 
-          // Update source documents
-          rfq.sourceDocuments = processedFiles.map(file => ({
+            await document.save();
+            documentIds.push(document._id);
+            console.log(`📄 Created document: ${document.documentId}`);
+          }
+
+          // 2. Update RFQ with extracted components and document references
+          rfq.documents = processedFiles.map((file, index) => ({
+            documentId: documentIds[index],
             fileName: file.originalname,
-            fileType: file.mimetype,
-            fileSize: file.size,
-            source: file.source || 'direct',
-            zipSource: file.zipSource
+            fileType: file.mimetype
           }));
 
-          rfq.markStepComplete(1, {
-            documentsUploaded: true,
-            documentsExtracted: true,
-            componentsExtracted: extractionResult.extraction.components.length,
-            filesProcessed: processedFiles.length
-          });
+          rfq.analysisData = {
+            components: extractionResult.extraction.components,
+            modelMetadata: extractionResult.modelMetadata,
+            processingTime,
+            analysisDate: new Date()
+          };
+
+          // Ensure createdBy is set correctly
+          if (!rfq.createdBy) {
+            rfq.createdBy = userId;
+          }
 
           await rfq.save();
-          console.log(`💾 RFQ ${rfqId} updated with extracted data`);
+          console.log(`💾 Updated RFQ ${rfq.rfqId} with extracted components`);
         } else {
           console.warn(`⚠️ RFQ ${rfqId} not found for user ${userId}`);
         }

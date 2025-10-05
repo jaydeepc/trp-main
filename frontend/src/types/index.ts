@@ -1,6 +1,7 @@
 // RFQ Types
 export interface RFQ {
   id: string;
+  rfqId: string; // Business identifier from backend
   rfqNumber: string;
   status: 'draft' | 'in-progress' | 'completed' | 'sent' | 'cancelled';
   currentStep: number;

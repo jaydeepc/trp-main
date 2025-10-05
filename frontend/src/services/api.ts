@@ -110,6 +110,22 @@ class APIService {
         return this.handleResponse(response);
     }
 
+    // Save requirements from RequirementsForm
+    async updateRequirements(
+        id: string,
+        requirements: {
+            supplierPriority: string[];
+            complianceRequirements: string[];
+            desiredLeadTime: string;
+            additionalRequirements?: string;
+        }
+    ): Promise<{ rfq: any }> {
+        const response = await this.api.put(`/rfqs/${id}/requirements`, {
+            requirements,
+        });
+        return this.handleResponse(response);
+    }
+
     async analyzeBOM(
         id: string,
         requirements: {

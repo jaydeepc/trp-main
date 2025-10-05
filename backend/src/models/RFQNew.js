@@ -41,17 +41,11 @@ const RFQSchema = new mongoose.Schema({
   },
 
   requirements: {
-    supplierPriority: [{
-      type: String,
-      enum: ['quality', 'price', 'reliability', 'established-company', 'support', 'returns-warranty']
-    }],
+    supplierPriority: [String],
     sourcingLocation: String,
     deliveryLocation: String,
-    complianceRequirements: [{
-      type: String,
-      enum: ['ISO9001', 'AS9100', 'ISO14001', 'RoHS', 'REACH', 'CE', 'FDA', 'UL']
-    }],
-    leadTime: String,
+    complianceRequirements: [String],
+    desiredLeadTime: String,
     paymentTerms: {
       type: String,
       enum: ['Net 30', 'Net 60', 'Net 90', 'Milestone-based', '2/10 Net 30', 'COD', 'Letter of Credit']
