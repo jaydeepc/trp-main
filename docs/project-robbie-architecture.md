@@ -128,7 +128,7 @@ For detailed implementation, see: [voice-app-architecture.md](./voice-app-archit
 
 ### RFQ Creation Workflow (4 Steps)
 
-#### Step 1: Define Requirements
+#### Step 1: Upload & Extract Documents
 
 **User Actions:**
 
@@ -139,26 +139,89 @@ For detailed implementation, see: [voice-app-architecture.md](./voice-app-archit
 **Processing:**
 
 -   File validation (type, size)
--   Backend processing (10-20 seconds)
--   AI analysis using Gemini or mock data fallback
--   Component extraction with metadata
+-   Backend document extraction (5-10 seconds)
+-   Component data extraction using Gemini AI
+-   Structured component data output
 
 **Output:**
 
 -   List of components with part numbers
 -   Material types and quantities
--   Initial ZBC estimates
--   Confidence scores
+-   Basic component metadata
+-   Extraction confidence scores
 
-#### Step 2: Smart BOM Review
+#### Step 2: Define Requirements & Trigger BOM Analysis
+
+**Purpose:** Gather project requirements BEFORE analysis for context-aware results.
+
+**Configuration Options:**
+
+**Compliance Requirements:**
+
+-   ISO 9001, RoHS, REACH, CE Marking, UL Listed, FDA, AS9100, ISO 14001, OHSAS 18001
+-   Voice: "Add ISO 9001 and RoHS compliance"
+
+**Lead Time:**
+
+-   1-2 weeks, 2-4 weeks, 4-6 weeks, 6-8 weeks, 8-12 weeks, 12+ weeks
+-   Voice: "Set lead time to 8 weeks"
+
+**Payment Terms:**
+
+-   Net 30, Net 60, 2/10 Net 30, Milestone-based, Cash on Delivery, Letter of Credit
+-   Voice: "Use Net 30 payment terms"
+
+**Delivery Location:**
+
+-   Free-form text input with regional focus
+-   Voice: "Deliver to San Francisco, California"
+
+**Additional Requirements (Optional):**
+
+-   Special packaging, expedited shipping, custom labeling
+-   Voice: "Add requirement for anti-static packaging"
+
+**Real-Time Voice Feedback:**
+
+-   Each selection immediately sent to Gemini for context awareness
+-   Example: User selects "Net 30" → Gemini notified: "User selected payment terms: Net 30 (Payment due within 30 days of invoice)"
+
+**Trigger BOM Analysis:**
+
+-   After requirements complete, trigger analysis via voice or button
+-   Voice command: "Analyze the BOM" or "Start analysis"
+-   Backend processes with requirements as context (15-20 seconds)
+
+**Data Transformation:**
+
+-   API returns supplier research data structure
+-   Frontend transforms to Component interface format
+-   Maps: partName, unitCost, riskFlag, compliance status
+-   Enriches with AI insights and market predictions
+
+**Voice Summary After Analysis:**
+
+```
+"Supplier research complete! I've analyzed 45 components with your requirements:
+• Compliance: ISO 9001, RoHS
+• Lead time: 8 weeks
+• Payment: Net 30
+• Delivery Location: San Francisco
+
+The analyzed components include supplier recommendations, cost data, and compliance
+status. You can now review the detailed BOM analysis in the next step."
+```
+
+#### Step 3: Smart BOM Review
 
 **Display:**
 
--   Interactive table of analyzed components
+-   Interactive table of analyzed components (PRE-FILTERED by requirements)
 -   ZBC should-cost vs market price
 -   Variance analysis (e.g., +18%)
--   Risk flags and compliance status
+-   Risk flags and compliance status (based on requirements)
 -   AI confidence scores (90-95%)
+-   Regional supplier prioritization
 
 **User Actions:**
 
@@ -172,63 +235,8 @@ For detailed implementation, see: [voice-app-architecture.md](./voice-app-archit
 -   Market price predictions
 -   Alternative component suggestions
 -   Risk level indicators (Low, Medium, High)
--   Compliance verification status
-
-#### Step 3: Commercial Terms
-
-**Configuration Options:**
-
-**Lead Time:**
-
--   2-4 weeks (Standard)
--   6-8 weeks (Extended)
--   10-12 weeks (Long-lead)
--   Custom duration
--   Voice: "Set lead time to 8 weeks"
-
-**Payment Terms:**
-
--   Net 30 / Net 60
--   Milestone-based
--   2/10 Net 30 (2% discount if paid in 10 days)
--   Cash on Delivery
--   Letter of Credit
--   Voice: "Use Net 30 payment terms"
-
-**Delivery Location:**
-
--   Free-form text input
--   Voice: "Deliver to San Francisco, California"
-
-**Compliance Requirements:**
-
--   ISO 9001 (Quality Management)
--   AS9100 (Aerospace)
--   ISO 14001 (Environmental)
--   OHSAS 18001 (Health & Safety)
--   RoHS (Hazardous Substances)
--   REACH (Chemical Regulation)
--   FDA (Medical Devices)
--   CE Marking (European Conformity)
--   UL Listed (Safety Certification)
--   Voice: "Add ISO 9001 and RoHS compliance"
-
-**Additional Requirements:**
-
--   Free-form text for special instructions
--   Packaging requirements
--   Quality control specifications
--   Voice: "Add requirement for anti-static packaging"
-
-**Voice Workflow:**
-Robbie guides users through each field sequentially:
-
-1. Asks about lead time → User responds → Confirms
-2. Asks about payment terms → User responds → Confirms
-3. Asks about delivery → User responds → Confirms
-4. Asks about compliance → User responds → Confirms
-5. Asks about additional requirements → User responds → Confirms
-6. Summarizes all commercial terms
+-   Compliance verification against selected standards
+-   Supplier recommendations filtered by region
 
 #### Step 4: Preview & Send
 
@@ -907,6 +915,14 @@ npm test
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** February 10, 2025  
+**Document Version:** 1.1  
+**Last Updated:** March 10, 2025  
 **Maintainers:** Project Robbie Team
+
+**Recent Changes (v1.1):**
+- Updated RFQ workflow to reflect 4-step process with requirements-first approach
+- Documented real-time voice feedback implementation
+- Added data transformation layer documentation
+- Updated Step 2 to "Define Requirements & Trigger BOM Analysis"
+- Updated Step 3 to "Smart BOM Review" (with pre-filtered results)
+- See [voice-integration-update-plan.md](./voice-integration-update-plan.md) for detailed implementation notes
