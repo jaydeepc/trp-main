@@ -9,6 +9,7 @@ import {
     addComplianceRequirement,
     removeComplianceRequirement,
     setAdditionalRequirements,
+    setSupplierPriority,
     setCurrentStep,
 } from '../store/rfqSlice';
 
@@ -478,6 +479,30 @@ class VoiceFunctionRegistry {
             function: this.setAdditionalRequirements.bind(this),
         });
 
+        this.registerFunction({
+            name: 'set_priority_ranking',
+            description:
+                'Set the priority ranking for supplier selection criteria. Priorities should be ordered from most important to least important.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    priorities: {
+                        type: 'array',
+                        items: {
+                            type: 'string',
+                            enum: ['Quality', 'Price', 'Reliability', 'Established Company', 'Support', 'Returns & Warranty']
+                        },
+                        description:
+                            'Array of priority names in order from highest to lowest priority (e.g., ["Quality", "Price", "Reliability", "Established Company", "Support", "Returns & Warranty"])',
+                        minItems: 1,
+                        maxItems: 6
+                    },
+                },
+                required: ['priorities'],
+            },
+            function: this.setPriorityRanking.bind(this),
+        });
+
         // New functions for Step 2 workflow
         this.registerFunction({
             name: 'trigger_bom_analysis',
@@ -806,6 +831,47 @@ I'm powered by Google Gemini Live API. How can I help you today?`;
             success: true,
             message: `Perfect! I've recorded your additional requirements: "${args.requirements}". Let me summarize what we've configured for your commercial terms.`,
             nextStep: 'summary',
+        };
+    }
+
+    private async setPriorityRanking(args: { priorities: string[] }) {
+        if (!this.callbacks) {
+            throw new Error('Callbacks not initialized');
+        }
+
+        // Create priority ranking objects with proper structure
+        const priorityMapping: Record<string, { id: string, iconName: string, description: string }> = {
+            'Quality': { id: 'quality', iconName: 'quality', description: 'Product quality and reliability' },
+            'Price': { id: 'price', iconName: 'price', description: 'Cost competitiveness' },
+            'Reliability': { id: 'reliability', iconName: 'reliability', description: 'Supplier track record' },
+            'Established Company': { id: 'established', iconName: 'established', description: 'Company reputation and stability' },
+            'Support': { id: 'support', iconName: 'support', description: 'Customer service and technical support' },
+            'Returns & Warranty': { id: 'warranty', iconName: 'warranty', description: 'Return policy and warranty coverage' }
+        };
+
+        // Convert priority names to full objects in the specified order
+        const priorityRanking = args.priorities.map(priorityName => {
+            const mapping = priorityMapping[priorityName];
+            if (!mapping) {
+                throw new Error(`Invalid priority: ${priorityName}`);
+            }
+            return {
+                id: mapping.id,
+                name: priorityName,
+                description: mapping.description,
+                iconName: mapping.iconName
+            };
+        });
+
+        // Dispatch Redux action with JSON stringified ranking
+        this.callbacks.dispatch(setSupplierPriority(JSON.stringify(priorityRanking)));
+
+        const priorityList = args.priorities.join(' > ');
+        return {
+            success: true,
+            message: `Perfect! I've set your supplier priority ranking as: ${priorityList}. This means suppliers will be evaluated with ${args.priorities[0]} as the top priority, followed by ${args.priorities[1]}, and so on.`,
+            ranking: priorityRanking,
+            nextStep: 'compliance_requirements',
         };
     }
 
