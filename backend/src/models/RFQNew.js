@@ -65,12 +65,22 @@ const RFQSchema = new mongoose.Schema({
     lastUpdated: Date
   },
 
-  // Workflow tracking
-  currentStep: {
-    type: Number,
-    min: 1,
-    max: 5,
-    default: 1
+  // Workflow state management
+  workflow: {
+    currentStep: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: 1
+    },
+    completedSteps: {
+      type: [Number],
+      default: []
+    },
+    stepData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    }
   },
 }, {
   timestamps: true,

@@ -1,40 +1,53 @@
 const express = require('express');
 const router = express.Router();
-const RFQ = require('../models/RFQ');
+const RFQNew = require('../models/RFQNew');
+const BOM = require('../models/BOM');
 const SupplierResearch = require('../models/SupplierResearch');
 
 // Middleware for user authentication (simplified for MVP)
 const authenticateUser = (req, res, next) => {
   // For MVP, use a default user ID
   // In production, this would validate JWT tokens
-  req.userId = req.headers['x-user-id'] || 'demo-user-001';
+  req.userId = req.headers['x-user-id'] || 'system';
   next();
 };
 
 // POST /api/supplier-research/:rfqId - Generate supplier research using Gemini
 router.post('/:rfqId', authenticateUser, async (req, res) => {
   try {
-    const rfq = await RFQ.findOne({
-      _id: req.params.rfqId,
-      userId: req.userId
+    console.log('🔍 Starting supplier research for rfqId:', req.params.rfqId);
+    console.log('👤 User ID:', req.userId);
+
+    const rfq = await RFQNew.findOne({
+      rfqId: req.params.rfqId,
+      createdBy: req.userId
     });
 
     if (!rfq) {
+      console.log('❌ RFQ not found for rfqId:', req.params.rfqId);
       return res.status(404).json({
         error: 'RFQ not found'
       });
     }
 
-    // Check if RFQ has extracted components data
-    if (!rfq.extractedDocumentData || !rfq.extractedDocumentData.components) {
+    console.log('✅ Found RFQ:', {
+      rfqId: rfq.rfqId,
+      rfqNumber: rfq.rfqNumber,
+      hasAnalysisData: !!rfq.analysisData,
+      componentsCount: rfq.analysisData?.components?.length || 0
+    });
+
+    // Check if RFQ has analysis data with components
+    if (!rfq.analysisData || !rfq.analysisData.components) {
+      console.log('❌ No components data found in analysisData');
       return res.status(400).json({
         error: 'No components data found',
         message: 'Please upload and analyze documents first'
       });
     }
 
-    const components = rfq.extractedDocumentData.components;
-    
+    const components = rfq.analysisData.components;
+
     // Create the supplier research prompt with appended data
     const supplierResearchPrompt = `System Directive:
 This is a high-priority task for the Robbie Agent System. The mission is to perform intensive supplier research based on a user-provided Bill of Materials (BOM).
@@ -138,24 +151,29 @@ OUTPUT SPECIFICATIONS
 
 Data:-
 {
-  "extractedDocumentData": {
+  "analysisData": {
     "components": ${JSON.stringify(components, null, 2)}
   }
 }`;
 
     console.log('🔍 Starting supplier research for RFQ:', rfq.rfqNumber);
     console.log('📊 Components to research:', components.length);
+    console.log('🗂️ Components preview:', components.slice(0, 3).map(c => ({
+      partNumber: c.partNumber,
+      name: c.name,
+      quantity: c.quantity
+    })));
 
     // Import geminiService here to avoid circular dependencies
     const geminiService = require('../services/geminiService');
-    
+
     const startTime = Date.now();
-    
+
     // Call Gemini API with the supplier research prompt using BOM model (gemini-2.5-flash) with Google Search enabled
     const supplierResearchResponse = await geminiService.generateSupplierResearch(supplierResearchPrompt, 'bom-extraction');
-    
+
     const processingTime = Date.now() - startTime;
-    
+
     console.log('✅ Supplier research completed in', processingTime, 'ms');
     console.log('📄 Response preview:', supplierResearchResponse.substring(0, 200) + '...');
 
@@ -167,13 +185,13 @@ Data:-
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
-      
+
       parsedResponse = JSON.parse(cleanResponse);
       console.log('✅ Successfully parsed JSON response');
     } catch (parseError) {
       console.error('❌ Failed to parse JSON response:', parseError.message);
       console.log('Raw response:', supplierResearchResponse);
-      
+
       return res.status(500).json({
         error: 'Failed to parse supplier research response',
         message: 'The AI response was not in valid JSON format',
@@ -184,9 +202,9 @@ Data:-
     // Save to SupplierResearch collection with same userId as RFQ
     try {
       const supplierResearchDoc = new SupplierResearch({
-        rfqId: rfq._id,
-        rfqNumber: rfq.rfqNumber,
-        userId: rfq.userId, // Use the same userId as the RFQ
+        rfqId: rfq.rfqId, // Use the UUID rfqId, not MongoDB _id
+        rfqNumber: rfq.rfqId, // Use rfqId as rfqNumber since RFQNew model doesn't have separate rfqNumber
+        userId: rfq.createdBy, // Use the same createdBy as the RFQ (stored as userId in SupplierResearch)
         status: 'completed',
         supplierResearch: parsedResponse,
         processingTime,
@@ -195,6 +213,7 @@ Data:-
         sourcesFound: 0, // We could enhance this from response metadata
         originalComponents: components.map(comp => ({
           partNumber: comp.partNumber,
+          name: comp.name, // Changed from description to name to match new schema
           description: comp.description,
           quantity: comp.quantity,
           specifications: comp.specifications
@@ -203,6 +222,7 @@ Data:-
 
       await supplierResearchDoc.save();
       console.log('✅ Supplier research saved to database with ID:', supplierResearchDoc._id);
+      console.log('🔗 Linked to RFQ ID:', rfq.rfqId);
 
       // Return the response with database ID
       res.json({
@@ -210,9 +230,9 @@ Data:-
         message: 'Supplier research completed and saved successfully',
         data: {
           id: supplierResearchDoc._id,
-          rfqId: rfq._id,
-          rfqNumber: rfq.rfqNumber,
-          userId: rfq.userId,
+          rfqId: rfq.rfqId, // Return the UUID rfqId
+          rfqNumber: rfq.rfqId, // Use rfqId as rfqNumber since RFQNew model doesn't have separate rfqNumber
+          userId: rfq.createdBy,
           processingTime,
           totalComponents: components.length,
           supplierResearch: parsedResponse,
@@ -228,15 +248,20 @@ Data:-
 
     } catch (dbError) {
       console.error('❌ Failed to save to database:', dbError);
-      
+      console.error('❌ Database error details:', {
+        name: dbError.name,
+        message: dbError.message,
+        code: dbError.code
+      });
+
       // Still return the response even if DB save fails
       res.json({
         success: true,
         message: 'Supplier research completed successfully (database save failed)',
         data: {
-          rfqId: rfq._id,
-          rfqNumber: rfq.rfqNumber,
-          userId: rfq.userId,
+          rfqId: rfq.rfqId, // Return the UUID rfqId
+          rfqNumber: rfq.rfqId, // Use rfqId as rfqNumber since RFQNew model doesn't have separate rfqNumber
+          userId: rfq.createdBy,
           processingTime,
           totalComponents: components.length,
           supplierResearch: parsedResponse,
@@ -296,62 +321,62 @@ router.get('/:rfqId', authenticateUser, async (req, res) => {
 
 // GET /api/supplier-research - Get supplier research history for user
 router.get('/', authenticateUser, async (req, res) => {
-  try {
-    const { limit = 10, page = 1 } = req.query;
-    
-    const supplierResearches = await SupplierResearch.findByUser(req.userId, parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit));
-    
-    const total = await SupplierResearch.countDocuments({ userId: req.userId });
+      try {
+        const { limit = 10, page = 1 } = req.query;
 
-    res.json({
-      success: true,
-      data: {
-        items: supplierResearches,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / parseInt(limit))
-        }
+        const supplierResearches = await SupplierResearch.findByUser(req.userId, parseInt(limit))
+          .skip((parseInt(page) - 1) * parseInt(limit));
+
+        const total = await SupplierResearch.countDocuments({ userId: req.userId });
+
+        res.json({
+          success: true,
+          data: {
+            items: supplierResearches,
+            pagination: {
+              page: parseInt(page),
+              limit: parseInt(limit),
+              total,
+              pages: Math.ceil(total / parseInt(limit))
+            }
+          }
+        });
+
+      } catch (error) {
+        console.error('Error fetching supplier research history:', error);
+        res.status(500).json({
+          error: 'Failed to fetch supplier research history',
+          message: error.message
+        });
       }
     });
 
-  } catch (error) {
-    console.error('Error fetching supplier research history:', error);
-    res.status(500).json({
-      error: 'Failed to fetch supplier research history',
-      message: error.message
+    // DELETE /api/supplier-research/:id - Delete supplier research
+    router.delete('/:id', authenticateUser, async (req, res) => {
+      try {
+        const supplierResearch = await SupplierResearch.findOneAndDelete({
+          _id: req.params.id,
+          userId: req.userId
+        });
+
+        if (!supplierResearch) {
+          return res.status(404).json({
+            error: 'Supplier research not found'
+          });
+        }
+
+        res.json({
+          success: true,
+          message: 'Supplier research deleted successfully'
+        });
+
+      } catch (error) {
+        console.error('Error deleting supplier research:', error);
+        res.status(500).json({
+          error: 'Failed to delete supplier research',
+          message: error.message
+        });
+      }
     });
-  }
-});
 
-// DELETE /api/supplier-research/:id - Delete supplier research
-router.delete('/:id', authenticateUser, async (req, res) => {
-  try {
-    const supplierResearch = await SupplierResearch.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.userId
-    });
-
-    if (!supplierResearch) {
-      return res.status(404).json({
-        error: 'Supplier research not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Supplier research deleted successfully'
-    });
-
-  } catch (error) {
-    console.error('Error deleting supplier research:', error);
-    res.status(500).json({
-      error: 'Failed to delete supplier research',
-      message: error.message
-    });
-  }
-});
-
-module.exports = router;
+    module.exports = router;
