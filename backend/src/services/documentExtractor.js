@@ -21,57 +21,22 @@ const responseSchema = {
         type: Type.OBJECT,
         properties: {
           partNumber: { type: Type.STRING, nullable: true },
-          partName: { type: Type.STRING },
+          name: { type: Type.STRING },
           description: { type: Type.STRING, nullable: true },
           quantity: { type: Type.NUMBER },
-          material: { type: Type.STRING, nullable: true },
-          dimensions: { type: Type.STRING, nullable: true },
-          estimatedCost: { type: Type.NUMBER, nullable: true },
           specifications: { type: Type.STRING, nullable: true },
-          notes: { type: Type.STRING, nullable: true }
+          zbc: {
+            type: Type.OBJECT,
+            properties: {
+              shouldCost: { type: Type.NUMBER, nullable: true }
+            }
+          }
         },
-        required: ['partName']
+        required: ['name', 'quantity']
       }
-    },
-    projectInfo: {
-      type: Type.OBJECT,
-      properties: {
-        projectName: { type: Type.STRING, nullable: true },
-        projectNumber: { type: Type.STRING, nullable: true },
-        date: { type: Type.STRING, nullable: true },
-        budget: { type: Type.NUMBER, nullable: true },
-        industry: { type: Type.STRING, nullable: true }
-      }
-    },
-    technicalRequirements: {
-      type: Type.OBJECT,
-      properties: {
-        materials: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING }
-        },
-        finishes: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING }
-        },
-        tolerances: { type: Type.STRING, nullable: true },
-        standards: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING }
-        },
-        testingRequired: { type: Type.STRING, nullable: true }
-      }
-    },
-    metadata: {
-      type: Type.OBJECT,
-      properties: {
-        confidence: { type: Type.NUMBER },
-        extractionNotes: { type: Type.STRING, nullable: true }
-      },
-      required: ['confidence']
     }
   },
-  required: ['documentTypes', 'components', 'metadata']
+  required: ['documentTypes', 'components']
 };
 
 const extractDocumentData = async (fileBuffers, fileNames, mimeTypes) => {
@@ -118,8 +83,10 @@ Extract all available information and structure it according to the defined sche
       console.log(`📎 File ${i + 1}: ${fileNames[i]} (${mimeTypes[i]})`);
     }
 
+    const model = process.env.GEMINI_DOCUMENT_UNDERSTANDING_MODEL || 'gemini-2.5-flash';
+
     const response = await ai.models.generateContent({
-      model: process.env.GEMINI_DOCUMENT_UNDERSTANDING_MODEL || 'gemini-2.5-flash',
+      model,
       contents: contentParts,
       config: {
         systemInstruction,
@@ -129,6 +96,11 @@ Extract all available information and structure it according to the defined sche
     });
 
     const extractedData = JSON.parse(response.text);
+
+    // Initialize metadata if it doesn't exist
+    if (!extractedData.metadata) {
+      extractedData.metadata = {};
+    }
 
     extractedData.metadata.fileNames = fileNames;
     extractedData.metadata.fileCount = fileCount;
@@ -146,7 +118,16 @@ Extract all available information and structure it according to the defined sche
     return {
       success: true,
       extraction: extractedData,
-      componentsFound
+      componentsFound,
+      modelMetadata: {
+        provider: 'GOOGLE',
+        model,
+        tokenUsage: {
+          promptTokens: response.usageMetadata.promptTokenCount,
+          completionTokens: response.usageMetadata.candidatesTokenCount,
+          thoughtTokens: response.usageMetadata.thoughtsTokenCount
+        }
+      }
     };
 
   } catch (error) {

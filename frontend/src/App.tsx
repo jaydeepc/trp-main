@@ -92,7 +92,7 @@ const AppContent: React.FC = () => {
   const handleCreateRFQ = async () => {
     console.log('Header: Creating new RFQ');
     const newRFQ = await createRFQ();
-    navigate(`/rfq-wizard/${newRFQ.id}`);
+    navigate(`/rfq-wizard/${newRFQ.rfqId}`);
   };
 
   // Register app commands with voice command bus
@@ -101,7 +101,7 @@ const AppContent: React.FC = () => {
     voiceAppCommandBus.registerAppCommand('createRFQ', async () => {
       try {
         const newRFQ = await createRFQ();
-        navigate(`/rfq-wizard/${newRFQ.id}`);
+        navigate(`/rfq-wizard/${newRFQ.rfqId}`);
 
         // Send feedback to voice
         voiceAppCommandBus.sendVoiceFeedback('rfqCreated', {

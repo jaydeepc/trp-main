@@ -15,12 +15,12 @@ const ExcelTable: React.FC<ExcelTableProps> = ({ data, title = "Data Table", cla
   // Extract all unique columns from the data
   const columns = useMemo(() => {
     if (!data || data.length === 0) return [];
-    
+
     const allKeys = new Set<string>();
     data.forEach(row => {
       Object.keys(row).forEach(key => allKeys.add(key));
     });
-    
+
     return Array.from(allKeys);
   }, [data]);
 
@@ -59,7 +59,7 @@ const ExcelTable: React.FC<ExcelTableProps> = ({ data, title = "Data Table", cla
   const handleSort = (column: string) => {
     setSortConfig(current => {
       if (current?.key === column) {
-        return current.direction === 'asc' 
+        return current.direction === 'asc'
           ? { key: column, direction: 'desc' }
           : null;
       }
@@ -83,12 +83,12 @@ const ExcelTable: React.FC<ExcelTableProps> = ({ data, title = "Data Table", cla
 
     const csvContent = [
       columns.join(','), // Header row
-      ...data.map(row => 
+      ...data.map(row =>
         columns.map(col => {
           const value = formatCellValue(row[col]);
           // Escape commas and quotes in CSV
-          return value.includes(',') || value.includes('"') 
-            ? `"${value.replace(/"/g, '""')}"` 
+          return value.includes(',') || value.includes('"')
+            ? `"${value.replace(/"/g, '""')}"`
             : value;
         }).join(',')
       )
@@ -151,7 +151,7 @@ const ExcelTable: React.FC<ExcelTableProps> = ({ data, title = "Data Table", cla
                       {column}
                     </span>
                     {sortConfig?.key === column && (
-                      sortConfig.direction === 'asc' 
+                      sortConfig.direction === 'asc'
                         ? <ChevronUp className="h-4 w-4" />
                         : <ChevronDown className="h-4 w-4" />
                     )}

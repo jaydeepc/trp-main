@@ -137,7 +137,7 @@ const UploadDocuments: React.FC<UploadDocumentsProps> = ({
       console.log('📄 Starting document extraction...');
 
       // Call extraction API with actual files
-      const extractedData = await api.extractDocuments(selectedFiles, rfq.id);
+      const extractedData = await api.extractDocuments(selectedFiles, rfq.rfqId);
 
       console.log('✅ Extraction complete:', extractedData);
 

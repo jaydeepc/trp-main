@@ -312,7 +312,20 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
     setIsAnalyzing(true);
 
     try {
-      console.log('🔄 Triggering supplier research...');
+      console.log('💾 Saving requirements first...');
+
+      // Transform supplier priority from array objects to just IDs
+      const supplierPriorityIds = priorityRanking.map(item => item.id);
+
+      // Save requirements to database first
+      await api.updateRequirements(rfq.id, {
+        supplierPriority: supplierPriorityIds,
+        complianceRequirements: localCompliance,
+        desiredLeadTime: localLeadTime,
+        additionalRequirements: localAdditional
+      });
+
+      console.log('✅ Requirements saved. Now triggering supplier research...');
 
       // Call supplier research API
       const result = await api.generateSupplierResearch(rfq.id);
@@ -415,12 +428,12 @@ ${JSON.stringify({
                   <thead className="sticky top-0 z-10">
                     <tr className="bg-slate-100">
                       <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 w-16">#</th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[180px]">Part Name</th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[250px]">Description</th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[150px]">Material</th>
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[120px]">Part Number</th>
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[180px]">Component Name</th>
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[200px]">Description</th>
                       <th className="px-4 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 w-20">Qty</th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[120px]">Dimensions</th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider min-w-[200px]">Specifications</th>
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[150px]">Specifications</th>
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider min-w-[140px]">ZBC Analysis</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -430,19 +443,21 @@ ${JSON.stringify({
                         className="group hover:bg-blue-50/50 transition-all duration-150 border-b border-slate-300"
                       >
                         <td className="px-4 py-4 text-sm text-slate-500 font-medium group-hover:text-blue-600 border-r border-slate-300">
-                          {component.partNumber || idx + 1}
+                          {idx + 1}
                         </td>
                         <td className="px-4 py-4 border-r border-slate-300">
-                          <span className="text-sm font-semibold text-gray-900">{component.partName}</span>
+                          <span className="text-sm font-mono text-blue-600">
+                            {component.partNumber || <span className="text-gray-400">—</span>}
+                          </span>
                         </td>
                         <td className="px-4 py-4 border-r border-slate-300">
-                          <span className="text-sm text-gray-700">
-                            {component.description || component.notes || <span className="text-gray-400">—</span>}
+                          <span className="text-sm font-semibold text-gray-900">
+                            {component.name || component.partName || <span className="text-gray-400">—</span>}
                           </span>
                         </td>
                         <td className="px-4 py-4 border-r border-slate-300">
                           <span className="text-sm text-gray-700">
-                            {component.material || <span className="text-gray-400">—</span>}
+                            {component.description || <span className="text-gray-400">—</span>}
                           </span>
                         </td>
                         <td className="px-4 py-4 text-center border-r border-slate-300">
@@ -452,13 +467,31 @@ ${JSON.stringify({
                         </td>
                         <td className="px-4 py-4 border-r border-slate-300">
                           <span className="text-xs text-gray-600">
-                            {component.dimensions || <span className="text-gray-400">—</span>}
+                            {component.specifications || <span className="text-gray-400">—</span>}
                           </span>
                         </td>
                         <td className="px-4 py-4">
-                          <span className="text-xs text-gray-600">
-                            {component.specifications || <span className="text-gray-400">—</span>}
-                          </span>
+                          {component.zbc ? (
+                            <div className="space-y-1">
+                              {component.zbc.shouldCost && (
+                                <div className="text-xs font-medium text-green-600">
+                                  ${component.zbc.shouldCost.toFixed(2)}
+                                </div>
+                              )}
+                              {component.zbc.variance && (
+                                <div className="text-xs text-gray-600">
+                                  {component.zbc.variance}
+                                </div>
+                              )}
+                              {component.zbc.confidence && (
+                                <div className="text-xs text-blue-600">
+                                  {component.zbc.confidence}% confidence
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs">—</span>
+                          )}
                         </td>
                       </tr>
                     ))}
