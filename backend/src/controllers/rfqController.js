@@ -67,7 +67,7 @@ class RFQController {
           .limit(parseInt(limit))
           .skip(skip)
           .populate('documents', 'fileName fileType uploadedAt processingStatus')
-          .populate('bomId', 'version status totalComponents estimatedValue'),
+          .populate('bomIds', 'version status totalComponents estimatedValue'),
         RFQNew.countDocuments(query)
       ]);
 
@@ -103,7 +103,7 @@ class RFQController {
 
       const rfq = await RFQNew.findOne({ rfqId: id, createdBy: userId }) // Use rfqId and createdBy for consistency
         .populate('documents')
-        .populate('bomId');
+        .populate('bomIds');
 
       if (!rfq) {
         console.log('❌ RFQ not found for rfqId:', id);

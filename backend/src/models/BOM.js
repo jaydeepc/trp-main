@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { ComponentSchema } = require('./schemas/CommonSchemas');
+const { ComponentSchema, ModelMetadataSchema } = require('./schemas/CommonSchemas');
 
 // Supplier Schema (specific to BOM context)
 const BOMSupplierSchema = new mongoose.Schema({
@@ -24,23 +24,26 @@ const BOMSupplierSchema = new mongoose.Schema({
 
 // Enhanced Component Schema for BOM (extends base ComponentSchema)
 const BOMComponentSchema = new mongoose.Schema({
-  id: { type: String },
   partNumber: String,
   name: { type: String },
   description: String,
   specifications: String,
   quantity: { type: Number, min: 1 },
   costRange: String,
+  zbc: {
+    shouldCost: Number,
+    variance: String,
+  },
 
   // Alternative Components
   alternatives: [{
-    id: String,
     partNumber: String,
     name: String,
     description: String,
     specifications: String,
     costRange: String,
-    recommendationReason: String,
+    keyAdvantages: [String],
+    potentialDrawbacks: [String],
     suppliers: [BOMSupplierSchema]
   }],
 
@@ -67,14 +70,9 @@ const BOMSchema = new mongoose.Schema({
 
   // BOM Metadata
   metadata: {
-    createdFrom: {
-      type: String,
-      enum: ['analysis', 'manual', 'import']
-    },
     totalValue: Number,
     currency: { type: String, default: 'USD' },
-    estimatedLeadTime: String,
-    notes: String
+    modelMetadata: ModelMetadataSchema,
   },
 
   // Status tracking
@@ -115,7 +113,7 @@ BOMSchema.pre('save', async function (next) {
         const cost = supplier.pricing?.unitCost || 0;
         return cost < min ? cost : min;
       }, Infinity) || 0;
-      
+
       return total + (lowestCost * (component.quantity || 1));
     }, 0);
   }

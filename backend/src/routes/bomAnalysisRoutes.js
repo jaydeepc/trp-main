@@ -3,6 +3,7 @@ const router = express.Router();
 const RFQNew = require('../models/RFQNew');
 const BOM = require('../models/BOM');
 const SupplierResearch = require('../models/SupplierResearch');
+const bomAnalysisController = require('../controllers/bomAnalysisController');
 
 // Middleware for user authentication (simplified for MVP)
 const authenticateUser = (req, res, next) => {
@@ -374,6 +375,20 @@ router.delete('/:id', authenticateUser, async (req, res) => {
     console.error('Error deleting BOM analysis:', error);
     res.status(500).json({
       error: 'Failed to delete BOM analysis',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/bom-analysis/:rfqId/new - Create BOM with alternatives using Perplexity
+router.post('/:rfqId/new', authenticateUser, async (req, res) => {
+  try {
+    await bomAnalysisController.createBomAnalysis(req, res);
+  } catch (error) {
+    console.error('Error in bom creation route:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create BOM analysis',
       message: error.message
     });
   }
