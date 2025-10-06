@@ -3,11 +3,11 @@ const router = express.Router();
 
 const rfqRoutes = require('./rfqRoutes');
 const documentRoutes = require('./documentRoutes');
-const supplierResearchRoutes = require('./supplierResearchRoutes');
+const bomAnalysisRoutes = require('./bomAnalysisRoutes');
 
 router.use('/rfqs', rfqRoutes);
 router.use('/documents', documentRoutes);
-router.use('/supplier-research', supplierResearchRoutes);
+router.use('/bom-analysis', bomAnalysisRoutes);
 
 router.get('/health', (req, res) => {
   res.json({
