@@ -12,10 +12,10 @@ const authenticateUser = (req, res, next) => {
   next();
 };
 
-// POST /api/supplier-research/:rfqId - Generate supplier research using Gemini
+// POST /api/bom-analysis/:rfqId - Generate BOM analysis using Gemini
 router.post('/:rfqId', authenticateUser, async (req, res) => {
   try {
-    console.log('🔍 Starting supplier research for rfqId:', req.params.rfqId);
+    console.log('🔍 Starting BOM analysis for rfqId:', req.params.rfqId);
     console.log('👤 User ID:', req.userId);
 
     const rfq = await RFQNew.findOne({
@@ -156,7 +156,7 @@ Data:-
   }
 }`;
 
-    console.log('🔍 Starting supplier research for RFQ:', rfq.rfqNumber);
+    console.log('🔍 Starting BOM analysis for RFQ:', rfq.rfqNumber);
     console.log('📊 Components to research:', components.length);
     console.log('🗂️ Components preview:', components.slice(0, 3).map(c => ({
       partNumber: c.partNumber,
@@ -174,7 +174,7 @@ Data:-
 
     const processingTime = Date.now() - startTime;
 
-    console.log('✅ Supplier research completed in', processingTime, 'ms');
+    console.log('✅ BOM analysis completed in', processingTime, 'ms');
     console.log('📄 Response preview:', supplierResearchResponse.substring(0, 200) + '...');
 
     // Try to parse the response as JSON
@@ -193,7 +193,7 @@ Data:-
       console.log('Raw response:', supplierResearchResponse);
 
       return res.status(500).json({
-        error: 'Failed to parse supplier research response',
+        error: 'Failed to parse BOM analysis response',
         message: 'The AI response was not in valid JSON format',
         rawResponse: supplierResearchResponse.substring(0, 500)
       });
@@ -221,13 +221,13 @@ Data:-
       });
 
       await supplierResearchDoc.save();
-      console.log('✅ Supplier research saved to database with ID:', supplierResearchDoc._id);
+      console.log('✅ BOM analysis saved to database with ID:', supplierResearchDoc._id);
       console.log('🔗 Linked to RFQ ID:', rfq.rfqId);
 
       // Return the response with database ID
       res.json({
         success: true,
-        message: 'Supplier research completed and saved successfully',
+        message: 'BOM analysis completed and saved successfully',
         data: {
           id: supplierResearchDoc._id,
           rfqId: rfq.rfqId, // Return the UUID rfqId
@@ -257,7 +257,7 @@ Data:-
       // Still return the response even if DB save fails
       res.json({
         success: true,
-        message: 'Supplier research completed successfully (database save failed)',
+        message: 'BOM analysis completed successfully (database save failed)',
         data: {
           rfqId: rfq.rfqId, // Return the UUID rfqId
           rfqNumber: rfq.rfqId, // Use rfqId as rfqNumber since RFQNew model doesn't have separate rfqNumber
@@ -277,31 +277,31 @@ Data:-
     }
 
   } catch (error) {
-    console.error('Error generating supplier research:', error);
+    console.error('Error generating BOM analysis:', error);
     res.status(500).json({
-      error: 'Failed to generate supplier research',
+      error: 'Failed to generate BOM analysis',
       message: error.message
     });
   }
 });
 
-// GET /api/supplier-research/:rfqId - Get stored supplier research for an RFQ
+// GET /api/bom-analysis/:rfqId - Get stored BOM analysis for an RFQ
 router.get('/:rfqId', authenticateUser, async (req, res) => {
   try {
     const supplierResearch = await SupplierResearch.findByRFQ(req.params.rfqId);
-    
+
     if (!supplierResearch) {
       return res.status(404).json({
-        error: 'Supplier research not found',
-        message: 'No supplier research data found for this RFQ'
+        error: 'BOM analysis not found',
+        message: 'No BOM analysis data found for this RFQ'
       });
     }
 
-    // Check if user has access to this supplier research
+    // Check if user has access to this BOM analysis
     if (supplierResearch.userId !== req.userId) {
       return res.status(403).json({
         error: 'Access denied',
-        message: 'You do not have access to this supplier research'
+        message: 'You do not have access to this BOM analysis'
       });
     }
 
@@ -311,72 +311,72 @@ router.get('/:rfqId', authenticateUser, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching supplier research:', error);
+    console.error('Error fetching BOM analysis:', error);
     res.status(500).json({
-      error: 'Failed to fetch supplier research',
+      error: 'Failed to fetch BOM analysis',
       message: error.message
     });
   }
 });
 
-// GET /api/supplier-research - Get supplier research history for user
+// GET /api/bom-analysis - Get BOM analysis history for user
 router.get('/', authenticateUser, async (req, res) => {
-      try {
-        const { limit = 10, page = 1 } = req.query;
+  try {
+    const { limit = 10, page = 1 } = req.query;
 
-        const supplierResearches = await SupplierResearch.findByUser(req.userId, parseInt(limit))
-          .skip((parseInt(page) - 1) * parseInt(limit));
+    const supplierResearches = await SupplierResearch.findByUser(req.userId, parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
 
-        const total = await SupplierResearch.countDocuments({ userId: req.userId });
+    const total = await SupplierResearch.countDocuments({ userId: req.userId });
 
-        res.json({
-          success: true,
-          data: {
-            items: supplierResearches,
-            pagination: {
-              page: parseInt(page),
-              limit: parseInt(limit),
-              total,
-              pages: Math.ceil(total / parseInt(limit))
-            }
-          }
-        });
-
-      } catch (error) {
-        console.error('Error fetching supplier research history:', error);
-        res.status(500).json({
-          error: 'Failed to fetch supplier research history',
-          message: error.message
-        });
-      }
-    });
-
-    // DELETE /api/supplier-research/:id - Delete supplier research
-    router.delete('/:id', authenticateUser, async (req, res) => {
-      try {
-        const supplierResearch = await SupplierResearch.findOneAndDelete({
-          _id: req.params.id,
-          userId: req.userId
-        });
-
-        if (!supplierResearch) {
-          return res.status(404).json({
-            error: 'Supplier research not found'
-          });
+    res.json({
+      success: true,
+      data: {
+        items: supplierResearches,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit))
         }
-
-        res.json({
-          success: true,
-          message: 'Supplier research deleted successfully'
-        });
-
-      } catch (error) {
-        console.error('Error deleting supplier research:', error);
-        res.status(500).json({
-          error: 'Failed to delete supplier research',
-          message: error.message
-        });
       }
     });
 
-    module.exports = router;
+  } catch (error) {
+    console.error('Error fetching BOM analysis history:', error);
+    res.status(500).json({
+      error: 'Failed to fetch BOM analysis history',
+      message: error.message
+    });
+  }
+});
+
+// DELETE /api/bom-analysis/:id - Delete BOM analysis
+router.delete('/:id', authenticateUser, async (req, res) => {
+  try {
+    const supplierResearch = await SupplierResearch.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.userId
+    });
+
+    if (!supplierResearch) {
+      return res.status(404).json({
+        error: 'BOM analysis not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'BOM analysis deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Error deleting BOM analysis:', error);
+    res.status(500).json({
+      error: 'Failed to delete BOM analysis',
+      message: error.message
+    });
+  }
+});
+
+module.exports = router;

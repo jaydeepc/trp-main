@@ -279,7 +279,7 @@ class APIService {
         }
     }
 
-    // Supplier Research endpoints
+    // BOM Analysis endpoints
     async generateSupplierResearch(id: string): Promise<{
         id: string;
         rfqId: string;
@@ -291,12 +291,12 @@ class APIService {
         summary: any;
         metadata: any;
     }> {
-        const response = await this.api.post(`/supplier-research/${id}`);
+        const response = await this.api.post(`/bom-analysis/${id}`);
         return this.handleResponse(response);
     }
 
     async getSupplierResearch(id: string): Promise<any> {
-        const response = await this.api.get(`/supplier-research/${id}`);
+        const response = await this.api.get(`/bom-analysis/${id}`);
         return this.handleResponse(response);
     }
 
@@ -304,12 +304,12 @@ class APIService {
         page?: number;
         limit?: number;
     }): Promise<PaginatedResponse<any>> {
-        const response = await this.api.get('/supplier-research', { params });
+        const response = await this.api.get('/bom-analysis', { params });
         return this.handleResponse(response);
     }
 
     async deleteSupplierResearch(id: string): Promise<void> {
-        const response = await this.api.delete(`/supplier-research/${id}`);
+        const response = await this.api.delete(`/bom-analysis/${id}`);
         this.handleResponse(response);
     }
 
