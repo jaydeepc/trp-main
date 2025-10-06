@@ -476,7 +476,7 @@ ${JSON.stringify({
                             <div className="space-y-1">
                               {component.zbc.shouldCost && (
                                 <div className="text-xs font-medium text-green-600">
-                                  ${component.zbc.shouldCost.toFixed(2)}
+                                  {component.zbc.shouldCost.toFixed(2)}
                                 </div>
                               )}
                               {component.zbc.variance && (

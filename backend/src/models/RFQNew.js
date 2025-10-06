@@ -53,6 +53,12 @@ const RFQSchema = new mongoose.Schema({
     additionalRequirements: String
   },
 
+  // BOM references
+  bomIds: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BOM'
+  }],
+
   // BOM Summary (for quick access without loading BOM collection)
   bomSummary: {
     activeVersion: {
