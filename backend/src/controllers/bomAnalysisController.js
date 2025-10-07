@@ -118,16 +118,35 @@ class BOMAnalysisController {
   }
 
   async createBetaBOM(components, requirements, processedComponents) {
-    console.log(`🚀 Starting parallel processing of ${components.length} components`);
+    console.log(`🚀 Starting rate-limited parallel processing of ${components.length} components`);
 
-    // Process all components in parallel using Promise.allSettled for better error handling
-    const componentPromises = components.map(async (component, index) => {
-      return this.processComponentWithRetries(component, index, components.length, requirements);
-    });
+    // Process components in batches with delays to respect rate limits
+    const batchSize = 3; // Process 3 components at a time
+    const delayBetweenBatches = 2000; // 2 second delay between batches
+    
+    const results = [];
+    
+    for (let i = 0; i < components.length; i += batchSize) {
+      const batch = components.slice(i, i + batchSize);
+      console.log(`📦 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(components.length/batchSize)} (${batch.length} components)`);
+      
+      // Process current batch in parallel
+      const batchPromises = batch.map(async (component, batchIndex) => {
+        const globalIndex = i + batchIndex;
+        return this.processComponentWithRetries(component, globalIndex, components.length, requirements);
+      });
 
-    // Wait for all components to be processed
-    const results = await Promise.allSettled(componentPromises);
-
+      // Wait for current batch to complete
+      const batchResults = await Promise.allSettled(batchPromises);
+      results.push(...batchResults);
+      
+      // Add delay between batches (except for the last batch)
+      if (i + batchSize < components.length) {
+        console.log(`⏳ Waiting ${delayBetweenBatches}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+      }
+    }
+    
     // Process results and handle errors
     const errors = [];
     const successfulComponents = [];
@@ -175,10 +194,101 @@ class BOMAnalysisController {
       try {
         console.log(`🔄 Processing component ${index + 1}/${totalComponents}: ${component.name} (Attempt ${attempt}/${maxRetries})`);
 
-        // Call Perplexity to find alternatives
+        // Step 1: Find alternatives for the component
         const alternativesData = await this.findComponentAlternatives(component, requirements);
-        // TODO: find suppliers
-        // TODO: find alternatives suppliers
+        
+        // Step 2: Prepare all components for supplier research (main component + alternatives)
+        const componentsForSupplierResearch = [
+          component, // Main component
+          ...(alternativesData.alternatives || []) // Alternative components
+        ];
+
+        console.log(`🔍 Finding suppliers for ${componentsForSupplierResearch.length} components (1 main + ${alternativesData.alternatives?.length || 0} alternatives)`);
+
+        // Step 3: Find suppliers for all components with rate limiting
+        const supplierResults = [];
+        const delayBetweenSupplierCalls = 1000; // 1 second delay between supplier calls
+        
+        for (let compIndex = 0; compIndex < componentsForSupplierResearch.length; compIndex++) {
+          const comp = componentsForSupplierResearch[compIndex];
+          const isMainComponent = compIndex === 0;
+          
+          try {
+            console.log(`🏭 Finding suppliers for ${isMainComponent ? 'main' : 'alternative'} component: ${comp.name}`);
+            
+            const supplierData = await this.findComponentSuppliers(comp, requirements);
+            supplierResults.push({
+              status: 'fulfilled',
+              value: {
+                success: true,
+                isMainComponent,
+                componentIndex: compIndex,
+                component: comp,
+                supplierData
+              }
+            });
+          } catch (error) {
+            console.error(`❌ Failed to find suppliers for component ${comp.name}:`, error.message);
+            supplierResults.push({
+              status: 'fulfilled',
+              value: {
+                success: false,
+                isMainComponent,
+                componentIndex: compIndex,
+                component: comp,
+                error: error.message
+              }
+            });
+          }
+          
+          // Add delay between supplier calls (except for the last one)
+          if (compIndex < componentsForSupplierResearch.length - 1) {
+            console.log(`⏳ Waiting ${delayBetweenSupplierCalls}ms before next supplier call...`);
+            await new Promise(resolve => setTimeout(resolve, delayBetweenSupplierCalls));
+          }
+        }
+
+        // Process supplier results
+        let mainComponentSuppliers = [];
+        const alternativeComponentsWithSuppliers = [];
+
+        supplierResults.forEach((result, resultIndex) => {
+          if (result.status === 'fulfilled' && result.value.success) {
+            const { isMainComponent, supplierData, component: comp } = result.value;
+            
+            // Transform supplier data to BOM format
+            const transformedSuppliers = supplierData.alternativeSuppliers?.map(supplier => ({
+              id: `${comp.name}-supplier-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              name: supplier.supplierName,
+              country: supplier.country,
+              classification: supplier.classification,
+              classificationDescription: supplier.classificationDescription,
+              supplierURL: supplier.supplierURL,
+              productPageURL: supplier.productPageURL,
+              landedCostINR: supplier.landedCostINR,
+              keyAdvantages: supplier.keyAdvantages,
+              reliability: supplier.reliability,
+              leadTime: supplier.leadTime,
+              baselineAnalysis: isMainComponent ? supplierData.baselineAnalysis : undefined
+            })) || [];
+
+            if (isMainComponent) {
+              mainComponentSuppliers = transformedSuppliers;
+            } else {
+              // This is an alternative component, add suppliers to it
+              const altIndex = resultIndex - 1; // Subtract 1 because main component is at index 0
+              if (alternativesData.alternatives && alternativesData.alternatives[altIndex]) {
+                alternativeComponentsWithSuppliers[altIndex] = {
+                  ...alternativesData.alternatives[altIndex],
+                  suppliers: transformedSuppliers
+                };
+              }
+            }
+          } else {
+            const componentName = result.status === 'fulfilled' ? result.value.component.name : 'Unknown';
+            console.warn(`⚠️ Failed to get suppliers for component: ${componentName}`);
+          }
+        });
 
         // Transform component data for BOM format
         const bomComponent = {
@@ -196,22 +306,29 @@ class BOMAnalysisController {
             }
           }),
 
-          // Transform Perplexity alternatives to BOM alternatives format
-          alternatives: alternativesData.alternatives?.map(alt => ({
-            id: alt.partNumber || `${component.name}-alt-${Date.now()}`,
-            partNumber: alt.partNumber || '',
-            name: alt.name,
-            description: alt.description,
-            specifications: alt.specifications,
-            costRange: alt.costRange,
-            recommendationReason: alt.keyAdvantages?.join('; ') || 'Alternative component',
-            suppliers: [] // Empty for now - will be populated later
-          })) || [],
+          // Add suppliers for main component
+          suppliers: mainComponentSuppliers,
 
-          suppliers: [] // Empty for now - will be populated later
+          // Transform alternatives with their suppliers
+          alternatives: alternativesData.alternatives?.map((alt, altIndex) => {
+            const altWithSuppliers = alternativeComponentsWithSuppliers[altIndex];
+            return {
+              id: alt.partNumber || `${component.name}-alt-${Date.now()}-${altIndex}`,
+              partNumber: alt.partNumber || '',
+              name: alt.name,
+              description: alt.description,
+              specifications: alt.specifications,
+              costRange: alt.costRange,
+              recommendationReason: alt.keyAdvantages?.join('; ') || 'Alternative component',
+              suppliers: altWithSuppliers?.suppliers || []
+            };
+          }) || []
         };
 
-        console.log(`✅ Completed component ${index + 1}/${totalComponents}: ${component.name}`);
+        const totalSuppliers = mainComponentSuppliers.length + 
+          (bomComponent.alternatives?.reduce((sum, alt) => sum + (alt.suppliers?.length || 0), 0) || 0);
+
+        console.log(`✅ Completed component ${index + 1}/${totalComponents}: ${component.name} with ${totalSuppliers} total suppliers`);
         return { success: true, component: bomComponent, originalIndex: index };
 
       } catch (error) {
@@ -238,7 +355,7 @@ class BOMAnalysisController {
   async findComponentAlternatives(component, requirements, maxRetries = 3) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`🔄 Attempt ${attempt}/${maxRetries} for component: ${component.name}`);
+        console.log(`🔍 Attempt ${attempt}/${maxRetries} for component: ${component.name}`);
         const result = await perplexityService.findComponentAlternatives(component, requirements);
         return result;
       } catch (error) {
@@ -252,6 +369,28 @@ class BOMAnalysisController {
         // Exponential backoff: wait 2^attempt seconds
         const delay = Math.pow(2, attempt) * 1000;
         console.log(`⏳ Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  async findComponentSuppliers(component, requirements, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🏭 Attempt ${attempt}/${maxRetries} for supplier research: ${component.name}`);
+        const result = await perplexityService.findComponentSuppliers(component, requirements);
+        return result;
+      } catch (error) {
+        console.error(`❌ Supplier research attempt ${attempt} failed for ${component.name}:`, error.message);
+
+        if (attempt === maxRetries) {
+          console.error(`🚨 All ${maxRetries} supplier research attempts failed for ${component.name}`);
+          throw error;
+        }
+
+        // Exponential backoff: wait 2^attempt seconds
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`⏳ Waiting ${delay}ms before supplier research retry...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
