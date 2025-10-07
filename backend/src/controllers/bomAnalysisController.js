@@ -106,11 +106,63 @@ class BOMAnalysisController {
   }
 
   async createBetaBOM(components, requirements, processedComponents) {
-    for (let i = 0; i < components.length; i++) {
-      const component = components[i];
-      console.log(`🔄 Processing component ${i + 1}/${components.length}: ${component.name}`);
+    console.log(`🚀 Starting parallel processing of ${components.length} components`);
 
+    // Process all components in parallel using Promise.allSettled for better error handling
+    const componentPromises = components.map(async (component, index) => {
+      return this.processComponentWithRetries(component, index, components.length, requirements);
+    });
+
+    // Wait for all components to be processed
+    const results = await Promise.allSettled(componentPromises);
+    
+    // Process results and handle errors
+    const errors = [];
+    const successfulComponents = [];
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        const componentResult = result.value;
+        if (componentResult.success) {
+          successfulComponents.push(componentResult);
+        } else {
+          errors.push(`Component "${componentResult.componentName}": ${componentResult.error}`);
+        }
+      } else {
+        errors.push(`Component ${index + 1}: ${result.reason?.message || 'Unknown error'}`);
+      }
+    });
+
+    // Sort successful components by their original index to maintain order
+    successfulComponents.sort((a, b) => a.originalIndex - b.originalIndex);
+
+    // Add successful components to processedComponents array
+    successfulComponents.forEach(result => {
+      processedComponents.push(result.component);
+    });
+
+    console.log(`🎯 Parallel processing completed: ${successfulComponents.length}/${components.length} components processed successfully`);
+
+    // If there are errors but some components succeeded, log warnings
+    if (errors.length > 0 && successfulComponents.length > 0) {
+      console.warn(`⚠️ Some components failed to process:`, errors);
+      console.warn(`📊 Continuing with ${successfulComponents.length} successfully processed components`);
+    }
+
+    // If all components failed, throw an error
+    if (errors.length > 0 && successfulComponents.length === 0) {
+      throw new Error(`All components failed to process: ${errors.join('; ')}`);
+    }
+
+    // If some components failed, we could optionally throw or continue
+    // For now, we'll continue with successful ones and log the errors
+  }
+
+  async processComponentWithRetries(component, index, totalComponents, requirements, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
+        console.log(`🔄 Processing component ${index + 1}/${totalComponents}: ${component.name} (Attempt ${attempt}/${maxRetries})`);
+
         // Call Perplexity to find alternatives
         const alternativesData = await this.findComponentAlternatives(component, requirements);
         // TODO: find suppliers
@@ -147,11 +199,26 @@ class BOMAnalysisController {
           suppliers: [] // Empty for now - will be populated later
         };
 
-        processedComponents.push(bomComponent);
+        console.log(`✅ Completed component ${index + 1}/${totalComponents}: ${component.name}`);
+        return { success: true, component: bomComponent, originalIndex: index };
 
       } catch (error) {
-        console.error(`❌ Error processing component ${component.name}:`, error.message);
-        throw new Error(`Failed to process component ${component.name}: ${error.message}`);
+        console.error(`❌ Attempt ${attempt} failed for component ${component.name}:`, error.message);
+
+        if (attempt === maxRetries) {
+          console.error(`🚨 All ${maxRetries} attempts failed for component ${component.name}`);
+          return { 
+            success: false, 
+            error: error.message, 
+            componentName: component.name, 
+            originalIndex: index 
+          };
+        }
+
+        // Exponential backoff: wait 2^attempt seconds
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`⏳ Waiting ${delay}ms before retry for component ${component.name}...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }
