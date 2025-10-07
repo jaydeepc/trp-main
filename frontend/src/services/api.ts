@@ -291,7 +291,7 @@ class APIService {
         summary: any;
         metadata: any;
     }> {
-        const response = await this.api.post(`/bom-analysis/${id}`);
+        const response = await this.api.post(`/bom-analysis/${id}/new`);
         return this.handleResponse(response);
     }
 

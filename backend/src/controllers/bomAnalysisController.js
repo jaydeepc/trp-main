@@ -113,6 +113,8 @@ class BOMAnalysisController {
       try {
         // Call Perplexity to find alternatives
         const alternativesData = await this.findComponentAlternatives(component, requirements);
+        // TODO: find suppliers
+        // TODO: find alternatives suppliers
 
         // Transform component data for BOM format
         const bomComponent = {
