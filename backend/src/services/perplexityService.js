@@ -9,6 +9,31 @@ class PerplexityService {
     this.deepResearchModel = 'sonar-deep-research';
   }
 
+  // Helper function to parse JSON from Perplexity response (ignore thinking content)
+  parsePerplexityResponse(response) {
+    try {
+      // Remove <think>...</think> content if present
+      let cleanResponse = response.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      
+      // Find first { and last } to extract JSON
+      const firstBrace = cleanResponse.indexOf('{');
+      const lastBrace = cleanResponse.lastIndexOf('}');
+      
+      if (firstBrace === -1 || lastBrace === -1) {
+        throw new Error('No valid JSON found in Perplexity response');
+      }
+      
+      const jsonString = cleanResponse.substring(firstBrace, lastBrace + 1);
+      console.log('Extracted JSON string:', jsonString.substring(0, 200) + '...');
+      
+      return JSON.parse(jsonString);
+    } catch (error) {
+      console.error('Error parsing Perplexity response:', error);
+      console.error('Raw response:', response.substring(0, 500) + '...');
+      throw new Error(`Failed to parse Perplexity JSON response: ${error.message}`);
+    }
+  }
+
   getModelForTask(taskType) {
     const models = {
       'component-alternatives': this.reasoningModel,
@@ -121,7 +146,9 @@ Focus on real, currently available components with accurate market data.
         }
       );
 
-      return JSON.parse(response);
+      console.log('Perplexity alternatives response:', response);
+
+      return this.parsePerplexityResponse(response);
     } catch (error) {
       console.error('Error finding component alternatives:', error);
       throw error;
