@@ -120,7 +120,7 @@ const Step3CommercialTerms: React.FC<Step3CommercialTermsProps> = ({
     if (!validateForm()) return;
 
     try {
-      await updateStep(rfq.id, 3, formData);
+      await updateStep(rfq.rfqId, 3, formData);
       onNext();
     } catch (error) {
       console.error('Error updating step 3:', error);

@@ -295,6 +295,46 @@ class APIService {
         return this.handleResponse(response);
     }
 
+    // New BOM Analysis with Perplexity Integration
+    async createBetaBOMAnalysis(rfqId: string): Promise<{
+        bomId: string;
+        rfqId: string;
+        type: string;
+        version: number;
+        componentCount: number;
+        alternativesCount: number;
+        status: string;
+        metadata: {
+            totalValue: number | null;
+            currency: string;
+        };
+        components: Array<{
+            partNumber: string;
+            name: string;
+            description: string;
+            specifications: string;
+            quantity: number;
+            zbc: {
+                shouldCost: number;
+            };
+            alternatives: Array<{
+                partNumber: string;
+                name: string;
+                description: string;
+                specifications: string;
+                costRange: string;
+                keyAdvantages: string[];
+                potentialDrawbacks: string[];
+                suppliers: any[];
+            }>;
+            suppliers: any[];
+        }>;
+        createdAt: string;
+    }> {
+        const response = await this.api.post(`/bom-analysis/${rfqId}/new`);
+        return this.handleResponse(response);
+    }
+
     async getSupplierResearch(id: string): Promise<any> {
         const response = await this.api.get(`/bom-analysis/${id}`);
         return this.handleResponse(response);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Filter, Shield, Award, AlertTriangle, Zap, Target, Star, Brain, TrendingUp } from 'lucide-react';
 import Card from './Card';
 
@@ -30,6 +30,23 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
 }) => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [hoveredSupplier, setHoveredSupplier] = useState<Supplier | null>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [chartDimensions, setChartDimensions] = useState({ width: 600, height: 300 });
+
+  // Measure container and update chart dimensions
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (chartContainerRef.current) {
+        const width = chartContainerRef.current.offsetWidth - 24; // Subtract padding
+        const height = Math.min(width * 0.5, 400); // Maintain aspect ratio, max 400px
+        setChartDimensions({ width, height });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
 
   const filteredSuppliers = suppliers.filter(supplier =>
     filterCategory === 'all' || supplier.category === filterCategory
@@ -73,8 +90,8 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
   const avgCost = filteredSuppliers.reduce((sum, s) => sum + s.cost, 0) / filteredSuppliers.length;
 
   // Calculate chart dimensions and scaling
-  const chartWidth = 600;
-  const chartHeight = 300;
+  const chartWidth = chartDimensions.width;
+  const chartHeight = chartDimensions.height;
   const padding = 40;
 
   // Calculate actual min/max values from supplier data
@@ -110,16 +127,16 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
   }
 
   return (
-    <Card className={`${className} overflow-hidden`}>
+    <>
       {/* Header - Simplified */}
-      <div className="p-5 pb-0">
+      <div>
         <div className="flex items-center space-x-3 mb-4">
           <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
             <Target className="w-5 h-5 text-white" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-surface-900">
-              Supplier Intelligence Matrix
+              Supplier Intelligence Matrix {componentName ? `for ${componentName}` : ''}
             </h3>
             <p className="text-sm text-surface-600">
               Trust vs Cost Analysis
@@ -161,9 +178,9 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
       </div>
 
       {/* Chart with Insights Side by Side */}
-      <div className="px-5 py-5">
-        {/* Static Chart - 2/3 width */}
-        <div className="h-80 bg-gradient-to-br from-surface-50/50 to-primary-50/30 rounded-xl p-3 border border-surface-100">
+      <div className="py-5">
+        {/* Static Chart - Full width, responsive */}
+        <div ref={chartContainerRef} className="w-full bg-gradient-to-br from-surface-50/50 to-primary-50/30 rounded-xl p-3 border border-surface-100">
           <style>
             {`
               .static-chart,
@@ -180,8 +197,8 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
               }
             `}
           </style>
-          <div className="static-chart relative w-full h-full">
-            <svg width="100%" height="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="overflow-visible">
+          <div className="static-chart relative w-full" style={{ height: `${chartHeight}px` }}>
+            <svg width={chartWidth} height={chartHeight} className="overflow-visible">
               {/* Grid lines */}
               <defs>
                 <pattern id="grid" width="50" height="30" patternUnits="userSpaceOnUse">
@@ -245,7 +262,7 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
               <text x={chartWidth / 2} y={chartHeight - 5} textAnchor="middle" className="text-sm fill-surface-700 font-medium">
                 Cost ($)
               </text>
-              <text x={15} y={chartHeight / 2} textAnchor="middle" className="text-sm fill-surface-700 font-medium" transform={`rotate(-90 15 ${chartHeight / 2})`}>
+              <text x={15} y={chartHeight / 2} textAnchor="middle" className="text-sm fill-surface-700 font-medium rotate-90">
                 Trust Score
               </text>
 
@@ -340,7 +357,7 @@ const SupplierTrustGraph: React.FC<SupplierTrustGraphProps> = ({
           </div>
         </div>
       </div>
-    </Card>
+    </>
   );
 };
 

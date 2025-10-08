@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus, TrendingUp, Clock, AlertTriangle, Upload,
-  BarChart3, Sparkles, Brain, Target, Globe,
+  Plus, TrendingUp, Clock, AlertTriangle,
+  BarChart3, Sparkles, Brain,
   Activity, DollarSign, Users, Award, ArrowUpRight, MessageCircle
 } from 'lucide-react';
 import { useRFQ } from '../contexts/RFQContext';
@@ -369,8 +369,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
               {recentRFQs.length > 0 ? (
                 recentRFQs.map((rfq, index) => (
                   <div
-                    key={rfq.id}
-                    onClick={() => onViewRFQ(rfq.id)}
+                    key={rfq.rfqId}
+                    onClick={() => onViewRFQ(rfq.rfqId)}
                     className="group bg-surface-50 hover:bg-surface-100 p-4 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
                   >
                     <div className="flex items-center justify-between">
@@ -380,7 +380,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
                         </div>
                         <div>
                           <div className="font-medium text-surface-900 group-hover:text-primary-600 transition-colors">
-                            {rfq.rfqNumber}
+                            {rfq.rfqId}
                           </div>
                           <div className="text-sm text-surface-600">
                             Created {new Date(rfq.createdAt).toLocaleDateString()}

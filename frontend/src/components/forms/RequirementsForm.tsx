@@ -7,13 +7,15 @@ import {
   removeComplianceRequirement,
   setAdditionalRequirements,
   setSupplierPriority,
-  setRFQData
+  addBOM,
+  setRFQ
 } from '../../store/rfqSlice';
 import { Shield, Calendar, Plus, Info, X, AlertTriangle, Sparkles, Clock, MessageCircle, Target, TrendingUp, DollarSign, Award, Users, HeadphonesIcon, GripVertical } from 'lucide-react';
 import Button from '../common/Button';
 import { voiceAppCommandBus } from '../../services/VoiceAppCommandBus';
 import api from '../../services/api';
 import Card from '../common/Card';
+import { getRandomSuppliers } from '../../data/mockBOMData';
 
 interface RequirementsFormProps {
   rfq: any;
@@ -52,7 +54,7 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  const extractedData = useSelector((state: RootState) => state.rfq.extractedData);
+  const extractedData = useSelector((state: RootState) => state.rfq.rfqData?.analysisData);
 
   // Sync local state with Redux when Redux changes (e.g., from voice commands)
   useEffect(() => {
@@ -325,67 +327,53 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack
         additionalRequirements: localAdditional
       });
 
-      console.log('✅ Requirements saved. Now triggering supplier research...');
-      console.log('🔍 Using rfqId for supplier research:', rfq.rfqId);
+      console.log('✅ Requirements saved. Now triggering BOM analysis...');
+      console.log('🔍 Using rfqId for BOM analysis:', rfq.rfqId);
 
-      // Call supplier research API using UUID rfqId (not MongoDB _id)
-      const result = await api.generateSupplierResearch(rfq.rfqId);
+      // Call new BOM analysis API using UUID rfqId
+      const result = await api.createBetaBOMAnalysis(rfq.rfqId);
 
-      console.log('✅ Supplier research complete:', result);
+      console.log('✅ BOM analysis complete:', result);
 
-      // Transform supplier research data to match UI expectations
-      const transformedComponents = (result.supplierResearch || []).map((item: any, index: number) => ({
-        id: `${index + 1}`,
-        partName: item.partName || 'Unknown',
-        partNumber: item.baselineAnalysis?.manufacturer || `PART-${index + 1}`,
-        quantity: item.quantity || 1,
-        material: item.baselineAnalysis?.primaryCategory || 'Unknown',
-        unitCost: `₹${item.unitCostINR || 0}`,
-        totalCost: `₹${item.totalCostINR || 0}`,
-        complianceStatus: 'compliant',
-        riskFlag: {
-          level: item.alternativeSuppliers?.length > 0 ? 'Low' : 'Medium',
-          reason: item.alternativeSuppliers?.length > 0 ? 'Multiple suppliers available' : 'Limited supplier options'
-        },
-        aiSuggestedAlternative: item.baselineAnalysis?.keySpecifications || 'No alternative suggested',
-        confidence: 85,
-        aiRecommendedRegion: 'India',
-        predictedMarketRange: `₹${Math.round(item.unitCostINR * 0.9)} - ₹${Math.round(item.unitCostINR * 1.1)}`,
-        zbcShouldCost: `₹${item.unitCostINR}`,
-        zbcVariance: '0%',
-        zbcSource: item.baselineAnalysis?.sourceURL || 'N/A',
-        complianceFlags: [
-          { icon: '✓', text: 'Standard compliance' }
-        ]
-      }));
+      // Populate mock suppliers into components and alternatives
+      const enhancedResult = {
+        ...result,
+        components: result.components?.map((component: any) => ({
+          ...component,
+          // Add mock suppliers to main component (5-10 suppliers per component)
+          suppliers: component.suppliers || getRandomSuppliers(Math.floor(Math.random() * 6) + 5),
+          // Add mock suppliers to each alternative
+          alternatives: component.alternatives?.map((alt: any) => ({
+            ...alt,
+            suppliers: alt.suppliers || getRandomSuppliers(Math.floor(Math.random() * 3) + 2)
+          }))
+        }))
+      };
 
-      // Store transformed supplier research data in Redux
-      dispatch(setRFQData({
-        components: transformedComponents,
-        suppliers: result.summary || {},
-        insights: [`Processed ${result.totalComponents} components in ${(result.processingTime / 1000).toFixed(1)}s`]
-      }));
-      console.log('📊 Redux: Stored supplier research data -', transformedComponents.length, 'components');
+      console.log('📦 Enhanced result with mock suppliers:', enhancedResult.components?.length, 'components');
+
+      // Store enhanced BOM analysis data in Redux
+      dispatch(addBOM(enhancedResult));
+      console.log('📊 Redux: Stored BOM analysis data with suppliers -', enhancedResult.components?.length || 0, 'components');
 
       // Send detailed summary to voice using Redux sendText
-      if (sendText && transformedComponents) {
-        const totalComponents = transformedComponents.length;
+      if (sendText && result.components) {
+        const totalComponents = result.components.length;
         const complianceStr = localCompliance.length > 0
           ? localCompliance.join(', ')
           : 'No specific compliance requirements';
 
-        const summaryMessage = `Supplier research complete! I've analyzed ${totalComponents} components with your requirements:
+        const summaryMessage = `BOM analysis complete! I've analyzed ${totalComponents} components with your requirements:
 • Compliance: ${complianceStr}
 • Lead time: ${localLeadTime}
 
-The analyzed components include supplier recommendations, cost data, and compliance status. You can now review the detailed BOM analysis in the next step.
+The analyzed components include alternatives analysis and cost data. You can now review the detailed BOM analysis in the next step.
 
 Data:
 ${JSON.stringify({
-          components: transformedComponents,
-          summary: result.summary || {},
-          processingTime: result.processingTime,
-          totalComponents: result.totalComponents
+          components: result.components,
+          alternativesCount: result.alternativesCount,
+          componentCount: result.componentCount
         })}`;
 
         console.log('🎙️ Sending voice summary via Redux sendText');
@@ -453,7 +441,7 @@ ${JSON.stringify({
                         </td>
                         <td className="px-4 py-4 border-r border-slate-300">
                           <span className="text-sm font-semibold text-gray-900">
-                            {component.name || component.partName || <span className="text-gray-400">—</span>}
+                            {component.name || <span className="text-gray-400">—</span>}
                           </span>
                         </td>
                         <td className="px-4 py-4 border-r border-slate-300">
@@ -482,11 +470,6 @@ ${JSON.stringify({
                               {component.zbc.variance && (
                                 <div className="text-xs text-gray-600">
                                   {component.zbc.variance}
-                                </div>
-                              )}
-                              {component.zbc.confidence && (
-                                <div className="text-xs text-blue-600">
-                                  {component.zbc.confidence}% confidence
                                 </div>
                               )}
                             </div>
