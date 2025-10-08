@@ -312,7 +312,7 @@ const RFQWizard: React.FC<RFQWizardProps> = ({ rfqId, onBackToDashboard }) => {
       </div>
 
       {/* Main Content with Robbie Conversation Layout */}
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Main Content Area (65%) */}
         <div className="col-span-12 lg:col-span-8">
           {/* Robbie's Conversational Greeting */}

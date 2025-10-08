@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from "react-router-dom";
 import { Provider as ReduxProvider } from 'react-redux';
 import { store } from './store';
 import { LiveAPIProvider } from "./contexts/LiveAPIContext";
@@ -17,6 +17,22 @@ if (typeof API_KEY !== "string") {
 
 const host = "generativelanguage.googleapis.com";
 const uri = `wss://${host}/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent`;
+
+// RFQ Wizard Wrapper to extract rfqId from URL params
+interface RFQWizardWrapperProps {
+  onBackToDashboard: () => void;
+}
+
+const RFQWizardWrapper: React.FC<RFQWizardWrapperProps> = ({ onBackToDashboard }) => {
+  const { rfqId } = useParams<{ rfqId: string }>();
+
+  return (
+    <RFQWizard
+      rfqId={rfqId || ""}
+      onBackToDashboard={onBackToDashboard}
+    />
+  );
+};
 
 // Main App Routes Component (inside Router context)
 interface AppRoutesProps {
@@ -48,9 +64,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ handleCreateRFQ }) => {
       {/* RFQ Routes */}
       <Route
         path="/rfq-wizard/:rfqId"
-        element={
-          <RFQWizard rfqId={""} onBackToDashboard={handleBackToDashboard} />
-        }
+        element={<RFQWizardWrapper onBackToDashboard={handleBackToDashboard} />}
       />
 
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -106,7 +120,7 @@ const AppContent: React.FC = () => {
         // Send feedback to voice
         voiceAppCommandBus.sendVoiceFeedback('rfqCreated', {
           rfq: newRFQ,
-          message: `RFQ ${newRFQ.id} created successfully`
+          message: `RFQ ${newRFQ.rfqId} created successfully`
         });
 
         return {

@@ -1,14 +1,11 @@
-import React, { useState, useCallback } from 'react';
-import { CheckCircle, AlertTriangle, XCircle, TrendingUp, TrendingDown, Info, Sparkles, Download, Table, Grid } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, CheckCircle, Info, Download, MessageCircle, Sparkles } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import InfoTooltip from '../common/InfoTooltip';
 import { RootState } from '../../store';
 import { RFQ } from '../../types';
 import { useRFQ } from '../../contexts/RFQContext';
 import Button from '../common/Button';
-import Card from '../common/Card';
 import SupplierTrustGraph from '../common/SupplierTrustGraph';
-import BOMResultsTable from '../common/BOMResultsTable';
 
 interface Step2SmartBOMReviewProps {
   rfq: RFQ;
@@ -21,18 +18,22 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
   onNext,
   onPrevious,
 }) => {
-  const { components, suppliers } = useSelector((state: RootState) => state.rfq);
+  const rfqData = useSelector((state: RootState) => state.rfq.rfqData);
+  const components = rfqData?.boms?.[0]?.components || [];
 
   const { updateStep, loading } = useRFQ();
+  const [currentComponentIndex, setCurrentComponentIndex] = useState(0);
+  const [selectedAlternatives, setSelectedAlternatives] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState('');
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [selectedComponent, setSelectedComponent] = useState<string>('1'); // Default to first component
-  const [viewMode, setViewMode] = useState<'detailed' | 'excel'>('detailed');
+
+  const currentComponent = components[currentComponentIndex];
+  const componentId = currentComponentIndex.toString();
+  const selectedOption = selectedAlternatives[componentId];
 
   const handleContinue = async () => {
     try {
-      await updateStep(rfq.id, 2, {
-        componentUpdates: [],
+      await updateStep(rfq.rfqId, 2, {
+        selectedAlternatives,
         notes,
       });
       onNext();
@@ -41,512 +42,480 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
     }
   };
 
-  const toggleRowExpansion = (componentId: string) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(componentId)) {
-      newExpanded.delete(componentId);
-    } else {
-      newExpanded.add(componentId);
-    }
-    setExpandedRows(newExpanded);
+  const selectOption = (optionId: string) => {
+    setSelectedAlternatives({
+      ...selectedAlternatives,
+      [componentId]: optionId
+    });
   };
 
-  const getComplianceIcon = (status: string) => {
-    switch (status) {
-      case 'compliant':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'pending':
-        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
-      case 'non-compliant':
-        return <XCircle className="w-4 h-4 text-red-600" />;
-      default:
-        return <Info className="w-4 h-4 text-gray-600" />;
+  const goToNext = () => {
+    if (currentComponentIndex < components.length - 1) {
+      setCurrentComponentIndex(currentComponentIndex + 1);
     }
   };
 
-  const getRiskBadgeClass = (level: string) => {
-    switch (level) {
-      case 'Low':
-        return 'badge badge-success';
-      case 'Medium':
-        return 'badge badge-warning';
-      case 'High':
-        return 'badge badge-error';
-      default:
-        return 'badge';
+  const goToPrevious = () => {
+    if (currentComponentIndex > 0) {
+      setCurrentComponentIndex(currentComponentIndex - 1);
     }
   };
 
-  const getZBCVarianceClass = (variance: string) => {
-    if (!variance || variance === 'N/A') return 'text-gray-600';
-
-    const numericVariance = parseFloat(variance.replace('%', ''));
-    if (numericVariance < 5) return 'zbc-good';
-    if (numericVariance < 20) return 'zbc-moderate';
-    return 'zbc-high';
+  const goToComponent = (index: number) => {
+    setCurrentComponentIndex(index);
   };
 
-  const getZBCVarianceIcon = (variance: string) => {
-    if (!variance || variance === 'N/A') return null;
+  const handleExportToExcel = () => {
+    console.log('Exporting to Excel...');
+  };
 
-    const numericVariance = parseFloat(variance.replace('%', ''));
-    if (numericVariance > 0) {
-      return <TrendingUp className="w-4 h-4" />;
-    } else {
-      return <TrendingDown className="w-4 h-4" />;
+  // Transform component suppliers to SupplierTrustGraph format (before early return)
+  const transformedSuppliers = useMemo(() => {
+    if (!currentComponent || !currentComponent.suppliers || currentComponent.suppliers.length === 0) {
+      return [];
     }
-  };
 
-  // Excel export functionality
-  const exportToExcel = useCallback(() => {
-    // Create CSV content (simple Excel compatibility)
-    const headers = [
-      'Row #',
-      'Part Name',
-      'Part Number',
-      'Qty',
-      'Material',
-      'Unit Cost',
-      'Total Cost',
-      'Status',
-      'Risk Level',
-      'AI Alternative',
-      'Confidence %',
-      'Region',
-      'Market Range',
-      'ZBC Variance'
-    ];
+    return currentComponent.suppliers.map((supplier: any, index: number) => ({
+      id: `sup-${index}`,
+      name: supplier.name,
+      cost: supplier.pricing?.unitCost || 0,
+      trustScore: supplier.reliability?.trustScore || 0,
+      category: supplier.reliability?.trustScore >= 9.0 ? 'trusted' as const :
+        supplier.reliability?.trustScore >= 8.0 ? 'empanelled' as const :
+          'new' as const,
+      region: supplier.location || 'Unknown',
+      certifications: supplier.certifications || [],
+      riskLevel: supplier.reliability?.trustScore >= 9.0 ? 'Low' as const :
+        supplier.reliability?.trustScore >= 8.0 ? 'Medium' as const :
+          'High' as const,
+    }));
+  }, [currentComponent]);
 
-    const csvContent = [
-      headers.join(','),
-      ...components.map((component: any, index: number) => [
-        index + 1,
-        `"${component.partName}"`,
-        component.partNumber,
-        component.quantity,
-        `"${component.material}"`,
-        component.zbcShouldCost,
-        `"${parseFloat(component.zbcShouldCost?.replace(/[$,]/g, '') || '0') * component.quantity}"`,
-        component.complianceStatus,
-        component.riskFlag?.level || 'Unknown',
-        `"${component.aiSuggestedAlternative}"`,
-        component.confidence,
-        `"${component.aiRecommendedRegion}"`,
-        component.predictedMarketRange,
-        component.zbcVariance
-      ].join(','))
-    ].join('\n');
+  if (!currentComponent) {
+    return <div className="text-center py-12 text-gray-600">No components available</div>;
+  }
 
-    // Download file
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'smart-bom-analysis.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  }, [components]);
+  const hasAlternatives = currentComponent.alternatives && currentComponent.alternatives.length > 0;
+  const allOptions = [{ id: 'original', ...currentComponent, isOriginal: true }, ...(currentComponent.alternatives || [])];
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <Card size="large">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-dark-slate-gray mb-2">
-            Review Your Smart Bill of Materials
-          </h2>
-          <p className="text-medium-gray">
-            Project Robbie's AI has analyzed your input. Review the enhanced data and ZBC insights below.
-          </p>
-        </div>
+    <div className="space-y-6">
 
-        {/* Header with View Toggle and Export Button */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center space-x-4">
-            <h3 className="text-lg font-semibold text-dark-slate-gray">Smart BOM Data</h3>
-            <span className="text-sm text-medium-gray">({components.length} components)</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            {/* View Toggle */}
-            <div className="flex items-center bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('detailed')}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
-                  viewMode === 'detailed'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Grid className="w-4 h-4" />
-                <span>Detailed</span>
-              </button>
-              <button
-                onClick={() => setViewMode('excel')}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
-                  viewMode === 'excel'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Table className="w-4 h-4" />
-                <span>Excel View</span>
-              </button>
-            </div>
-            
-            <Button
-              onClick={exportToExcel}
-              variant="secondary"
-              icon={<Download className="w-4 h-4" />}
-              className="bg-green-600 hover:bg-green-700 text-white border-green-600"
-            >
-              Export to Excel
-            </Button>
-          </div>
-        </div>
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="text-center">
-            <h3 className="text-2xl font-bold text-primary-blue">{components.length}</h3>
-            <p className="text-sm text-medium-gray">Components</p>
-          </Card>
-          <Card className="text-center">
-            <h3 className="text-2xl font-bold text-green-600">
-              {components.filter((c: any) => c.complianceStatus === 'compliant').length}
-            </h3>
-            <p className="text-sm text-medium-gray">Compliant</p>
-          </Card>
-          <Card className="text-center">
-            <h3 className="text-2xl font-bold text-red-600">
-              {components.filter((c: any) => c.riskFlag?.level === 'High').length}
-            </h3>
-            <p className="text-sm text-medium-gray">High Risk</p>
-          </Card>
-          <Card className="text-center">
-            <h3 className="text-2xl font-bold text-secondary-orange">
-              {components.length > 0 ? Math.round(components.reduce((sum: number, c: any) => {
-                const variance = parseFloat(c.zbcVariance?.replace('%', '') || '0');
-                return sum + variance;
-              }, 0) / components.length) : 0}%
-            </h3>
-            <p className="text-sm text-medium-gray">Avg ZBC Variance</p>
-          </Card>
-        </div>
-
-        {/* Conditional Rendering Based on View Mode */}
-        {viewMode === 'detailed' ? (
-          /* Detailed View - Original Table */
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900 min-w-[200px]">
-                      <div className="flex items-center space-x-2">
-                        <span>Component</span>
-                        <InfoTooltip
-                          title="Component Information"
-                          description="Part details and specifications"
-                          businessValue="Core component identification"
-                          position="bottom"
-                        />
-                      </div>
-                    </th>
-                    <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-16">Qty</th>
-                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900 min-w-[180px]">
-                      <div className="flex items-center space-x-2">
-                        <Sparkles className="w-4 h-4 text-blue-600" />
-                        <span>AI Insights</span>
-                      </div>
-                    </th>
-                    <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-24">
-                      <div className="flex items-center justify-center space-x-1">
-                        <span>Status</span>
-                      </div>
-                    </th>
-                    <th className="px-4 py-4 text-right text-sm font-semibold text-gray-900 min-w-[120px]">
-                      <div className="flex items-center justify-end space-x-2">
-                        <TrendingUp className="w-4 h-4 text-green-600" />
-                        <span>Cost Analysis</span>
-                      </div>
-                    </th>
-                    <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-20">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {components.map((component: any, index: number) => (
-                    <React.Fragment key={component.id}>
-                      <tr className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                        {/* Component Column */}
-                        <td className="px-4 py-4">
-                          <div className="space-y-1">
-                            <div className="font-semibold text-gray-900 text-sm">
-                              {component.partName}
-                            </div>
-                            <div className="text-xs text-gray-500 font-mono">
-                              {component.partNumber}
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              {component.material}
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Quantity Column */}
-                        <td className="px-4 py-4 text-center">
-                          <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-semibold rounded-full">
-                            {component.quantity}
-                          </span>
-                        </td>
-
-                        {/* AI Insights Column */}
-                        <td className="px-4 py-4">
-                          <div className="space-y-2">
-                            <div className="text-sm text-blue-700 font-medium line-clamp-2">
-                              {component.aiSuggestedAlternative}
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <div className="text-xs text-gray-500">Confidence:</div>
-                              <div className="flex items-center space-x-1">
-                                <div className="w-12 bg-gray-200 rounded-full h-1.5">
-                                  <div
-                                    className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-                                    style={{ width: `${component.confidence}%` }}
-                                  ></div>
-                                </div>
-                                <span className="text-xs font-medium text-blue-600">{component.confidence}%</span>
-                              </div>
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              📍 {component.aiRecommendedRegion}
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Status Column */}
-                        <td className="px-4 py-4">
-                          <div className="flex flex-col items-center space-y-2">
-                            <div className="flex items-center space-x-1">
-                              {getComplianceIcon(component.complianceStatus)}
-                            </div>
-                            <span className={`${getRiskBadgeClass(component.riskFlag.level)} text-xs px-2 py-1`}>
-                              {component.riskFlag.level}
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* Cost Analysis Column */}
-                        <td className="px-4 py-4 text-right">
-                          <div className="space-y-1">
-                            <div className="text-sm text-gray-600">
-                              Market: <span className="font-medium">{component.predictedMarketRange}</span>
-                            </div>
-                            <div className="text-sm">
-                              ZBC: <span className="font-bold text-primary-blue">{component.zbcShouldCost}</span>
-                            </div>
-                            <div className={`flex items-center justify-end space-x-1 text-sm ${getZBCVarianceClass(component.zbcVariance)}`}>
-                              {getZBCVarianceIcon(component.zbcVariance)}
-                              <span className="font-semibold">{component.zbcVariance}</span>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Actions Column */}
-                        <td className="px-4 py-4 text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleRowExpansion(component.id)}
-                            className="text-xs"
-                          >
-                            {expandedRows.has(component.id) ? '▲' : '▼'}
-                          </Button>
-                        </td>
-                      </tr>
-
-                      {/* Expanded Row Details */}
-                      {expandedRows.has(component.id) && (
-                        <tr>
-                          <td colSpan={6} className="px-4 py-4 bg-gray-50 border-t border-gray-100">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                              {/* Compliance Details */}
-                              <div>
-                                <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
-                                  <CheckCircle className="w-4 h-4 text-green-600" />
-                                  <span>Compliance & Certifications</span>
-                                </h5>
-                                <div className="space-y-2">
-                                  {component.complianceFlags?.map((flag: any, index: number) => (
-                                    <div key={index} className="flex items-center space-x-2">
-                                      <span className="text-sm">{flag.icon}</span>
-                                      <span className="text-sm text-gray-700">{flag.text}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Cost Breakdown */}
-                              <div>
-                                <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
-                                  <TrendingUp className="w-4 h-4 text-green-600" />
-                                  <span>Detailed Cost Analysis</span>
-                                </h5>
-                                <div className="space-y-2 text-sm">
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">Market Low:</span>
-                                    <span className="font-medium">{component.predictedMarketRange.split(' - ')[0]}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">Market High:</span>
-                                    <span className="font-medium">{component.predictedMarketRange.split(' - ')[1]}</span>
-                                  </div>
-                                  <div className="flex justify-between border-t pt-2">
-                                    <span className="text-gray-600">ZBC Should-Cost:</span>
-                                    <span className="font-bold text-primary-blue">{component.zbcShouldCost}</span>
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-2">
-                                    Source: {component.zbcSource}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* AI Recommendations */}
-                              <div>
-                                <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
-                                  <Sparkles className="w-4 h-4 text-blue-600" />
-                                  <span>AI Recommendations</span>
-                                </h5>
-                                <div className="space-y-2 text-sm">
-                                  <div>
-                                    <span className="text-gray-600">Alternative:</span>
-                                    <p className="text-blue-700 font-medium mt-1">{component.aiSuggestedAlternative}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-gray-600">Recommended Region:</span>
-                                    <p className="text-gray-900 font-medium mt-1">{component.aiRecommendedRegion}</p>
-                                  </div>
-                                  <div className="flex justify-between items-center pt-2 border-t">
-                                    <span className="text-gray-600">AI Confidence:</span>
-                                    <span className="font-semibold text-blue-600">{component.confidence}%</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
+      {/* Robbie's Suggestion Nudge */}
+      <div className="bg-gradient-to-br from-blue-50 via-primary-50 to-accent-50 border-2 border-primary-200 hover:border-primary-300 transition-all duration-300 rounded-2xl p-6 shadow-md">
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-shrink-0">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <Sparkles className="w-6 h-6 text-white" />
             </div>
           </div>
-        ) : (
-          /* Excel View - New BOMResultsTable Component */
-          <BOMResultsTable 
-            bomData={components} 
-            isLoading={loading.isLoading}
-            error={null}
-          />
-        )}
-
-        {/* Supplier Trust Graph Section */}
-        <div className="mt-12">
-          <div className="mb-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <Sparkles className="w-6 h-6 text-accent-teal" />
-              <h3 className="text-xl font-bold text-dark-slate-gray">
-                Supplier Intelligence Analysis
-              </h3>
-            </div>
-            <p className="text-medium-gray">
-              Explore cost vs trust relationships for each component. Select a component to view its supplier landscape.
-            </p>
+          <div className="flex-1">
+            <h3 className="text-base font-bold text-surface-900 mb-1">Discuss with Robbie to choose the best option!</h3>
+            <p className="text-sm text-gray-700">I can help compare alternatives, explain trade-offs, and recommend the best option for your needs.</p>
           </div>
+          <Button
+            className="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-6 py-3 font-semibold shadow-md hover:shadow-lg transition-all duration-300 flex-shrink-0"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            Yes, let's chat
+          </Button>
+        </div>
+      </div>
 
-          {/* Component Selector */}
-          <div className="mb-6">
-            <div className="flex flex-wrap gap-3">
-              {components.map((component: any) => (
+      {/* Component Switcher Section */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900">
+            Component {currentComponentIndex + 1} of {components.length}
+          </h3>
+          <Button
+            onClick={handleExportToExcel}
+            variant="outline"
+            icon={<Download className="w-4 h-4" />}
+            size="sm"
+          >
+            Export
+          </Button>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+            <span>Progress</span>
+            <span>{Object.keys(selectedAlternatives).length} / {components.length} reviewed</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-gradient-to-r from-primary-500 to-accent-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(Object.keys(selectedAlternatives).length / components.length) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+
+        {/* Component Selector Pills */}
+        <div className="flex items-center space-x-2 overflow-x-auto pb-2">
+          <button
+            onClick={goToPrevious}
+            disabled={currentComponentIndex === 0}
+            className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          <div className="flex space-x-2 overflow-x-auto flex-1">
+            {components.map((comp: any, index: number) => {
+              const compId = index.toString();
+              const isSelected = index === currentComponentIndex;
+              const hasSelection = selectedAlternatives[compId] !== undefined;
+
+              return (
                 <button
-                  key={component.id}
-                  onClick={() => setSelectedComponent(component.id)}
-                  className={`px-4 py-2 rounded-xl border-2 transition-all duration-200 ${selectedComponent === component.id
-                    ? 'border-accent-teal bg-blue-50 text-accent-teal'
-                    : 'border-gray-300 text-dark-slate-gray hover:border-gray-400'
+                  key={compId}
+                  onClick={() => goToComponent(index)}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0 max-w-[200px] ${isSelected
+                    ? 'bg-gradient-to-r from-primary-600 to-accent-600 text-white shadow-md'
+                    : hasSelection
+                      ? 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200'
+                      : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
                     }`}
                 >
-                  <div className="text-sm font-medium">{component.partName}</div>
-                  <div className="text-xs opacity-75">{component.partNumber}</div>
+                  <div className="flex items-center space-x-2">
+                    {/* <span className="text-xs opacity-70">{index + 1}.</span> */}
+                    <span className="truncate">{comp.name}</span>
+                    {hasSelection && !isSelected && (
+                      <CheckCircle className="w-3 h-3 flex-shrink-0" />
+                    )}
+                  </div>
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          {/* Supplier Trust Graph */}
-          {selectedComponent && suppliers[selectedComponent as keyof typeof suppliers] && (
-            <SupplierTrustGraph
-              componentName={components.find((c: any) => c.id === selectedComponent)?.partName || 'Component'}
-              suppliers={suppliers[selectedComponent as keyof typeof suppliers]}
-              onSupplierSelect={(supplier) => {
-                console.log('Selected supplier:', supplier);
-                // Here you could open a modal with detailed supplier information
-              }}
-              className="mb-8"
-            />
+          <button
+            onClick={goToNext}
+            disabled={currentComponentIndex === components.length - 1}
+            className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Current Component Details */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6">
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {currentComponent.name}
+            </h2>
+            <div className="flex items-center space-x-4 text-sm text-gray-600">
+              {currentComponent.partNumber && (
+                <span className="font-mono">Part #: {currentComponent.partNumber}</span>
+              )}
+              <span>Qty: {currentComponent.quantity || 1}</span>
+              {hasAlternatives && (
+                <span className="text-blue-600 font-medium">
+                  {currentComponent?.alternatives?.length} alternative{currentComponent?.alternatives?.length !== 1 ? 's' : ''} available
+                </span>
+              )}
+            </div>
+          </div>
+          {selectedOption && (
+            <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg border border-green-300 flex items-center space-x-2">
+              <CheckCircle className="w-5 h-5" />
+              <span className="font-semibold">Selection Made</span>
+            </div>
           )}
         </div>
 
-        {/* Notes Section */}
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold text-dark-slate-gray mb-4">
-            Review Notes (Optional)
-          </h3>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add any notes about the Smart BoM analysis..."
-            className="input-field h-24 resize-none"
+        {/* Comparison Table */}
+        <div className="bg-white rounded-xl overflow-hidden border-2 border-gray-200">
+          <table className="w-full">
+            {/* Table Header */}
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-10"></th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-48">
+                  Option
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Details
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-56">
+                  Advantages
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider w-28">
+                  Cost
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-28">
+                  Action
+                </th>
+              </tr>
+            </thead>
+
+            {/* Table Body - All Options */}
+            <tbody>
+              {allOptions.map((option: any, index: number) => {
+                const optionId = option.isOriginal ? 'original' : (option.id || option._id || index.toString());
+                const isSelected = selectedOption === optionId;
+
+                return (
+                  <tr
+                    key={optionId}
+                    className={`border-b border-gray-100 transition-all duration-200 ${isSelected
+                      ? option.isOriginal
+                        ? 'bg-gradient-to-r from-blue-50 to-cyan-50'
+                        : 'bg-gradient-to-r from-green-50 to-emerald-50'
+                      : 'hover:bg-gray-50'
+                      }`}
+                  >
+                    {/* Radio / Selection Indicator */}
+                    <td className="pl-5 py-3">
+                      <button
+                        onClick={() => selectOption(optionId)}
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected
+                          ? option.isOriginal
+                            ? 'border-blue-600 bg-blue-600'
+                            : 'border-green-600 bg-green-600'
+                          : 'border-gray-300 hover:border-gray-400'
+                          }`}
+                      >
+                        {isSelected && (
+                          <div className="w-3 h-3 bg-white rounded-full"></div>
+                        )}
+                      </button>
+                    </td>
+
+                    {/* Option Name */}
+                    <td className="pl-5 py-3">
+                      <div>
+                        <div className="flex flex-col space-y-2 mb-2">
+                          {option.isOriginal && (
+                            <span className="px-2 py-0.5 w-fit rounded text-xs font-semibold bg-gray-200 text-gray-700">
+                              ORIGINAL
+                            </span>
+                          )}
+                          <div className="font-semibold text-gray-900">
+                            {option.name || option.material}
+                          </div>
+                        </div>
+                        {option.partNumber && (
+                          <div className="text-xs text-gray-500 font-mono">
+                            {option.partNumber}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Details */}
+                    <td className="pl-5 py-3">
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {option.specifications || option.description || 'As specified in BOM'}
+                      </p>
+                      {option.suppliers && option.suppliers.length > 0 && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          {option.suppliers.length} supplier{option.suppliers.length !== 1 ? 's' : ''} available
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Advantages */}
+                    <td className="pl-5 py-3">
+                      {option.keyAdvantages && option.keyAdvantages.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {option.keyAdvantages.slice(0, 3).map((adv: string, i: number) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center text-xs bg-green-50 text-green-700 px-2 py-1 rounded font-medium"
+                            >
+                              ✓ {adv}
+                            </span>
+                          ))}
+                        </div>
+                      ) : option.isOriginal ? (
+                        <span className="text-xs text-gray-500 italic">Specified in BOM</span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+
+                    {/* Cost */}
+                    <td className="pl-5 py-3 text-right">
+                      <div>
+                        <div className="text-base font-bold text-gray-900">
+                          {option.costRange || 'TBD'}
+                        </div>
+                        {option.estimatedSavings && (
+                          <div className="text-xs text-green-600 font-semibold mt-1">
+                            Save {option.estimatedSavings}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Action Button */}
+                    <td className="px-4 py-3 text-center">
+                      <Button
+                        onClick={() => selectOption(optionId)}
+                        variant={isSelected ? 'primary' : 'outline'}
+                        size="sm"
+                        className={`font-semibold transition-all duration-200 ${isSelected
+                          ? option.isOriginal
+                            ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md'
+                            : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md'
+                          : 'border-2 border-gray-400 text-gray-700 hover:bg-gray-50'
+                          }`}
+                      >
+                        {isSelected ? (
+                          <span className="flex items-center">
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Selected
+                          </span>
+                        ) : (
+                          'Select'
+                        )}
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {/* Robbie's Supplier Selection Nudge */}
+      <div className="bg-gradient-to-br from-blue-50 via-primary-50 to-accent-50 border-2 border-primary-200 hover:border-primary-300 transition-all duration-300 rounded-2xl p-6 mb-6 shadow-md">
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-shrink-0">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-base font-bold text-surface-900 mb-1">Need help choosing the right supplier?</h3>
+            <p className="text-sm text-gray-700">Let Robbie analyze trust scores, costs, and certifications to recommend the best supplier for {currentComponent.name}.</p>
+          </div>
+          <Button
+            className="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-6 py-3 font-semibold shadow-md hover:shadow-lg transition-all duration-300 flex-shrink-0"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            Let's choose together
+          </Button>
+        </div>
+      </div>
+
+      {/* Supplier Intelligence Section */}
+      {transformedSuppliers.length > 0 && (
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6">
+
+          <SupplierTrustGraph
+            componentName={currentComponent.name}
+            suppliers={transformedSuppliers}
+            className="border-0 shadow-none"
           />
-        </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-between mt-8">
-          <Button
-            onClick={onPrevious}
-            variant="secondary"
-            disabled={loading.isLoading}
-          >
-            Previous
-          </Button>
-
-          <Button
-            onClick={handleContinue}
-            loading={loading.isLoading}
-          >
-            Continue to Commercial Terms
-          </Button>
-        </div>
-
-        {/* Help Text */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-xl">
-          <div className="flex items-start space-x-3">
-            <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-            <div className="text-sm">
-              <h4 className="font-semibold text-blue-800 mb-1">
-                Understanding Your Smart BoM
-              </h4>
-              <ul className="text-blue-700 space-y-1">
-                <li>• <strong>ZBC Variance:</strong> Difference between market price and should-cost</li>
-                <li>• <strong>Risk Levels:</strong> Supply chain, geopolitical, and material volatility risks</li>
-                <li>• <strong>AI Suggestions:</strong> Alternative materials and processes for cost optimization</li>
-                <li>• <strong>Compliance:</strong> Regulatory status and certifications</li>
-              </ul>
+          {/* Info about supplier selection */}
+          <div className="mt-6 p-4 bg-blue-50/80 backdrop-blur-sm rounded-xl border border-blue-200">
+            <div className="flex items-start space-x-3">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="text-blue-800 font-medium mb-1">Supplier Selection Coming Soon</p>
+                <p className="text-blue-700">
+                  You'll be able to select specific suppliers from the graph for each component.
+                  For now, review the trust vs cost analysis to understand your options.
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </Card>
+      )}
+
+      {/* Notes Section */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6">
+        <label className="block text-sm font-semibold text-gray-900 mb-2">
+          Additional Notes (Optional)
+        </label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Add any notes about component selections or special requirements..."
+          className="w-full p-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 resize-none h-24"
+        />
+      </div>
+
+      {/* Help Text */}
+      <div className="bg-primary-50/80 backdrop-blur-sm border border-primary-200 rounded-2xl p-6">
+        <div className="flex items-start space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-accent-600 rounded-full flex items-center justify-center flex-shrink-0">
+            <Info className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-primary-800 mb-2">
+              How to Review
+            </h4>
+            <ul className="text-sm text-primary-700 space-y-1">
+              <li>• <strong>Compare options:</strong> Review Original vs Alternative materials side-by-side</li>
+              <li>• <strong>Select one:</strong> Click "Select" button to choose Original or an Alternative</li>
+              <li>• <strong>Navigate:</strong> Use Previous/Next buttons or component pills to move through all items</li>
+              <li>• <strong>Track progress:</strong> Green checkmarks show completed reviews</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Component Navigation */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6">
+        <div className="flex items-center justify-between">
+          <Button
+            onClick={goToPrevious}
+            disabled={currentComponentIndex === 0}
+            variant="outline"
+            icon={<ChevronLeft className="w-4 h-4" />}
+          >
+            Previous Component
+          </Button>
+
+          <div className="text-sm text-gray-600">
+            Component {currentComponentIndex + 1} of {components.length}
+          </div>
+
+          {currentComponentIndex < components.length - 1 ? (
+            <Button
+              onClick={goToNext}
+              variant="primary"
+              className="bg-gradient-to-r from-primary-600 to-accent-600"
+            >
+              Next Component
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleContinue}
+              disabled={loading.isLoading}
+              loading={loading.isLoading}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
+            >
+              Complete Review & Continue →
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Footer Actions */}
+      <div className="flex justify-between items-center">
+        <Button
+          onClick={onPrevious}
+          variant="ghost"
+          disabled={loading.isLoading}
+          className="text-gray-600 hover:text-gray-800"
+        >
+          ← Back to Requirements
+        </Button>
+
+        <div className="text-sm text-gray-600">
+          {Object.keys(selectedAlternatives).length} of {components.length} components reviewed
+        </div>
+      </div>
     </div>
   );
 };

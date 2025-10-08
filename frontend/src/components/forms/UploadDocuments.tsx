@@ -8,7 +8,7 @@ import Button from '../common/Button';
 import Card from '../common/Card';
 import Loading from '../common/Loading';
 import { voiceAppCommandBus } from '../../services/VoiceAppCommandBus';
-import { setUploadedFiles, setExtractedData } from '../../store/rfqSlice';
+import { setUploadedFiles, setAnalysisData } from '../../store/rfqSlice';
 import api from '../../services/api';
 
 interface UploadDocumentsProps {
@@ -150,8 +150,8 @@ const UploadDocuments: React.FC<UploadDocumentsProps> = ({
 
       dispatch(setUploadedFiles(fileInfo));
 
-      // Store extracted data in Redux
-      dispatch(setExtractedData(extractedData));
+      // Store extracted data in rfqData.analysisData
+      dispatch(setAnalysisData(extractedData));
 
       // HYBRID: Send feedback to voice about extraction
       const componentCount = extractedData.components?.length || 0;

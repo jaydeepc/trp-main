@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
 import { RFQ, LoadingState, ErrorState, DocumentProcessingResult, RFQContextType } from '../types';
-import { setRFQData } from '../store/rfqSlice';
+import { setCurrentStep, setRFQ } from '../store/rfqSlice';
 import apiService from '../services/api';
+import { getRandomSuppliers } from '../data/mockBOMData';
 
 // Action types
 type RFQAction =
@@ -13,6 +14,7 @@ type RFQAction =
   | { type: 'ADD_RFQ'; payload: RFQ }
   | { type: 'UPDATE_RFQ'; payload: RFQ }
   | { type: 'REMOVE_RFQ'; payload: string }
+  | { type: 'SET_CURRENT_STEP'; payload: string }
   | { type: 'CLEAR_ERROR' };
 
 // State interface
@@ -70,6 +72,16 @@ function rfqReducer(state: RFQState, action: RFQAction): RFQState {
         error: { hasError: false },
       };
 
+    case 'SET_CURRENT_STEP':
+      return {
+        ...state,
+        currentRFQ: state.currentRFQ
+          ? { ...state.currentRFQ, workflow: { ...state.currentRFQ.workflow, currentStep: parseInt(action.payload) } }
+          : null,
+        loading: { isLoading: false },
+        error: { hasError: false },
+      };
+
     case 'ADD_RFQ':
       return {
         ...state,
@@ -81,12 +93,12 @@ function rfqReducer(state: RFQState, action: RFQAction): RFQState {
 
     case 'UPDATE_RFQ':
       const updatedRFQs = state.rfqs.map(rfq =>
-        rfq.id === action.payload.id ? action.payload : rfq
+        rfq.rfqId === action.payload.rfqId ? action.payload : rfq
       );
       return {
         ...state,
         rfqs: updatedRFQs,
-        currentRFQ: state.currentRFQ?.id === action.payload.id ? action.payload : state.currentRFQ,
+        currentRFQ: state.currentRFQ?.rfqId === action.payload.rfqId ? action.payload : state.currentRFQ,
         loading: { isLoading: false },
         error: { hasError: false },
       };
@@ -94,8 +106,8 @@ function rfqReducer(state: RFQState, action: RFQAction): RFQState {
     case 'REMOVE_RFQ':
       return {
         ...state,
-        rfqs: state.rfqs.filter(rfq => rfq.id !== action.payload),
-        currentRFQ: state.currentRFQ?.id === action.payload ? null : state.currentRFQ,
+        rfqs: state.rfqs.filter(rfq => rfq.rfqId !== action.payload),
+        currentRFQ: state.currentRFQ?.rfqId === action.payload ? null : state.currentRFQ,
         loading: { isLoading: false },
         error: { hasError: false },
       };
@@ -162,22 +174,56 @@ export function RFQProvider({ children }: RFQProviderProps) {
     try {
       dispatch({ type: 'SET_LOADING', payload: { isLoading: true, message: 'Loading RFQ...' } });
 
-      const rfq = await apiService.getRFQ(id);
-      dispatch({ type: 'SET_CURRENT_RFQ', payload: rfq });
+      const rawRfq = await apiService.getRFQ(id);
+      console.log('🔍 Raw API Response:', rawRfq);
+
+      // Populate mock suppliers if missing
+      const enhancedRfq = {
+        ...rawRfq,
+        boms: rawRfq.boms?.map((bom: any) => ({
+          ...bom,
+          components: bom.components?.map((component: any) => ({
+            ...component,
+            // Add mock suppliers to main component if missing (5-10 suppliers)
+            suppliers: component.suppliers?.length > 0
+              ? component.suppliers
+              : getRandomSuppliers(Math.floor(Math.random() * 6) + 5),
+            // Add mock suppliers to each alternative if missing
+            alternatives: component.alternatives?.map((alt: any) => ({
+              ...alt,
+              suppliers: alt.suppliers?.length > 0
+                ? alt.suppliers
+                : getRandomSuppliers(Math.floor(Math.random() * 3) + 2)
+            }))
+          }))
+        }))
+      };
+
+      console.log('📦 Enhanced RFQ with suppliers:', enhancedRfq.boms?.[0]?.components?.length, 'components');
+
+      // Set current RFQ in context
+      dispatch({ type: 'SET_CURRENT_RFQ', payload: enhancedRfq });
+      dispatch({ type: 'SET_CURRENT_STEP', payload: (enhancedRfq.workflow?.currentStep || 1).toString() });
+
+      // Dump entire RFQ to Redux - let components decide what to show based on workflow step
+      reduxDispatch(setRFQ(enhancedRfq));
+      reduxDispatch(setCurrentStep(enhancedRfq.workflow?.currentStep + 1 || 1));
+
+      console.log('✅ Complete RFQ data with suppliers stored in Redux');
     } catch (error) {
       handleError(error, 'Failed to fetch RFQ');
     }
-  }, [handleError]);
+  }, [handleError, reduxDispatch]);
 
   // Update RFQ
-  const updateRFQ = useCallback(async (id: string, data: Partial<RFQ>) => {
+  const updateRFQ = useCallback(async (rfqId: string, data: Partial<RFQ>) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: { isLoading: true, message: 'Updating RFQ...' } });
 
       // For now, we'll update the local state directly
       // In a real implementation, this would make an API call
       const currentRFQ = state.currentRFQ;
-      if (currentRFQ && currentRFQ.id === id) {
+      if (currentRFQ && currentRFQ.rfqId === rfqId) {
         const updatedRFQ = { ...currentRFQ, ...data };
         dispatch({ type: 'UPDATE_RFQ', payload: updatedRFQ });
       }
@@ -217,16 +263,7 @@ export function RFQProvider({ children }: RFQProviderProps) {
 
       console.log('🔄 API Response received:', result);
 
-      // Dispatch API data to Redux store (backend returns { components, suppliers, insights })
-      if (result.components && result.suppliers) {
-        console.log('📊 Dispatching API data to Redux store...');
-        reduxDispatch(setRFQData({
-          components: result.components,
-          suppliers: result.suppliers,
-          insights: result.insights || []
-        }));
-        console.log('✅ API data dispatched to Redux store');
-      }
+      await fetchRFQ(rfqId);
 
       dispatch({ type: 'SET_LOADING', payload: { isLoading: false } });
 

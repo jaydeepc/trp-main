@@ -1,4 +1,5 @@
 const RFQNew = require('../models/RFQNew');
+const BOM = require('../models/BOM');
 const { v4: uuidv4 } = require('uuid');
 
 class RFQController {
@@ -116,12 +117,22 @@ class RFQController {
       console.log('✅ Found RFQ:', {
         rfqId: rfq.rfqId,
         rfqNumber: rfq.rfqNumber,
-        hasAnalysisData: !!rfq.analysisData
+        hasAnalysisData: !!rfq.analysisData,
+        bomIds: rfq.bomIds?.length || 0
       });
+
+      // Fetch BOM documents for this RFQ
+      const bomDocuments = await BOM.findByRFQ(id);
+      console.log('📊 Found BOM documents:', bomDocuments.length);
+
+      let responseData = {
+        ...rfq.toObject(),
+        boms: bomDocuments
+      };
 
       res.json({
         success: true,
-        data: rfq
+        data: responseData
       });
 
     } catch (error) {

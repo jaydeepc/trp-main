@@ -1,43 +1,19 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { BOMComponent, BOMSupplier, AnalysisData, RFQ } from '../types';
 
-// Component interface
-interface Component {
-    id: string;
-    partName: string;
+// Use actual backend types
+type Component = BOMComponent;
+
+// Define a simplified supplier type for the Redux store (alternatives from backend)
+interface AlternativeComponents {
     partNumber: string;
-    quantity: number;
-    material: string;
-    aiSuggestedAlternative: string;
-    aiSuggestedAlternativeReasoning?: string;
-    complianceStatus: 'compliant' | 'pending' | 'non-compliant';
-    complianceFlags: Array<{
-        type: 'success' | 'warning' | 'error';
-        text: string;
-        icon: string;
-    }>;
-    riskFlag: {
-        level: 'Low' | 'Medium' | 'High';
-        color: 'green' | 'yellow' | 'red';
-    };
-    aiRecommendedRegion: string;
-    predictedMarketRange: string;
-    zbcShouldCost: string;
-    zbcVariance: string;
-    zbcSource: 'AI Generated' | 'Professional Report' | 'Manual Entry';
-    confidence: number;
-    notes?: string;
-}
-
-// Supplier interface
-interface Supplier {
-    id: string;
     name: string;
-    cost: number;
-    trustScore: number;
-    category: 'trusted' | 'empanelled' | 'new';
-    region: string;
-    certifications: string[];
-    riskLevel: 'Low' | 'Medium' | 'High';
+    description: string;
+    specifications: string;
+    costRange: string;
+    keyAdvantages: string[];
+    potentialDrawbacks: string[];
+    suppliers: BOMSupplier[];
 }
 
 export interface CommercialTermsData {
@@ -76,9 +52,9 @@ export interface ExtractedDocumentData {
 }
 
 export interface RFQState {
-    components: Component[];
-    suppliers: Record<string, Supplier[]>;
-    insights: string[];
+    // Store the entire RFQ from backend
+    rfqData: RFQ | null;
+
     currentRFQId?: string;
     currentStep: number;
     commercialTerms: CommercialTermsData;
@@ -87,15 +63,12 @@ export interface RFQState {
         size: number;
         type: string;
     }>;
-    extractedData?: ExtractedDocumentData;
     isLoading: boolean;
     error?: string;
 }
 
 const initialState: RFQState = {
-    components: [],
-    suppliers: {},
-    insights: [],
+    rfqData: null,
     currentStep: 1,
     commercialTerms: {
         desiredLeadTime: '',
@@ -113,33 +86,39 @@ const rfqSlice = createSlice({
     name: 'rfq',
     initialState,
     reducers: {
-        setRFQData: (
-            state,
-            action: PayloadAction<{
-                components: any[];
-                suppliers: Record<string, Supplier[]>;
-                insights: string[];
-            }>
-        ) => {
-            state.components = action.payload.components as Component[];
-            state.suppliers = action.payload.suppliers;
-            state.insights = action.payload.insights;
+        // New action: Just store the entire RFQ from backend
+        setRFQ: (state, action: PayloadAction<RFQ>) => {
+            state.rfqData = action.payload;
+            state.currentStep = action.payload.workflow?.currentStep || 1;
             state.isLoading = false;
-            console.log('📊 Redux: RFQ data updated');
+            console.log('📊 Redux: Full RFQ data stored', {
+                rfqId: action.payload.rfqId,
+                step: action.payload.workflow?.currentStep,
+                boms: action.payload.boms?.length,
+                hasAnalysisData: !!action.payload.analysisData,
+            });
         },
-        updateComponent: (
-            state,
-            action: PayloadAction<{ id: string; updates: Partial<Component> }>
-        ) => {
-            const { id, updates } = action.payload;
-            const componentIndex = state.components.findIndex(
-                (c) => c.id === id
-            );
-            if (componentIndex !== -1) {
-                state.components[componentIndex] = {
-                    ...state.components[componentIndex],
-                    ...updates,
-                };
+        // Add BOM to existing RFQ
+        addBOM: (state, action: PayloadAction<any>) => {
+            if (state.rfqData) {
+                if (!state.rfqData.boms) {
+                    state.rfqData.boms = [];
+                }
+                state.rfqData.boms.push(action.payload);
+                console.log('📊 Redux: BOM added to RFQ', {
+                    bomId: action.payload._id,
+                    components: action.payload.components?.length,
+                });
+            }
+        },
+        // Set analysis data from document extraction (Step 1)
+        setAnalysisData: (state, action: PayloadAction<any>) => {
+            if (state.rfqData) {
+                state.rfqData.analysisData = action.payload;
+                console.log('📊 Redux: Analysis data set', {
+                    components: action.payload.components?.length,
+                    documentTypes: action.payload.documentTypes,
+                });
             }
         },
         setLoading: (state, action: PayloadAction<boolean>) => {
@@ -222,10 +201,7 @@ const rfqSlice = createSlice({
         },
         setSupplierPriority: (state, action: PayloadAction<string>) => {
             state.commercialTerms.supplierPriority = action.payload;
-            console.log(
-                '📊 Redux: Supplier priority set to',
-                action.payload
-            );
+            console.log('📊 Redux: Supplier priority set to', action.payload);
         },
         setUploadedFiles: (
             state,
@@ -244,28 +220,13 @@ const rfqSlice = createSlice({
             state.uploadedFiles = [];
             console.log('📊 Redux: Uploaded files cleared');
         },
-        setExtractedData: (
-            state,
-            action: PayloadAction<ExtractedDocumentData>
-        ) => {
-            state.extractedData = action.payload;
-            console.log(
-                '📊 Redux: Extracted data set -',
-                action.payload.components?.length,
-                'components,',
-                action.payload.documentTypes?.join(', ')
-            );
-        },
-        clearExtractedData: (state) => {
-            state.extractedData = undefined;
-            console.log('📊 Redux: Extracted data cleared');
-        },
     },
 });
 
 export const {
-    setRFQData,
-    updateComponent,
+    setRFQ,
+    addBOM,
+    setAnalysisData,
     setLoading,
     setError,
     clearError,
@@ -282,8 +243,6 @@ export const {
     setSupplierPriority,
     setUploadedFiles,
     clearUploadedFiles,
-    setExtractedData,
-    clearExtractedData,
 } = rfqSlice.actions;
 
 export default rfqSlice.reducer;
