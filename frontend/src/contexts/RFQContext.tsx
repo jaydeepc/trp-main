@@ -207,7 +207,7 @@ export function RFQProvider({ children }: RFQProviderProps) {
 
       // Dump entire RFQ to Redux - let components decide what to show based on workflow step
       reduxDispatch(setRFQ(enhancedRfq));
-      reduxDispatch(setCurrentStep(enhancedRfq.workflow?.currentStep + 1 || 1));
+      reduxDispatch(setCurrentStep(enhancedRfq.workflow?.currentStep || 1));
 
       console.log('✅ Complete RFQ data with suppliers stored in Redux');
     } catch (error) {

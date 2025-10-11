@@ -110,6 +110,15 @@ const extractDocuments = async (req, res) => {
             rfq.createdBy = userId;
           }
 
+          // Update workflow step to 2 after successful document extraction
+          if (!rfq.workflow.completedSteps.includes(1)) {
+            rfq.workflow.completedSteps.push(1);
+            rfq.workflow.currentStep = Math.max(rfq.workflow.currentStep, 2);
+            console.log(`📊 Workflow updated: Step 1 completed, moving to step 2`);
+          }
+
+          rfq.status = 'in-progress';
+
           await rfq.save();
           console.log(`💾 Updated RFQ ${rfq.rfqId} with extracted components`);
         } else {
