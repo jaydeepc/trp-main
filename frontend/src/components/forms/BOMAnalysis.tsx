@@ -20,6 +20,7 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
 }) => {
   const rfqData = useSelector((state: RootState) => state.rfq.rfqData);
   const components = rfqData?.boms?.[0]?.components || [];
+  const { isVoiceInitialized } = useSelector((state: RootState) => state.voice);
 
   const { updateStep, loading } = useRFQ();
   const [currentComponentIndex, setCurrentComponentIndex] = useState(0);
@@ -101,26 +102,35 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
   return (
     <div className="space-y-6">
 
-      {/* Robbie's Suggestion Nudge */}
-      <div className="bg-gradient-to-br from-blue-50 via-primary-50 to-accent-50 border-2 border-primary-200 hover:border-primary-300 transition-all duration-300 rounded-2xl p-6 shadow-md">
-        <div className="flex items-center space-x-4">
-          <div className="relative flex-shrink-0">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <Sparkles className="w-6 h-6 text-white" />
+      {/* Robbie's Suggestion Nudge - Only show if voice is not initialized */}
+      {!isVoiceInitialized && (
+        <div className="bg-gradient-to-br from-blue-50 via-primary-50 to-accent-50 border-2 border-primary-200 hover:border-primary-300 transition-all duration-300 rounded-2xl p-6 shadow-md">
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-shrink-0">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
             </div>
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-surface-900 mb-1">Discuss with Robbie to choose the best option!</h3>
+              <p className="text-sm text-gray-700">I can help compare alternatives, explain trade-offs, and recommend the best option for your needs.</p>
+            </div>
+            <Button
+              onClick={() => {
+                // Trigger voice initialization like the FAB button
+                const fabButton = document.querySelector('[data-robbie-fab]') as HTMLButtonElement;
+                if (fabButton) {
+                  fabButton.click();
+                }
+              }}
+              className="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-6 py-3 font-semibold shadow-md hover:shadow-lg transition-all duration-300 flex-shrink-0"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Yes, let's chat
+            </Button>
           </div>
-          <div className="flex-1">
-            <h3 className="text-base font-bold text-surface-900 mb-1">Discuss with Robbie to choose the best option!</h3>
-            <p className="text-sm text-gray-700">I can help compare alternatives, explain trade-offs, and recommend the best option for your needs.</p>
-          </div>
-          <Button
-            className="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-6 py-3 font-semibold shadow-md hover:shadow-lg transition-all duration-300 flex-shrink-0"
-          >
-            <MessageCircle className="w-4 h-4 mr-2" />
-            Yes, let's chat
-          </Button>
         </div>
-      </div>
+      )}
 
       {/* Component Switcher Section */}
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6">
@@ -383,26 +393,35 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
           </table>
         </div>
       </div>
-      {/* Robbie's Supplier Selection Nudge */}
-      <div className="bg-gradient-to-br from-blue-50 via-primary-50 to-accent-50 border-2 border-primary-200 hover:border-primary-300 transition-all duration-300 rounded-2xl p-6 mb-6 shadow-md">
-        <div className="flex items-center space-x-4">
-          <div className="relative flex-shrink-0">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <Sparkles className="w-6 h-6 text-white" />
+      {/* Robbie's Supplier Selection Nudge - Only show if voice is not initialized */}
+      {!isVoiceInitialized && (
+        <div className="bg-gradient-to-br from-blue-50 via-primary-50 to-accent-50 border-2 border-primary-200 hover:border-primary-300 transition-all duration-300 rounded-2xl p-6 mb-6 shadow-md">
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-shrink-0">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
             </div>
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-surface-900 mb-1">Need help choosing the right supplier?</h3>
+              <p className="text-sm text-gray-700">Let Robbie analyze trust scores, costs, and certifications to recommend the best supplier for {currentComponent.name}.</p>
+            </div>
+            <Button
+              onClick={() => {
+                // Trigger voice initialization like the FAB button
+                const fabButton = document.querySelector('[data-robbie-fab]') as HTMLButtonElement;
+                if (fabButton) {
+                  fabButton.click();
+                }
+              }}
+              className="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-6 py-3 font-semibold shadow-md hover:shadow-lg transition-all duration-300 flex-shrink-0"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Let's choose together
+            </Button>
           </div>
-          <div className="flex-1">
-            <h3 className="text-base font-bold text-surface-900 mb-1">Need help choosing the right supplier?</h3>
-            <p className="text-sm text-gray-700">Let Robbie analyze trust scores, costs, and certifications to recommend the best supplier for {currentComponent.name}.</p>
-          </div>
-          <Button
-            className="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-6 py-3 font-semibold shadow-md hover:shadow-lg transition-all duration-300 flex-shrink-0"
-          >
-            <MessageCircle className="w-4 h-4 mr-2" />
-            Let's choose together
-          </Button>
         </div>
-      </div>
+      )}
 
       {/* Supplier Intelligence Section */}
       {transformedSuppliers.length > 0 && (

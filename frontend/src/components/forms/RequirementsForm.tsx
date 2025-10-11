@@ -7,10 +7,9 @@ import {
   removeComplianceRequirement,
   setAdditionalRequirements,
   setSupplierPriority,
-  addBOM,
-  setRFQ
+  addBOM
 } from '../../store/rfqSlice';
-import { Shield, Calendar, Plus, Info, X, AlertTriangle, Sparkles, Clock, MessageCircle, Target, TrendingUp, DollarSign, Award, Users, HeadphonesIcon, GripVertical } from 'lucide-react';
+import { Shield, Calendar, Plus, Info, X, AlertTriangle, Sparkles, MessageCircle, Target, DollarSign, Award, Users, HeadphonesIcon, GripVertical } from 'lucide-react';
 import Button from '../common/Button';
 import { voiceAppCommandBus } from '../../services/VoiceAppCommandBus';
 import api from '../../services/api';
@@ -26,20 +25,11 @@ interface RequirementsFormProps {
 const RequirementsForm: React.FC<RequirementsFormProps> = ({ rfq, onNext, onBack }) => {
   const dispatch = useDispatch();
   const { commercialTerms } = useSelector((state: RootState) => state.rfq);
-  const { sendText } = useSelector((state: RootState) => state.voice);
+  const { isVoiceInitialized, sendText } = useSelector((state: RootState) => state.voice);
 
   const [localCompliance, setLocalCompliance] = useState<string[]>(commercialTerms.complianceRequirements);
   const [localLeadTime, setLocalLeadTime] = useState(commercialTerms.desiredLeadTime);
   const [localAdditional, setLocalAdditional] = useState(commercialTerms.additionalRequirements);
-  // Icon mapping for priority items (can't serialize React components to Redux)
-  const priorityIcons = {
-    quality: Award,
-    price: DollarSign,
-    reliability: Target,
-    established: Users,
-    support: HeadphonesIcon,
-    warranty: Shield
-  };
 
   const [priorityRanking, setPriorityRanking] = useState<Array<{ id: string, name: string, description: string, iconName: string }>>([
     { id: 'quality', name: 'Quality', description: 'Product quality and reliability', iconName: 'quality' },
@@ -500,36 +490,44 @@ ${JSON.stringify({
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-8">
           <h3 className="text-xl font-bold text-gray-900 mb-4">Define Your Requirements</h3>
 
-          {/* Robbie's Smart Suggestions - Enhanced with Personality */}
-          <div className={`mb-12 transition-all duration-700 delay-700 translate-y-0 opacity-100`}>
-            <div className="relative">
-              <Card className="bg-gradient-to-br from-blue-50 via-primary-50 to-accent-50 border-2 border-primary-200 hover:border-primary-300 transition-all duration-300 p-6 shadow-md hover:shadow-xl">
-                <div className="flex items-center space-x-5">
-                  {/* Robbie Avatar with Personality */}
-                  <div className="relative flex-shrink-0">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Sparkles className="w-6 h-6 text-white" />
+          {/* Robbie's Smart Suggestions - Only show if voice is not initialized */}
+          {!isVoiceInitialized && (
+            <div className={`mb-12 transition-all duration-700 delay-700 translate-y-0 opacity-100`}>
+              <div className="relative">
+                <Card className="bg-gradient-to-br from-blue-50 via-primary-50 to-accent-50 border-2 border-primary-200 hover:border-primary-300 transition-all duration-300 p-6 shadow-md hover:shadow-xl">
+                  <div className="flex items-center space-x-5">
+                    {/* Robbie Avatar with Personality */}
+                    <div className="relative flex-shrink-0">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
+                        <Sparkles className="w-6 h-6 text-white" />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex-1 flex justify-between">
-                    <div className="flex items-center space-x-3">
-                      <h3 className="text-lg font-bold text-surface-900">Discuss your requirements details with Robbie!</h3>
-                    </div>
-                    <div className="flex space-x-4">
-                      <Button
-                        // onClick={onCreateRFQ}
-                        className="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-4 py-2 font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
-                      >
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        Yes, let's do it!
-                      </Button>
+                    <div className="flex-1 flex justify-between">
+                      <div className="flex items-center space-x-3">
+                        <h3 className="text-lg font-bold text-surface-900">Discuss your requirements details with Robbie!</h3>
+                      </div>
+                      <div className="flex space-x-4">
+                        <Button
+                          onClick={() => {
+                            // Trigger voice initialization like the FAB button
+                            const fabButton = document.querySelector('[data-robbie-fab]') as HTMLButtonElement;
+                            if (fabButton) {
+                              fabButton.click();
+                            }
+                          }}
+                          className="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-4 py-2 font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Yes, let's do it!
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Supplier Priority Ranking */}
           <div>
@@ -545,7 +543,6 @@ ${JSON.stringify({
             {/* Drag and Drop Priority Ranking */}
             <div className="space-y-3">
               {priorityRanking.map((priority, index) => {
-                const IconComponent = priorityIcons[priority.iconName as keyof typeof priorityIcons] || Target; // Fallback to Target icon
                 const isDragging = draggedItem === index;
 
                 return (

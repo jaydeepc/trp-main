@@ -13,6 +13,8 @@ import voiceFunctionRegistry from '../../services/voiceFunctionRegistry';
 import voiceActionService from '../../services/voiceActionService';
 import FloatingOverlayManager from './FloatingOverlayManager';
 import DetailWindow from '../voice/DetailWindow';
+import { store } from '../../store';
+import { generateContextMessage } from '../../utils/voiceContextGenerator';
 
 interface VoiceInterfaceSidebarProps {
     autoStart?: boolean;
@@ -202,11 +204,11 @@ Always call the appropriate function based on user requests and current workflow
 
                 dispatch(initializeVoice({ sendText }));
 
-                // Wait for fade in transition then send greeting
+                // Wait for fade in transition then send context-aware greeting
                 setTimeout(() => {
-                    const initialGreeting = "Hello Robbie!";
-                    console.log('Sending initial greeting to Robbie...');
-                    sendText(initialGreeting);
+                    const contextMessage = generateContextMessage(store.getState());
+                    console.log('Sending context to Gemini:', contextMessage.substring(0, 200) + '...');
+                    sendText(contextMessage);
                 }, 300);
             }, 300);
 
