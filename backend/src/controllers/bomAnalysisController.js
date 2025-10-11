@@ -69,10 +69,22 @@ class BOMAnalysisController {
       await bom.save();
 
       // Update RFQ BOM summary
-      await rfq.updateBOMSummary?.() || RFQNew.findOneAndUpdate(
-        { rfqId },
-        { $push: { bomIds: bom._id } }
-      );
+      const rfqUpdate = await RFQNew.findOne({ rfqId });
+      if (rfqUpdate) {
+        if (!rfqUpdate.bomIds.includes(bom._id)) {
+          rfqUpdate.bomIds.push(bom._id);
+        }
+
+        // Update workflow step to 3 after successful beta BOM creation
+        if (type === 'beta' && !rfqUpdate.workflow.completedSteps.includes(2)) {
+          rfqUpdate.workflow.completedSteps.push(2);
+          rfqUpdate.workflow.currentStep = Math.max(rfqUpdate.workflow.currentStep, 3);
+          console.log(`📊 Workflow updated: Step 2 completed, moving to step 3`);
+        }
+
+        await rfqUpdate.save();
+        await rfqUpdate.updateBOMSummary?.();
+      }
 
       const totalAlternatives = processedComponents.reduce((total, comp) => total + (comp.alternatives?.length || 0), 0);
 
@@ -115,7 +127,7 @@ class BOMAnalysisController {
 
     // Wait for all components to be processed
     const results = await Promise.allSettled(componentPromises);
-    
+
     // Process results and handle errors
     const errors = [];
     const successfulComponents = [];
@@ -207,11 +219,11 @@ class BOMAnalysisController {
 
         if (attempt === maxRetries) {
           console.error(`🚨 All ${maxRetries} attempts failed for component ${component.name}`);
-          return { 
-            success: false, 
-            error: error.message, 
-            componentName: component.name, 
-            originalIndex: index 
+          return {
+            success: false,
+            error: error.message,
+            componentName: component.name,
+            originalIndex: index
           };
         }
 

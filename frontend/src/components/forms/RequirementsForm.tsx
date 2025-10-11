@@ -405,331 +405,400 @@ ${JSON.stringify({
   const isValid = localLeadTime;
 
   return (
-    <div className="space-y-8">
-      {/* Document Extraction Results */}
-      {extractedData && extractedData.components && extractedData.components.length > 0 && (
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Extracted Components</h3>
-          <div className="bg-white rounded-2xl overflow-hidden border border-gray-100">
-            <div className="overflow-x-auto">
-              <div className="max-h-96 overflow-y-auto">
-                <table className="w-full border-collapse">
-                  <thead className="sticky top-0 z-10">
-                    <tr className="bg-slate-100">
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 w-16">#</th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[120px]">Part Number</th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[180px]">Component Name</th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[200px]">Description</th>
-                      <th className="px-4 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 w-20">Qty</th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[150px]">Specifications</th>
-                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider min-w-[140px]">ZBC Analysis</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {extractedData.components.map((component, idx) => (
-                      <tr
-                        key={idx}
-                        className="group hover:bg-blue-50/50 transition-all duration-150 border-b border-slate-300"
-                      >
-                        <td className="px-4 py-4 text-sm text-slate-500 font-medium group-hover:text-blue-600 border-r border-slate-300">
-                          {idx + 1}
-                        </td>
-                        <td className="px-4 py-4 border-r border-slate-300">
-                          <span className="text-sm font-mono text-blue-600">
-                            {component.partNumber || <span className="text-gray-400">—</span>}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 border-r border-slate-300">
-                          <span className="text-sm font-semibold text-gray-900">
-                            {component.name || <span className="text-gray-400">—</span>}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 border-r border-slate-300">
-                          <span className="text-sm text-gray-700">
-                            {component.description || <span className="text-gray-400">—</span>}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-center border-r border-slate-300">
-                          <span className="inline-flex items-center justify-center px-3 py-1 rounded-lg bg-slate-100 text-sm font-medium text-gray-900">
-                            {component.quantity || <span className="text-gray-400">—</span>}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 border-r border-slate-300">
-                          <span className="text-xs text-gray-600">
-                            {component.specifications || <span className="text-gray-400">—</span>}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4">
-                          {component.zbc ? (
-                            <div className="space-y-1">
-                              {component.zbc.shouldCost && (
-                                <div className="text-xs font-medium text-green-600">
-                                  {component.zbc.shouldCost.toFixed(2)}
-                                </div>
-                              )}
-                              {component.zbc.variance && (
-                                <div className="text-xs text-gray-600">
-                                  {component.zbc.variance}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400 text-xs">—</span>
-                          )}
-                        </td>
+    <>
+      <div className="space-y-8 relative">
+        {/* Document Extraction Results */}
+        {extractedData && extractedData.components && extractedData.components.length > 0 && (
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Extracted Components</h3>
+            <div className="bg-white rounded-2xl overflow-hidden border border-gray-100">
+              <div className="overflow-x-auto">
+                <div className="max-h-96 overflow-y-auto">
+                  <table className="w-full border-collapse">
+                    <thead className="sticky top-0 z-10">
+                      <tr className="bg-slate-100">
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 w-16">#</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[120px]">Part Number</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[180px]">Component Name</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[200px]">Description</th>
+                        <th className="px-4 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 w-20">Qty</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-300 min-w-[150px]">Specifications</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider min-w-[140px]">ZBC Analysis</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {extractedData.components.map((component, idx) => (
+                        <tr
+                          key={idx}
+                          className="group hover:bg-blue-50/50 transition-all duration-150 border-b border-slate-300"
+                        >
+                          <td className="px-4 py-4 text-sm text-slate-500 font-medium group-hover:text-blue-600 border-r border-slate-300">
+                            {idx + 1}
+                          </td>
+                          <td className="px-4 py-4 border-r border-slate-300">
+                            <span className="text-sm font-mono text-blue-600">
+                              {component.partNumber || <span className="text-gray-400">—</span>}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 border-r border-slate-300">
+                            <span className="text-sm font-semibold text-gray-900">
+                              {component.name || <span className="text-gray-400">—</span>}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 border-r border-slate-300">
+                            <span className="text-sm text-gray-700">
+                              {component.description || <span className="text-gray-400">—</span>}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-center border-r border-slate-300">
+                            <span className="inline-flex items-center justify-center px-3 py-1 rounded-lg bg-slate-100 text-sm font-medium text-gray-900">
+                              {component.quantity || <span className="text-gray-400">—</span>}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 border-r border-slate-300">
+                            <span className="text-xs text-gray-600">
+                              {component.specifications || <span className="text-gray-400">—</span>}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            {component.zbc ? (
+                              <div className="space-y-1">
+                                {component.zbc.shouldCost && (
+                                  <div className="text-xs font-medium text-green-600">
+                                    {component.zbc.shouldCost.toFixed(2)}
+                                  </div>
+                                )}
+                                {component.zbc.variance && (
+                                  <div className="text-xs text-gray-600">
+                                    {component.zbc.variance}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 text-xs">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
 
-            {/* Table Footer */}
-            <div className="px-6 py-3 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-t border-gray-100">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-gray-700">Total: {extractedData.components.length} components</span>
-                <span className="text-gray-500 text-xs">Automatically extracted from your documents</span>
+              {/* Table Footer */}
+              <div className="px-6 py-3 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-t border-gray-100">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-gray-700">Total: {extractedData.components.length} components</span>
+                  <span className="text-gray-500 text-xs">Automatically extracted from your documents</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Requirements Form */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-8">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Define Your Requirements</h3>
+        {/* Requirements Form */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-8">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Define Your Requirements</h3>
 
-        {/* Robbie's Smart Suggestions - Enhanced with Personality */}
-        <div className={`mb-12 transition-all duration-700 delay-700 translate-y-0 opacity-100`}>
-          <div className="relative">
-            <Card className="bg-gradient-to-br from-blue-50 via-primary-50 to-accent-50 border-2 border-primary-200 hover:border-primary-300 transition-all duration-300 p-6 shadow-md hover:shadow-xl">
-              <div className="flex items-center space-x-5">
-                {/* Robbie Avatar with Personality */}
-                <div className="relative flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Sparkles className="w-6 h-6 text-white" />
+          {/* Robbie's Smart Suggestions - Enhanced with Personality */}
+          <div className={`mb-12 transition-all duration-700 delay-700 translate-y-0 opacity-100`}>
+            <div className="relative">
+              <Card className="bg-gradient-to-br from-blue-50 via-primary-50 to-accent-50 border-2 border-primary-200 hover:border-primary-300 transition-all duration-300 p-6 shadow-md hover:shadow-xl">
+                <div className="flex items-center space-x-5">
+                  {/* Robbie Avatar with Personality */}
+                  <div className="relative flex-shrink-0">
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 flex justify-between">
+                    <div className="flex items-center space-x-3">
+                      <h3 className="text-lg font-bold text-surface-900">Discuss your requirements details with Robbie!</h3>
+                    </div>
+                    <div className="flex space-x-4">
+                      <Button
+                        // onClick={onCreateRFQ}
+                        className="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-4 py-2 font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Yes, let's do it!
+                      </Button>
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex-1 flex justify-between">
-                  <div className="flex items-center space-x-3">
-                    <h3 className="text-lg font-bold text-surface-900">Discuss your requirements details with Robbie!</h3>
-                  </div>
-                  <div className="flex space-x-4">
-                    <Button
-                      // onClick={onCreateRFQ}
-                      className="bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white px-4 py-2 font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Yes, let's do it!
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </div>
-        </div>
 
-        {/* Supplier Priority Ranking */}
-        <div>
-          <label className="mt-8 flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
-            <Target className="w-5 h-5 text-accent-teal" />
-            <span>Rank Your Priorities</span>
-          </label>
+          {/* Supplier Priority Ranking */}
+          <div>
+            <label className="mt-8 flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
+              <Target className="w-5 h-5 text-accent-teal" />
+              <span>Rank Your Priorities</span>
+            </label>
 
-          <p className="text-medium-gray mb-6">
-            Drag and drop to rank what matters most when selecting suppliers.
-          </p>
+            <p className="text-medium-gray mb-6">
+              Drag and drop to rank what matters most when selecting suppliers.
+            </p>
 
-          {/* Drag and Drop Priority Ranking */}
-          <div className="space-y-3">
-            {priorityRanking.map((priority, index) => {
-              const IconComponent = priorityIcons[priority.iconName as keyof typeof priorityIcons] || Target; // Fallback to Target icon
-              const isDragging = draggedItem === index;
+            {/* Drag and Drop Priority Ranking */}
+            <div className="space-y-3">
+              {priorityRanking.map((priority, index) => {
+                const IconComponent = priorityIcons[priority.iconName as keyof typeof priorityIcons] || Target; // Fallback to Target icon
+                const isDragging = draggedItem === index;
 
-              return (
-                <div
-                  key={priority.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, index)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, index)}
-                  onDragEnd={handleDragEnd}
-                  className={`
+                return (
+                  <div
+                    key={priority.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`
                     relative flex items-center p-4 bg-white rounded-xl border-2 cursor-move transition-all duration-200
                     ${isDragging
-                      ? 'opacity-50 shadow-2xl border-accent-teal'
-                      : 'hover:shadow-lg border-gray-200 hover:border-gray-300'
-                    }
+                        ? 'opacity-50 shadow-2xl border-accent-teal'
+                        : 'hover:shadow-lg border-gray-200 hover:border-gray-300'
+                      }
                   `}
-                >
-                  {/* Drag Handle */}
-                  <div className="mr-4 text-gray-400 hover:text-gray-600">
-                    <GripVertical className="w-5 h-5" />
-                  </div>
+                  >
+                    {/* Drag Handle */}
+                    <div className="mr-4 text-gray-400 hover:text-gray-600">
+                      <GripVertical className="w-5 h-5" />
+                    </div>
 
-                  {/* Priority Rank Badge */}
-                  <div className={`
+                    {/* Priority Rank Badge */}
+                    <div className={`
                     flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-bold mr-4
                     ${getPriorityColor(index)}
                   `}>
-                    {index + 1}
-                  </div>
+                      {index + 1}
+                    </div>
 
-                  {/* Priority Info */}
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-1">{priority.name}</h4>
-                    <p className="text-sm text-gray-600">{priority.description}</p>
-                  </div>
+                    {/* Priority Info */}
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900 mb-1">{priority.name}</h4>
+                      <p className="text-sm text-gray-600">{priority.description}</p>
+                    </div>
 
-                  {/* Priority Label */}
-                  <div className="text-right">
-                    <span className="text-sm font-medium text-gray-500">
-                      {getPriorityLabel(index)}
-                    </span>
+                    {/* Priority Label */}
+                    <div className="text-right">
+                      <span className="text-sm font-medium text-gray-500">
+                        {getPriorityLabel(index)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
 
-          {/* Priority Summary */}
-          <div className="mt-6 p-4 bg-gradient-to-r from-accent-teal/5 to-blue-50/50 rounded-xl border border-accent-teal/20">
-            <div className="flex items-start space-x-3">
-              <Target className="w-5 h-5 text-accent-teal mt-0.5" />
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Your Priority Ranking</h4>
-                <p className="text-sm text-gray-600 mb-3">
-                  Based on your ranking, suppliers will be evaluated in this order:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {priorityRanking.slice(0, 3).map((priority, index) => (
-                    <span
-                      key={priority.id}
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-300`}
-                    >
-                      {index + 1}. {priority.name}
-                    </span>
-                  ))}
-                  {priorityRanking.length > 3 && (
-                    <span className="text-xs text-gray-500 py-1">
-                      +{priorityRanking.length - 3} more...
-                    </span>
-                  )}
+            {/* Priority Summary */}
+            <div className="mt-6 p-4 bg-gradient-to-r from-accent-teal/5 to-blue-50/50 rounded-xl border border-accent-teal/20">
+              <div className="flex items-start space-x-3">
+                <Target className="w-5 h-5 text-accent-teal mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Your Priority Ranking</h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Based on your ranking, suppliers will be evaluated in this order:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {priorityRanking.slice(0, 3).map((priority, index) => (
+                      <span
+                        key={priority.id}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-300`}
+                      >
+                        {index + 1}. {priority.name}
+                      </span>
+                    ))}
+                    {priorityRanking.length > 3 && (
+                      <span className="text-xs text-gray-500 py-1">
+                        +{priorityRanking.length - 3} more...
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Compliance Requirements */}
-        <div>
-          <label className="mt-6 flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
-            <Shield className="w-5 h-5 text-accent-teal" />
-            <span>Compliance Requirements</span>
-          </label>
+          {/* Compliance Requirements */}
+          <div>
+            <label className="mt-6 flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
+              <Shield className="w-5 h-5 text-accent-teal" />
+              <span>Compliance Requirements</span>
+            </label>
 
-          <p className="text-medium-gray mb-4">
-            Select all applicable certifications and standards required for your components.
-          </p>
+            <p className="text-medium-gray mb-4">
+              Select all applicable certifications and standards required for your components.
+            </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {COMPLIANCE_OPTIONS.map((option) => (
-              <div
-                key={option.value}
-                className={`
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {COMPLIANCE_OPTIONS.map((option) => (
+                <div
+                  key={option.value}
+                  className={`
                     p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 transform hover:scale-[1.02]
                     ${localCompliance.includes(option.value)
-                    ? 'border-accent-teal bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                  }
+                      ? 'border-accent-teal bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                    }
                   `}
-                onClick={() => toggleCompliance(option.value)}
-              >
-                <div className="flex items-start space-x-3">
-                  <div className={`
+                  onClick={() => toggleCompliance(option.value)}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className={`
                       w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5
                       ${localCompliance.includes(option.value)
-                      ? 'border-accent-teal bg-accent-teal'
-                      : 'border-gray-300'
-                    }
+                        ? 'border-accent-teal bg-accent-teal'
+                        : 'border-gray-300'
+                      }
                     `}>
-                    {localCompliance.includes(option.value) && (
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-dark-slate-gray text-sm">{option.label}</h4>
-                    <p className="text-xs text-medium-gray">{option.description}</p>
+                      {localCompliance.includes(option.value) && (
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-dark-slate-gray text-sm">{option.label}</h4>
+                      <p className="text-xs text-medium-gray">{option.description}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Lead Time */}
-        <div>
-          <label className="mt-6 flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
-            <Calendar className="w-5 h-5 text-accent-teal" />
-            <span>Desired Lead Time</span>
-          </label>
+          {/* Lead Time */}
+          <div>
+            <label className="mt-6 flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
+              <Calendar className="w-5 h-5 text-accent-teal" />
+              <span>Desired Lead Time</span>
+            </label>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-            {LEAD_TIME_PRESETS.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                onClick={() => handleLeadTimeChange(preset)}
-                className={`
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+              {LEAD_TIME_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => handleLeadTimeChange(preset)}
+                  className={`
                     p-3 rounded-lg border-2 text-sm font-medium transition-all duration-200
                     ${localLeadTime === preset
-                    ? 'border-accent-teal bg-blue-50 text-primary-blue'
-                    : 'border-gray-200 hover:border-gray-300 text-dark-slate-gray'
-                  }
+                      ? 'border-accent-teal bg-blue-50 text-primary-blue'
+                      : 'border-gray-200 hover:border-gray-300 text-dark-slate-gray'
+                    }
                   `}
-              >
-                {preset}
-              </button>
-            ))}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+
+            <input
+              type="text"
+              value={localLeadTime}
+              onChange={(e) => handleLeadTimeChange(e.target.value)}
+              placeholder="Or enter custom lead time (e.g., '10-12 weeks')"
+              className="input-field"
+            />
+
+            {attemptedSubmit && !localLeadTime && (
+              <p className="text-sm text-red-600 mt-2">
+                Please select or enter a lead time
+              </p>
+            )}
           </div>
 
-          <input
-            type="text"
-            value={localLeadTime}
-            onChange={(e) => handleLeadTimeChange(e.target.value)}
-            placeholder="Or enter custom lead time (e.g., '10-12 weeks')"
-            className="input-field"
-          />
+          {/* Additional Requirements */}
+          <div>
+            <label className="mt-6 flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
+              <Plus className="w-5 h-5 text-accent-teal" />
+              <span>Special Requirements (Optional)</span>
+            </label>
 
-          {attemptedSubmit && !localLeadTime && (
-            <p className="text-sm text-red-600 mt-2">
-              Please select or enter a lead time
-            </p>
-          )}
+            <textarea
+              value={localAdditional}
+              onChange={(e) => handleAdditionalChange(e.target.value)}
+              placeholder="Specify any additional requirements, special handling instructions, or custom specifications..."
+              className="input-field h-24 resize-none"
+            />
+          </div>
         </div>
 
-        {/* Additional Requirements */}
-        <div>
-          <label className="mt-6 flex items-center space-x-2 text-lg font-semibold text-dark-slate-gray mb-4">
-            <Plus className="w-5 h-5 text-accent-teal" />
-            <span>Special Requirements (Optional)</span>
-          </label>
+        {/* Error Message */}
+        {analysisError && (
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-semibold text-red-800 mb-1">Supplier Research Failed</h4>
+                <p className="text-sm text-red-700">{analysisError}</p>
+              </div>
+              <button
+                onClick={() => setAnalysisError(null)}
+                className="text-red-400 hover:text-red-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
 
-          <textarea
-            value={localAdditional}
-            onChange={(e) => handleAdditionalChange(e.target.value)}
-            placeholder="Specify any additional requirements, special handling instructions, or custom specifications..."
-            className="input-field h-24 resize-none"
-          />
+        {/* Conversational Action Buttons */}
+        <div className="flex justify-between items-center">
+          <Button
+            onClick={onBack}
+            variant="ghost"
+            disabled={isAnalyzing}
+            className="text-gray-600 hover:text-gray-800"
+          >
+            ← Previous
+          </Button>
+
+          <Button
+            onClick={handleNext}
+            disabled={!isValid || isAnalyzing}
+            loading={isAnalyzing}
+            className="bg-gradient-to-r from-primary-500 to-accent-600 hover:from-primary-600 hover:to-accent-700 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            {isAnalyzing ? (
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 animate-pulse" />
+                <span>Researching Suppliers...</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span>Analyze Requirements</span>
+              </div>
+            )}
+          </Button>
+        </div>
+
+        {/* Help Text */}
+        <div className="mt-6 p-4 bg-blue-50/80 backdrop-blur-sm rounded-xl border border-blue-200">
+          <div className="flex items-start space-x-3">
+            <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div className="text-sm">
+              <h4 className="font-semibold text-blue-800 mb-1">
+                Requirements Guidelines
+              </h4>
+              <ul className="text-blue-700 space-y-1">
+                <li>• <strong>Compliance:</strong> Select only certifications that are truly necessary for your project</li>
+                <li>• <strong>Lead Time:</strong> Consider manufacturing complexity and supplier capabilities</li>
+                <li>• <strong>Payment Terms:</strong> Balance your cash flow needs with supplier preferences</li>
+                <li>• <strong>Region:</strong> Regional preferences can affect pricing, lead time, and compliance</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Loading Overlay */}
       {isAnalyzing && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 top-0 flex items-center justify-center">
           <div className="bg-white/95 backdrop-blur-md rounded-3xl p-12 max-w-lg mx-4 shadow-2xl border border-white/20">
             <div className="text-center">
               {/* Animated Logo/Icon */}
@@ -780,74 +849,7 @@ ${JSON.stringify({
           </div>
         </div>
       )}
-
-      {/* Error Message */}
-      {analysisError && (
-        <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
-          <div className="flex items-start space-x-3">
-            <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
-            <div className="flex-1">
-              <h4 className="font-semibold text-red-800 mb-1">Supplier Research Failed</h4>
-              <p className="text-sm text-red-700">{analysisError}</p>
-            </div>
-            <button
-              onClick={() => setAnalysisError(null)}
-              className="text-red-400 hover:text-red-600 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Conversational Action Buttons */}
-      <div className="flex justify-between items-center">
-        <Button
-          onClick={onBack}
-          variant="ghost"
-          disabled={isAnalyzing}
-          className="text-gray-600 hover:text-gray-800"
-        >
-          ← Previous
-        </Button>
-
-        <Button
-          onClick={handleNext}
-          disabled={!isValid || isAnalyzing}
-          loading={isAnalyzing}
-          className="bg-gradient-to-r from-primary-500 to-accent-600 hover:from-primary-600 hover:to-accent-700 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          {isAnalyzing ? (
-            <div className="flex items-center space-x-2">
-              <Sparkles className="w-4 h-4 animate-pulse" />
-              <span>Researching Suppliers...</span>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <span>Analyze Requirements</span>
-            </div>
-          )}
-        </Button>
-      </div>
-
-      {/* Help Text */}
-      <div className="mt-6 p-4 bg-blue-50/80 backdrop-blur-sm rounded-xl border border-blue-200">
-        <div className="flex items-start space-x-3">
-          <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-          <div className="text-sm">
-            <h4 className="font-semibold text-blue-800 mb-1">
-              Requirements Guidelines
-            </h4>
-            <ul className="text-blue-700 space-y-1">
-              <li>• <strong>Compliance:</strong> Select only certifications that are truly necessary for your project</li>
-              <li>• <strong>Lead Time:</strong> Consider manufacturing complexity and supplier capabilities</li>
-              <li>• <strong>Payment Terms:</strong> Balance your cash flow needs with supplier preferences</li>
-              <li>• <strong>Region:</strong> Regional preferences can affect pricing, lead time, and compliance</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 };
 
