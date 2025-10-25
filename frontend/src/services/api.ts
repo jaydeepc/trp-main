@@ -28,8 +28,9 @@ class APIService {
                     config.headers.Authorization = `Bearer ${token}`;
                 }
 
-                // Add user ID header for MVP
-                config.headers['x-user-id'] = 'system';
+                // Add MongoDB user ID header
+                const userId = localStorage.getItem('user');
+                config.headers['x-user-id'] = userId;
 
                 return config;
             },

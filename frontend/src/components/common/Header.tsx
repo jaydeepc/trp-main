@@ -38,8 +38,8 @@ const Header: React.FC<HeaderProps> = ({
                             </div>
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-surface-900">Project Robbie</h1>
-                            <p className="text-surface-600 text-sm font-medium">AI-Powered Procurement Intelligence</p>
+                            <h1 className="text-2xl font-bold text-surface-900">The Robbie Project</h1>
+                            <p className="text-surface-600 text-sm font-medium">AI Procurement OS</p>
                         </div>
                     </div>
 

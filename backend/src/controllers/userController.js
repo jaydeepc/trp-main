@@ -46,9 +46,9 @@ class UserController {
   // Get current user profile
   async getCurrentUser(req, res) {
     try {
-      const userId = req.userId; // Firebase UID from auth middleware
+      const userId = req.userId;
 
-      const user = await User.findByFirebaseUid(userId);
+      const user = await User.findById(userId);
 
       if (!user) {
         return res.status(404).json({
@@ -78,7 +78,7 @@ class UserController {
   // Update current user profile
   async updateCurrentUser(req, res) {
     try {
-      const userId = req.userId; // Firebase UID from auth middleware
+      const userId = req.userId;
       const updates = req.body;
 
       // Remove fields that shouldn't be updated directly
@@ -89,7 +89,7 @@ class UserController {
       delete updates.metadata;
       delete updates.status;
 
-      const user = await User.findByFirebaseUid(userId);
+      const user = await User.findById(userId);
 
       if (!user) {
         return res.status(404).json({
@@ -103,7 +103,7 @@ class UserController {
       if (updates.jobTitle !== undefined) user.jobTitle = updates.jobTitle;
       if (updates.department !== undefined) user.department = updates.department;
       if (updates.organizationId !== undefined) user.organizationId = updates.organizationId;
-      
+
       // Update preferences if provided
       if (updates.preferences) {
         user.preferences = {
@@ -133,8 +133,10 @@ class UserController {
   async getUserStats(req, res) {
     try {
       const userId = req.userId;
+      console.log('Fetching stats for user ID:', userId);
+      
 
-      const user = await User.findByFirebaseUid(userId);
+      const user = await User.findById(userId);
 
       if (!user) {
         return res.status(404).json({
@@ -144,12 +146,11 @@ class UserController {
 
       // Get RFQ statistics
       const RFQNew = require('../models/RFQNew');
-      
-      const [totalRFQs, activeRFQs, completedRFQs, draftRFQs] = await Promise.all([
+
+      const [totalRFQs, activeRFQs, completedRFQs] = await Promise.all([
         RFQNew.countDocuments({ createdBy: userId }),
         RFQNew.countDocuments({ createdBy: userId, status: 'in-progress' }),
         RFQNew.countDocuments({ createdBy: userId, status: 'completed' }),
-        RFQNew.countDocuments({ createdBy: userId, status: 'draft' })
       ]);
 
       res.json({
@@ -158,7 +159,6 @@ class UserController {
           totalRFQs,
           activeRFQs,
           completedRFQs,
-          draftRFQs,
           accountAge: Math.floor((Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24)), // days
           lastLoginAt: user.lastLoginAt,
           lastActiveAt: user.lastActiveAt

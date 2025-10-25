@@ -47,8 +47,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         providerData: user.providerData
       };
 
-      await apiService.syncUser(firebaseUser);
-      console.log('✅ User synced with backend');
+      const response = await apiService.syncUser(firebaseUser);
+
+      // Store MongoDB user ID in localStorage
+      if (response && response.id) {
+        localStorage.setItem('user', response.id);
+        console.log('✅ User synced with backend, ID:', response.id);
+      }
     } catch (error) {
       console.error('Failed to sync user with backend:', error);
     }
@@ -73,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    localStorage.removeItem('user');
     await signOut(auth);
   };
 

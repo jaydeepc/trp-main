@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus, TrendingUp, Clock, AlertTriangle,
   BarChart3, Sparkles, Brain,
-  Activity, DollarSign, Users, Award, ArrowUpRight, MessageCircle
+  Activity, DollarSign, Users, Award, ArrowUpRight, MessageCircle, Calendar
 } from 'lucide-react';
 import { useRFQ } from '../contexts/RFQContext';
 import { useAuth } from '../contexts/AuthContext';
+import apiService from '../services/api';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import SupplierTrustGraph from '../components/common/SupplierTrustGraph';
@@ -22,10 +23,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
   const { currentUser } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   const [rfqFilter, setRfqFilter] = useState<'all' | 'draft' | 'sent' | 'in-progress'>('all');
+  const [userStats, setUserStats] = useState<any>(null);
 
   const getUserFirstName = () => {
     console.log(currentUser);
-    
+
     if (currentUser?.displayName) {
       return currentUser.displayName.split(' ')[0];
     }
@@ -37,13 +39,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
 
   useEffect(() => {
     fetchRFQs();
-    setTimeout(() => setIsLoaded(true), 300);
-  }, [fetchRFQs]);
+
+    // Fetch user stats
+    const fetchUserStats = async () => {
+      try {
+        const stats = await apiService.getUserStats();
+        setUserStats(stats);
+        setIsLoaded(true)
+      } catch (error) {
+        console.error('Failed to fetch user stats:', error);
+      }
+    };
+
+    if (currentUser) {
+      fetchUserStats();
+    }
+  }, [fetchRFQs, currentUser]);
 
   const stats = {
-    totalRFQs: rfqs.length,
-    activeRFQs: rfqs.filter(rfq => rfq.status === 'in-progress' || rfq.status === 'draft').length,
-    completedRFQs: rfqs.filter(rfq => rfq.status === 'sent' || rfq.status === 'completed').length,
+    totalRFQs: userStats?.totalRFQs || rfqs.length,
+    activeRFQs: userStats?.activeRFQs || rfqs.filter(rfq => rfq.status === 'in-progress' || rfq.status === 'draft').length,
+    completedRFQs: userStats?.completedRFQs || rfqs.filter(rfq => rfq.status === 'sent' || rfq.status === 'completed').length,
     aiSavings: 23.5,
     avgProcessingTime: 2.3,
     supplierEngagement: 87,
