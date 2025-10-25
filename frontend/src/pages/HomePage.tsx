@@ -181,11 +181,16 @@ const HomePage: React.FC = () => {
       <nav className="bg-white border-b border-surface-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
-                <MessageCircle className="w-6 h-6 text-white" />
+            <div className={`flex items-center space-x-4 transition-all duration-500`}>
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Brain className="w-6 h-6 text-white" />
+                </div>
               </div>
-              <span className="text-2xl font-bold text-surface-900">The Robbie Project</span>
+              <div>
+                <h1 className="text-2xl font-bold text-surface-900">The Robbie Project</h1>
+                <p className="text-surface-600 text-sm font-medium">AI Procurement OS</p>
+              </div>
             </div>
             <div className="flex items-center space-x-6">
               <a href="#features" className="text-surface-600 hover:text-primary-600 font-medium">Features</a>
