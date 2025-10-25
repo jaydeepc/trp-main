@@ -11,6 +11,7 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
+import apiService from '../services/api';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -36,8 +37,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const syncUserWithBackend = async (user: User) => {
+    try {
+      const firebaseUser = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        providerData: user.providerData
+      };
+
+      await apiService.syncUser(firebaseUser);
+      console.log('✅ User synced with backend');
+    } catch (error) {
+      console.error('Failed to sync user with backend:', error);
+    }
+  };
+
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    await syncUserWithBackend(userCredential.user);
   };
 
   const signup = async (email: string, password: string, displayName?: string) => {
@@ -49,6 +68,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       await userCredential.user.reload();
     }
+
+    await syncUserWithBackend(userCredential.user);
   };
 
   const logout = async () => {
@@ -56,7 +77,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
+    const userCredential = await signInWithPopup(auth, googleProvider);
+    await syncUserWithBackend(userCredential.user);
   };
 
   const resetPassword = async (email: string) => {
@@ -64,8 +86,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+
+      if (user) {
+        await syncUserWithBackend(user);
+      }
+
       setLoading(false);
     });
 

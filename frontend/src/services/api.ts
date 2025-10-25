@@ -359,6 +359,47 @@ class APIService {
         return this.handleResponse(response);
     }
 
+    // User endpoints
+    async syncUser(firebaseUser: {
+        uid: string;
+        email: string | null;
+        displayName: string | null;
+        photoURL: string | null;
+        providerData: any[];
+    }): Promise<any> {
+        const response = await this.api.post('/users/sync', { firebaseUser });
+        return this.handleResponse(response);
+    }
+
+    async getCurrentUser(): Promise<any> {
+        const response = await this.api.get('/users/me');
+        return this.handleResponse(response);
+    }
+
+    async updateCurrentUser(updates: {
+        fullName?: string;
+        jobTitle?: string;
+        department?: string;
+        organizationId?: string;
+        preferences?: any;
+    }): Promise<any> {
+        const response = await this.api.put('/users/me', updates);
+        return this.handleResponse(response);
+    }
+
+    async getUserStats(): Promise<{
+        totalRFQs: number;
+        activeRFQs: number;
+        completedRFQs: number;
+        draftRFQs: number;
+        accountAge: number;
+        lastLoginAt: Date;
+        lastActiveAt: Date;
+    }> {
+        const response = await this.api.get('/users/me/stats');
+        return this.handleResponse(response);
+    }
+
     // Health check
     async healthCheck(): Promise<{
         status: string;
