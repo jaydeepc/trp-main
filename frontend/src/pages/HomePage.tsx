@@ -185,7 +185,7 @@ const HomePage: React.FC = () => {
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
                 <MessageCircle className="w-6 h-6 text-white" />
               </div>
-              <span className="text-2xl font-bold text-surface-900">Project Robbie</span>
+              <span className="text-2xl font-bold text-surface-900">The Robbie Project</span>
             </div>
             <div className="flex items-center space-x-6">
               <a href="#features" className="text-surface-600 hover:text-primary-600 font-medium">Features</a>
@@ -704,10 +704,10 @@ const HomePage: React.FC = () => {
                 <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
                   <MessageCircle className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-xl font-bold">Project Robbie</span>
+                <span className="text-xl font-bold">The Robbie Project</span>
               </div>
               <p className="text-surface-400">
-                AI-powered precision procurement for manufacturing leaders.
+                AI Procurement OS
               </p>
             </div>
 
@@ -744,7 +744,7 @@ const HomePage: React.FC = () => {
 
           <div className="border-t border-surface-800 mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
             <p className="text-surface-400">
-              © 2024 Project Robbie. All rights reserved.
+              © 2025 The Robbie Project. All rights reserved.
             </p>
             <div className="flex items-center space-x-6 mt-4 sm:mt-0">
               <div className="flex items-center space-x-2">
