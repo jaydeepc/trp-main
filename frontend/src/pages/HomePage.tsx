@@ -93,24 +93,6 @@ const ScrollReveal: React.FC<{ children: React.ReactNode; delay?: number }> = ({
   );
 };
 
-// Floating Animation Component
-const FloatingElement: React.FC<{ children: React.ReactNode; delay?: number }> = ({
-  children,
-  delay = 0
-}) => {
-  return (
-    <div
-      className="animate-float"
-      style={{
-        animationDelay: `${delay}ms`,
-        animation: `float 6s ease-in-out infinite ${delay}ms`
-      }}
-    >
-      {children}
-    </div>
-  );
-};
-
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [showROICalculator, setShowROICalculator] = useState(false);
@@ -284,87 +266,69 @@ const HomePage: React.FC = () => {
 
             {/* Hero Visual - Interactive Demo Teaser */}
             <div className="relative">
-              {/* Floating background elements */}
-              <div className="absolute -top-10 -left-10 w-20 h-20 bg-gradient-to-br from-primary-300 to-accent-300 rounded-full opacity-20"></div>
-              <div className="absolute -bottom-10 -right-10 w-16 h-16 bg-gradient-to-br from-accent-300 to-primary-300 rounded-full opacity-20"></div>
+              <Card className="p-8 shadow-2xl border-2 border-primary-100 relative overflow-hidden">
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-50/50 to-accent-50/50 pointer-events-none"></div>
 
-              <FloatingElement delay={0}>
-                <Card className="p-8 shadow-2xl border-2 border-primary-100 animate-pulse-glow relative overflow-hidden">
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-50/50 to-accent-50/50 pointer-events-none"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
+                      <MessageCircle className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-surface-900">Robbie</h3>
+                      <p className="text-sm text-surface-600">AI Procurement Assistant</p>
+                    </div>
+                  </div>
 
-                  <div className="relative z-10">
-                    <div className="flex items-center space-x-3 mb-6">
-                      <FloatingElement delay={500}>
-                        <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center animate-gradient">
-                          <MessageCircle className="w-7 h-7 text-white" />
-                        </div>
-                      </FloatingElement>
-                      <div>
-                        <h3 className="font-bold text-surface-900">Robbie</h3>
-                        <p className="text-sm text-surface-600">AI Procurement Assistant</p>
+                  <ScrollReveal delay={200}>
+                    <div className="bg-surface-50 rounded-xl p-4 mb-4 hover:shadow-md transition-shadow cursor-pointer">
+                      <div className="text-sm text-surface-600 mb-2 flex items-center">
+                        <Users className="w-4 h-4 mr-2" />
+                        You say:
                       </div>
-                      {/* Live indicator */}
-                      <div className="flex items-center space-x-1 ml-auto">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs text-green-600 font-medium">Live</span>
+                      <div className="bg-white p-3 rounded-lg shadow-sm border-l-4 border-primary-500">
+                        {isTyping ? (
+                          <span className="text-surface-900">
+                            "Analyze this BOM and find the best suppliers for automotive parts"
+                          </span>
+                        ) : (
+                          "Click to interact..."
+                        )}
                       </div>
                     </div>
+                  </ScrollReveal>
 
-                    <ScrollReveal delay={200}>
-                      <div className="bg-surface-50 rounded-xl p-4 mb-4 transform hover:scale-105 transition-transform cursor-pointer">
-                        <div className="text-sm text-surface-600 mb-2 flex items-center">
-                          <Users className="w-4 h-4 mr-2" />
-                          You say:
-                        </div>
-                        <div className="bg-white p-3 rounded-lg shadow-sm border-l-4 border-primary-500">
-                          {isTyping ? (
-                            <span className="text-surface-900">
-                              "Analyze this BOM and find the best suppliers for automotive parts"
-                              <span className="animate-pulse">|</span>
-                            </span>
-                          ) : (
-                            "Click to interact..."
-                          )}
+                  <ScrollReveal delay={400}>
+                    <div className="bg-primary-50 rounded-xl p-4 mb-4 hover:shadow-md transition-shadow">
+                      <div className="text-sm text-surface-600 mb-2 flex items-center">
+                        <Brain className="w-4 h-4 mr-2 text-primary-600" />
+                        Robbie responds:
+                      </div>
+                      <div className="bg-white p-3 rounded-lg shadow-sm border-l-4 border-accent-500">
+                        "I've analyzed <span className='font-bold text-primary-600'>47 components</span>. Found <span className='font-bold text-accent-600'>12 trusted suppliers</span> with <span className='font-bold text-emerald-600'>18% cost savings</span> potential. Would you like to see the breakdown?"
+                      </div>
+                      {/* Mini metrics */}
+                      <div className="flex space-x-4 mt-3 text-xs">
+                        <div className="flex items-center space-x-1">
+                          <TrendingUp className="w-3 h-3 text-accent-600" />
+                          <span className="text-surface-600">$47K potential savings</span>
                         </div>
                       </div>
-                    </ScrollReveal>
+                    </div>
+                  </ScrollReveal>
 
-                    <ScrollReveal delay={400}>
-                      <div className="bg-primary-50 rounded-xl p-4 mb-4 transform hover:scale-105 transition-transform">
-                        <div className="text-sm text-surface-600 mb-2 flex items-center">
-                          <Brain className="w-4 h-4 mr-2 text-primary-600" />
-                          Robbie responds:
-                        </div>
-                        <div className="bg-white p-3 rounded-lg shadow-sm border-l-4 border-accent-500">
-                          "I've analyzed <span className='font-bold text-primary-600'>47 components</span>. Found <span className='font-bold text-accent-600'>12 trusted suppliers</span> with <span className='font-bold text-emerald-600'>18% cost savings</span> potential. Would you like to see the breakdown?"
-                        </div>
-                        {/* Mini metrics */}
-                        <div className="flex space-x-4 mt-3 text-xs">
-                          <div className="flex items-center space-x-1">
-                            <Clock className="w-3 h-3 text-primary-600" />
-                            <span className="text-surface-600">2.3s analysis</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <TrendingUp className="w-3 h-3 text-accent-600" />
-                            <span className="text-surface-600">$47K potential savings</span>
-                          </div>
-                        </div>
-                      </div>
-                    </ScrollReveal>
-
-                    <ScrollReveal delay={600}>
-                      <Button
-                        onClick={handleDemoClick}
-                        className="w-full bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white font-semibold py-3 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
-                        icon={<ArrowRight className="w-4 h-4 ml-2" />}
-                      >
-                        Try This Demo
-                      </Button>
-                    </ScrollReveal>
-                  </div>
-                </Card>
-              </FloatingElement>
+                  <ScrollReveal delay={600}>
+                    <Button
+                      onClick={handleDemoClick}
+                      className="w-full bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white font-semibold py-3 hover:shadow-xl transition-all duration-300"
+                      icon={<ArrowRight className="w-4 h-4 ml-2" />}
+                    >
+                      Try This Demo
+                    </Button>
+                  </ScrollReveal>
+                </div>
+              </Card>
             </div>
           </div>
 
@@ -413,7 +377,7 @@ const HomePage: React.FC = () => {
       <section id="features" className="py-20 bg-surface-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-surface-900 mb-6">Manufacturing Procurement is Broken</h2>
+            <h2 className="text-4xl font-bold text-surface-900 mb-6">Precision Procurement is Broken</h2>
             <p className="text-xl text-surface-600 max-w-3xl mx-auto">
               Traditional procurement processes cost manufacturers millions in inefficiencies, delays, and missed opportunities.
             </p>
@@ -554,30 +518,24 @@ const HomePage: React.FC = () => {
 
           {/* Stats with Animated Counters */}
           <ScrollReveal>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
               <div>
                 <div className="text-primary-600">
                   <AnimatedCounter target={500} suffix="+" />
                 </div>
-                <div className="text-surface-600">Manufacturing Companies</div>
+                <div className="text-surface-600 font-medium">Manufacturing Companies</div>
               </div>
               <div>
                 <div className="text-accent-600">
                   <AnimatedCounter target={50} prefix="$" suffix="M+" />
                 </div>
-                <div className="text-surface-600">Total Savings Generated</div>
+                <div className="text-surface-600 font-medium">Total Savings Generated</div>
               </div>
               <div>
                 <div className="text-emerald-600">
                   <AnimatedCounter target={85} suffix="%" />
                 </div>
-                <div className="text-surface-600">Faster Processing</div>
-              </div>
-              <div>
-                <div className="text-orange-600">
-                  <AnimatedCounter target={99.9} suffix="%" />
-                </div>
-                <div className="text-surface-600">Uptime SLA</div>
+                <div className="text-surface-600 font-medium">Faster Processing</div>
               </div>
             </div>
           </ScrollReveal>
@@ -681,21 +639,20 @@ const HomePage: React.FC = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
+            <button
               onClick={handleDemoClick}
-              className="bg-white text-primary-600 hover:bg-surface-50 px-8 py-4 text-lg font-semibold"
-              icon={<Play className="w-5 h-5 mr-2" />}
+              className="inline-flex items-center justify-center bg-white text-primary-600 hover:bg-surface-50 px-8 py-4 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
             >
+              <Play className="w-5 h-5 mr-2" />
               Start Free Demo
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={() => setShowROICalculator(true)}
-              variant="secondary"
-              className="bg-primary-700 hover:bg-primary-800 text-white border-2 border-primary-400 px-8 py-4 text-lg font-semibold"
-              icon={<Calculator className="w-5 h-5 mr-2" />}
+              className="inline-flex items-center justify-center bg-white/20 hover:bg-white/30 text-white border-2 border-white/50 px-8 py-4 text-lg font-semibold rounded-xl backdrop-blur-sm transition-all duration-300"
             >
+              <Calculator className="w-5 h-5 mr-2" />
               Calculate Your ROI
-            </Button>
+            </button>
           </div>
         </div>
       </section>
@@ -704,16 +661,16 @@ const HomePage: React.FC = () => {
       <footer className="bg-surface-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
-                  <MessageCircle className="w-6 h-6 text-white" />
+            <div className={`flex items-center space-x-4 transition-all duration-500`}>
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Brain className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-xl font-bold">The Robbie Project</span>
               </div>
-              <p className="text-surface-400">
-                AI Procurement OS
-              </p>
+              <div>
+                <h1 className="text-2xl font-bold text-white">The Robbie Project</h1>
+                <p className="text-surface-600 text-sm font-medium">AI Procurement OS</p>
+              </div>
             </div>
 
             <div>
