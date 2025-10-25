@@ -4,6 +4,7 @@ import { store } from './store';
 import { LiveAPIProvider } from "./contexts/LiveAPIContext";
 import { RFQProvider, useRFQ } from "./contexts/RFQContext";
 import Layout from "./layout/Layout";
+import HomePage from "./pages/HomePage";
 import Dashboard from "./pages/Dashboard";
 import RFQWizard from "./pages/RFQWizard";
 import { useEffect } from "react";
@@ -34,43 +35,6 @@ const RFQWizardWrapper: React.FC<RFQWizardWrapperProps> = ({ onBackToDashboard }
   );
 };
 
-// Main App Routes Component (inside Router context)
-interface AppRoutesProps {
-  handleCreateRFQ: () => Promise<void>;
-}
-
-const AppRoutes: React.FC<AppRoutesProps> = ({ handleCreateRFQ }) => {
-  const navigate = useNavigate();
-
-  const handleViewRFQ = (rfqId: string) => {
-    console.log('Viewing existing RFQ:', rfqId);
-    navigate(`/rfq?rfqId=${rfqId}`);
-  };
-
-  const handleBackToDashboard = () => {
-    navigate('/');
-  };
-
-  return (
-    <Routes>
-      {/* Dashboard Route */}
-      <Route
-        path="/"
-        element={
-          <Dashboard onCreateRFQ={handleCreateRFQ} onViewRFQ={handleViewRFQ} />
-        }
-      />
-
-      {/* RFQ Routes */}
-      <Route
-        path="/rfq-wizard/:rfqId"
-        element={<RFQWizardWrapper onBackToDashboard={handleBackToDashboard} />}
-      />
-
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  );
-};
 
 function App() {
   return (
@@ -109,6 +73,15 @@ const AppContent: React.FC = () => {
     navigate(`/rfq-wizard/${newRFQ.rfqId}`);
   };
 
+  const handleViewRFQ = (rfqId: string) => {
+    console.log('Viewing existing RFQ:', rfqId);
+    navigate(`/rfq?rfqId=${rfqId}`);
+  };
+
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
+  };
+
   // Register app commands with voice command bus
   useEffect(() => {
     // Register createRFQ command
@@ -140,7 +113,7 @@ const AppContent: React.FC = () => {
     // Register navigation commands
     voiceAppCommandBus.registerAppCommand('navigateTo', async ({ destination }) => {
       const routeMap: Record<string, string> = {
-        'dashboard': '/',
+        'dashboard': '/dashboard',
         'create-rfq': '/create-rfq',
         'home': '/'
       };
@@ -164,9 +137,25 @@ const AppContent: React.FC = () => {
   }, [navigate, createRFQ]);
 
   return (
-    <Layout handleNavigateToDashboard={handleCreateRFQ}>
-      <AppRoutes handleCreateRFQ={handleCreateRFQ} />
-    </Layout>
+    <Routes>
+      {/* Marketing HomePage - no Layout wrapper */}
+      <Route path="/" element={<HomePage />} />
+
+      {/* App routes with Layout wrapper */}
+      <Route path="/dashboard" element={
+        <Layout handleNavigateToDashboard={handleCreateRFQ}>
+          <Dashboard onCreateRFQ={handleCreateRFQ} onViewRFQ={handleViewRFQ} />
+        </Layout>
+      } />
+
+      <Route path="/rfq-wizard/:rfqId" element={
+        <Layout handleNavigateToDashboard={handleCreateRFQ}>
+          <RFQWizardWrapper onBackToDashboard={handleBackToDashboard} />
+        </Layout>
+      } />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 };
 
