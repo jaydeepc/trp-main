@@ -3,10 +3,13 @@ import { Provider as ReduxProvider } from 'react-redux';
 import { store } from './store';
 import { LiveAPIProvider } from "./contexts/LiveAPIContext";
 import { RFQProvider, useRFQ } from "./contexts/RFQContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import Layout from "./layout/Layout";
 import HomePage from "./pages/HomePage";
 import Dashboard from "./pages/Dashboard";
 import RFQWizard from "./pages/RFQWizard";
+import Login from "./pages/Login";
+import PrivateRoute from "./components/common/PrivateRoute";
 import { useEffect } from "react";
 import voiceAppCommandBus from "./services/VoiceAppCommandBus";
 import './App.css';
@@ -49,13 +52,15 @@ function App() {
       }}
     >
       <ReduxProvider store={store}>
-        <LiveAPIProvider url={uri} apiKey={API_KEY}>
-          <RFQProvider>
-            <Router>
-              <AppContent />
-            </Router>
-          </RFQProvider>
-        </LiveAPIProvider>
+        <AuthProvider>
+          <LiveAPIProvider url={uri} apiKey={API_KEY}>
+            <RFQProvider>
+              <Router>
+                <AppContent />
+              </Router>
+            </RFQProvider>
+          </LiveAPIProvider>
+        </AuthProvider>
       </ReduxProvider>
     </div>
   );
@@ -141,17 +146,24 @@ const AppContent: React.FC = () => {
       {/* Marketing HomePage - no Layout wrapper */}
       <Route path="/" element={<HomePage />} />
 
-      {/* App routes with Layout wrapper */}
+      {/* Login Page */}
+      <Route path="/login" element={<Login />} />
+
+      {/* App routes with Layout wrapper - Protected */}
       <Route path="/dashboard" element={
-        <Layout handleNavigateToDashboard={handleCreateRFQ}>
-          <Dashboard onCreateRFQ={handleCreateRFQ} onViewRFQ={handleViewRFQ} />
-        </Layout>
+        <PrivateRoute>
+          <Layout handleNavigateToDashboard={handleCreateRFQ}>
+            <Dashboard onCreateRFQ={handleCreateRFQ} onViewRFQ={handleViewRFQ} />
+          </Layout>
+        </PrivateRoute>
       } />
 
       <Route path="/rfq-wizard/:rfqId" element={
-        <Layout handleNavigateToDashboard={handleCreateRFQ}>
-          <RFQWizardWrapper onBackToDashboard={handleBackToDashboard} />
-        </Layout>
+        <PrivateRoute>
+          <Layout handleNavigateToDashboard={handleCreateRFQ}>
+            <RFQWizardWrapper onBackToDashboard={handleBackToDashboard} />
+          </Layout>
+        </PrivateRoute>
       } />
 
       <Route path="*" element={<Navigate to="/" replace />} />

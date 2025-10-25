@@ -5,6 +5,7 @@ import {
   Activity, DollarSign, Users, Award, ArrowUpRight, MessageCircle
 } from 'lucide-react';
 import { useRFQ } from '../contexts/RFQContext';
+import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import SupplierTrustGraph from '../components/common/SupplierTrustGraph';
@@ -18,8 +19,21 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
   const { rfqs, fetchRFQs } = useRFQ();
+  const { currentUser } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   const [rfqFilter, setRfqFilter] = useState<'all' | 'draft' | 'sent' | 'in-progress'>('all');
+
+  const getUserFirstName = () => {
+    console.log(currentUser);
+    
+    if (currentUser?.displayName) {
+      return currentUser.displayName.split(' ')[0];
+    }
+    if (currentUser?.email) {
+      return currentUser.email.split('@')[0];
+    }
+    return 'there';
+  };
 
   useEffect(() => {
     fetchRFQs();
@@ -111,7 +125,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onCreateRFQ, onViewRFQ }) => {
         <div className={`mb-16 mt-10 transition-all duration-700 delay-300 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
           <div className="text-center">
             <h1 className="text-5xl font-bold text-surface-900 mb-4 tracking-tight">
-              Hey Jaydeep 👋
+              Hey {getUserFirstName()} 👋
             </h1>
             <p className="text-xl font-medium text-surface-600 mb-10 max-w-3xl mx-auto leading-relaxed">
               Let's make your next procurement smarter, faster, easier.

@@ -1,6 +1,8 @@
-import React from 'react';
-import {Plus, Brain, Search, Bell, Settings} from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Brain, Search, Bell, Settings, LogOut, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Button from './Button';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface HeaderProps {
     onCreateRFQ?: () => void;
@@ -11,6 +13,19 @@ const Header: React.FC<HeaderProps> = ({
     onCreateRFQ,
     isLoaded = true
 }) => {
+    const { currentUser, logout } = useAuth();
+    const navigate = useNavigate();
+    const [showUserMenu, setShowUserMenu] = useState(false);
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (error) {
+            console.error('Failed to logout:', error);
+        }
+    };
+
     return (
         <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-surface-200/50 shadow-sm">
             <div className="max-w-7xl mx-auto px-6 py-4">
@@ -50,6 +65,38 @@ const Header: React.FC<HeaderProps> = ({
                         >
                             Create RFQ
                         </Button>
+
+                        {/* User Menu */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowUserMenu(!showUserMenu)}
+                                className="flex items-center space-x-2 p-2 hover:bg-surface-100 rounded-xl transition-colors"
+                            >
+                                <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-accent-500 rounded-full flex items-center justify-center">
+                                    <User className="w-4 h-4 text-white" />
+                                </div>
+                            </button>
+
+                            {showUserMenu && (
+                                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-surface-200 py-2 z-50">
+                                    <div className="px-4 py-3 border-b border-surface-200">
+                                        <p className="text-sm font-semibold text-surface-900">
+                                            {currentUser?.displayName || 'User'}
+                                        </p>
+                                        <p className="text-xs text-surface-600 truncate">
+                                            {currentUser?.email}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-surface-700 hover:bg-surface-50 transition-colors"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        <span>Sign Out</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
