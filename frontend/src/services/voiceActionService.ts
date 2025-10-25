@@ -58,6 +58,10 @@ class VoiceActionService {
                 'showSystemInfo',
                 params
             );
+        } else if (functionName === 'navigate_to') {
+            return await voiceAppCommandBus.executeAppCommand('navigateTo', {
+                destination: params.destination
+            });
         } else {
             console.warn(`Unknown voice command: ${functionName}`);
             return {
