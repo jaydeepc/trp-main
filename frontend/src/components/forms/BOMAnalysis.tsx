@@ -547,6 +547,131 @@ const Step2SmartBOMReview: React.FC<Step2SmartBOMReviewProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Detailed Supplier Table */}
+            <div className="mt-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Supplier Details</h4>
+              <div className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Supplier
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Region
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Trust Score
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Cost (USD)
+                      </th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Risk Level
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Lead Time
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Product Links
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {transformedSuppliers.map((supplier, index) => (
+                      <tr key={supplier.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-gray-900">{supplier.name}</div>
+                          {supplier.certifications && supplier.certifications.length > 0 && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {supplier.certifications.slice(0, 2).join(', ')}
+                              {supplier.certifications.length > 2 && ` +${supplier.certifications.length - 2} more`}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {supplier.region}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <span className="text-sm font-medium text-gray-900">
+                              {supplier.trustScore}/10
+                            </span>
+                            <div className="w-16 bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full ${
+                                  supplier.trustScore >= 9 ? 'bg-green-500' :
+                                  supplier.trustScore >= 7 ? 'bg-yellow-500' : 'bg-red-500'
+                                }`}
+                                style={{ width: `${(supplier.trustScore / 10) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-sm font-medium text-gray-900">
+                            ${supplier.cost.toLocaleString()}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            supplier.category === 'trusted' ? 'bg-green-100 text-green-800' :
+                            supplier.category === 'empanelled' ? 'bg-blue-100 text-blue-800' :
+                            'bg-orange-100 text-orange-800'
+                          }`}>
+                            {supplier.category === 'trusted' ? 'Trusted' :
+                             supplier.category === 'empanelled' ? 'Empanelled' : 'New'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            supplier.riskLevel === 'Low' ? 'bg-green-100 text-green-800' :
+                            supplier.riskLevel === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {supplier.riskLevel}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {supplier.leadTime || 'Not specified'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col space-y-1">
+                            {supplier.supplierURL ? (
+                              <a
+                                href={supplier.supplierURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-xs underline"
+                              >
+                                Supplier Website
+                              </a>
+                            ) : null}
+                            {supplier.productPageURL ? (
+                              <a
+                                href={supplier.productPageURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-xs underline"
+                              >
+                                Product Page
+                              </a>
+                            ) : null}
+                            {!supplier.supplierURL && !supplier.productPageURL && (
+                              <span className="text-gray-400 text-xs">N/A</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </>
         ) : (
           <div className="text-center py-12">
