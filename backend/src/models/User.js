@@ -34,6 +34,11 @@ const UserSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Organization'
   },
+  role: {
+    type: String,
+    enum: ['admin', 'member'],
+    default: 'member'
+  },
 
   // User Preferences
   preferences: {

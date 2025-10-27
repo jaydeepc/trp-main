@@ -361,6 +361,17 @@ class APIService {
     }
 
     // User endpoints
+    async checkUserStatus(email: string): Promise<{
+        status: 'invited' | 'registered' | 'not-found';
+        email: string;
+        organizationName?: string;
+        organizationId?: string;
+        role?: string;
+    }> {
+        const response = await this.api.post('/users/check-status', { email });
+        return this.handleResponse(response);
+    }
+
     async syncUser(firebaseUser: {
         uid: string;
         email: string | null;

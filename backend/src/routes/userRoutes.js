@@ -3,7 +3,8 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { authMiddleware } = require('../middleware/auth');
 
-// Public route - sync user from Firebase (no auth required for initial sync)
+// Public routes - no auth required
+router.post('/check-status', userController.checkUserStatus);
 router.post('/sync', userController.syncUser);
 
 // Protected routes - require authentication

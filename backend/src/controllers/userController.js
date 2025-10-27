@@ -1,6 +1,68 @@
 const User = require('../models/User');
+const InvitedUser = require('../models/InvitedUser');
+const Organization = require('../models/Organization');
 
 class UserController {
+  // Check user status (invited, registered, or not found)
+  async checkUserStatus(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          error: 'Invalid request',
+          message: 'Email is required'
+        });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Check if user is already registered
+      const existingUser = await User.findByEmail(normalizedEmail);
+      if (existingUser) {
+        return res.json({
+          success: true,
+          status: 'registered',
+          data: {
+            email: normalizedEmail
+          }
+        });
+      }
+
+      // Check if user is invited
+      const invite = await InvitedUser.findByEmail(normalizedEmail);
+
+      if (invite && invite.organizationId) {
+        return res.json({
+          success: true,
+          data: {
+            status: 'invited',
+            email: normalizedEmail,
+            organizationName: invite.organizationId.name,
+            organizationId: invite.organizationId._id,
+            role: invite.role
+          }
+        });
+      }
+
+      // User not found
+      return res.json({
+        success: true,
+        status: 'not-found',
+        data: {
+          email: normalizedEmail
+        }
+      });
+
+    } catch (error) {
+      console.error('Error checking user status:', error);
+      res.status(500).json({
+        error: 'Failed to check user status',
+        message: error.message
+      });
+    }
+  }
+
   // Sync user from Firebase (create or update)
   async syncUser(req, res) {
     try {
@@ -13,17 +75,45 @@ class UserController {
         });
       }
 
+      const normalizedEmail = firebaseUser.email.toLowerCase().trim();
+
+      // Check if user was invited
+      const invite = await InvitedUser.findByEmail(normalizedEmail);
+
       // Find or create user
       let user = await User.findByFirebaseUid(firebaseUser.uid);
 
       if (!user) {
-        // Create new user
-        user = await User.createFromFirebase(firebaseUser);
-        console.log('✅ New user created:', user.email);
+        // Check if user is invited before allowing creation
+        if (!invite) {
+          return res.status(403).json({
+            error: 'Access denied',
+            message: 'You need an invitation to access this application'
+          });
+        }
+
+        // Create new user with organization info from invite
+        user = new User({
+          firebaseUid: firebaseUser.uid,
+          email: normalizedEmail,
+          fullName: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+          organizationId: invite.organizationId,
+          role: invite.role,
+          metadata: {
+            signupSource: firebaseUser.providerData?.[0]?.providerId === 'google.com' ? 'google' : 'email'
+          }
+        });
+
+        await user.save();
+
+        // Mark invite as accepted
+        await invite.markAsAccepted();
+
+        console.log('✅ New user created from invite:', user.email);
       } else {
         // Update existing user
         user.fullName = firebaseUser.displayName || user.fullName;
-        user.email = firebaseUser.email;
+        user.email = normalizedEmail;
         await user.updateLastLogin();
         console.log('✅ User updated:', user.email);
       }
@@ -134,7 +224,7 @@ class UserController {
     try {
       const userId = req.userId;
       console.log('Fetching stats for user ID:', userId);
-      
+
 
       const user = await User.findById(userId);
 
