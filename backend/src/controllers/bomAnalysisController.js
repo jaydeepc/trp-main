@@ -388,9 +388,22 @@ class BOMAnalysisController {
           throw error;
         }
 
-        // Exponential backoff: wait 2^attempt seconds
-        const delay = Math.pow(2, attempt) * 1000;
-        console.log(`⏳ Waiting ${delay}ms before supplier research retry...`);
+        // Determine delay based on error type
+        let delay;
+        if (error.message.includes('timed out')) {
+          // Longer delay for timeout errors
+          delay = Math.pow(2, attempt) * 2000; // 4s, 8s, 16s
+          console.log(`⏳ Timeout detected. Waiting ${delay}ms before supplier research retry...`);
+        } else if (error.message.includes('Rate limit')) {
+          // Even longer delay for rate limit errors
+          delay = Math.pow(2, attempt) * 5000; // 10s, 20s, 40s
+          console.log(`⏳ Rate limit detected. Waiting ${delay}ms before supplier research retry...`);
+        } else {
+          // Standard exponential backoff for other errors
+          delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+          console.log(`⏳ Waiting ${delay}ms before supplier research retry...`);
+        }
+        
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }

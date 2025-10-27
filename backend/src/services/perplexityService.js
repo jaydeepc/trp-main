@@ -3,10 +3,23 @@ const Perplexity = require('@perplexity-ai/perplexity_ai');
 class PerplexityService {
   constructor() {
     this.client = new Perplexity({
-      apiKey: process.env.PERPLEXITY_API_KEY
+      apiKey: process.env.PERPLEXITY_API_KEY,
+      timeout: 120000, // 2 minutes timeout
+      maxRetries: 2,
+      httpAgent: {
+        timeout: 120000,
+        keepAlive: true
+      }
     });
     this.reasoningModel = 'sonar-reasoning-pro';
     this.deepResearchModel = 'sonar-deep-research';
+    
+    // Timeout configurations for different task types (configurable via environment variables)
+    this.timeoutConfig = {
+      'component-alternatives': parseInt(process.env.PERPLEXITY_ALTERNATIVES_TIMEOUT) || 60000, // 1 minute
+      'supplier-search': parseInt(process.env.PERPLEXITY_SUPPLIER_TIMEOUT) || 120000, // 2 minutes (longer for complex research)
+      'default': parseInt(process.env.PERPLEXITY_DEFAULT_TIMEOUT) || 60000
+    };
   }
 
   // Helper function to parse JSON from Perplexity response (ignore thinking content)
@@ -54,13 +67,27 @@ class PerplexityService {
     return models[taskType];
   }
 
+  // Timeout wrapper function
+  async withTimeout(promise, timeoutMs, taskType) {
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`${taskType} request timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
+    return Promise.race([promise, timeoutPromise]);
+  }
+
   async generateContent(messages, taskType, options = {}) {
+    const startTime = Date.now();
+    const timeout = this.timeoutConfig[taskType] || this.timeoutConfig.default;
+    
     try {
       const model = this.getModelForTask(taskType);
 
-      console.log(`🤖 Perplexity ${taskType} request with model: ${model}`);
+      console.log(`🤖 Perplexity ${taskType} request with model: ${model} (timeout: ${timeout}ms)`);
 
-      const completion = await this.client.chat.completions.create({
+      const apiCall = this.client.chat.completions.create({
         messages,
         model,
         temperature: options.temperature || 0.3,
@@ -68,9 +95,28 @@ class PerplexityService {
         ...options
       });
 
+      // Wrap the API call with timeout
+      const completion = await this.withTimeout(apiCall, timeout, taskType);
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ Perplexity ${taskType} completed in ${duration}ms`);
+
       return completion.choices[0].message.content;
     } catch (error) {
-      console.error(`Perplexity API Error (${taskType}):`, error);
+      const duration = Date.now() - startTime;
+      console.error(`❌ Perplexity API Error (${taskType}) after ${duration}ms:`, error);
+      
+      // Enhanced error handling for different error types
+      if (error.message.includes('timed out')) {
+        throw new Error(`${taskType} request timed out after ${timeout}ms. The API may be experiencing high load.`);
+      } else if (error.code === 'ECONNRESET' || error.code === 'ENOTFOUND') {
+        throw new Error(`Network connection error for ${taskType}: ${error.message}`);
+      } else if (error.status === 429) {
+        throw new Error(`Rate limit exceeded for ${taskType}. Please try again later.`);
+      } else if (error.status >= 500) {
+        throw new Error(`Perplexity server error for ${taskType}: ${error.message}`);
+      }
+      
       throw new Error(`Failed to process ${taskType}: ${error.message}`);
     }
   }
