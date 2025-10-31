@@ -23,12 +23,6 @@ const corsOptions = {
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
 
-    // Development: allow localhost on any port
-    if (process.env.NODE_ENV === 'development' &&
-      (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
-      return callback(null, true);
-    }
-
     // Check allowed origins
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
