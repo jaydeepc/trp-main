@@ -293,6 +293,24 @@ const Login: React.FC = () => {
             {step === 'password' && (
               <form onSubmit={handlePasswordSubmit} className="space-y-6">
                 <div>
+                  <label htmlFor="email-display" className="block text-sm font-semibold text-surface-900 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-surface-400" />
+                    </div>
+                    <input
+                      id="email-display"
+                      type="email"
+                      value={email}
+                      disabled
+                      className="w-full pl-12 pr-4 py-3 border-2 border-surface-300 rounded-xl bg-surface-100 text-surface-800 cursor-not-allowed font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
                   <label htmlFor="password" className="block text-sm font-semibold text-surface-900 mb-2">
                     Password
                   </label>

@@ -22,8 +22,8 @@ class UserController {
       if (existingUser) {
         return res.json({
           success: true,
-          status: 'registered',
           data: {
+            status: 'registered',
             email: normalizedEmail
           }
         });
@@ -48,8 +48,8 @@ class UserController {
       // User not found
       return res.json({
         success: true,
-        status: 'not-found',
         data: {
+          status: 'not-found',
           email: normalizedEmail
         }
       });
