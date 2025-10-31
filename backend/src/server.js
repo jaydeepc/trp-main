@@ -9,6 +9,11 @@ const PORT = process.env.PORT || 5001;
 
 setupMiddleware(app);
 
+// Handle OPTIONS requests for all routes
+app.options('*', (req, res) => {
+  res.status(204).end();
+});
+
 app.use('/api', require('./routes'));
 
 app.use((err, req, res, next) => {
