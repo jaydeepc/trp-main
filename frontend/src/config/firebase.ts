@@ -2,13 +2,12 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
-    apiKey: 'AIzaSyBPVTjw8iqiZccDXyUPSEealVd-tUbSVFI',
-    authDomain: 'the-robbie-projectt.firebaseapp.com',
-    projectId: 'the-robbie-projectt',
-    storageBucket: 'the-robbie-projectt.firebasestorage.app',
-    messagingSenderId: '832983427787',
-    appId: '1:832983427787:web:a0025fd2f3531c6127094e',
-    measurementId: 'G-2S41PRDBBG',
+    apiKey: 'AIzaSyBFKF96WnP3OaFsqdOgtduWRIcROsZABrg',
+    authDomain: 'the-robbie-projectt-prod.firebaseapp.com',
+    projectId: 'the-robbie-projectt-prod',
+    storageBucket: 'the-robbie-projectt-prod.firebasestorage.app',
+    messagingSenderId: '851415561625',
+    appId: '1:851415561625:web:48539abc6983fb41088f08',
 };
 
 const app = initializeApp(firebaseConfig);

@@ -18,7 +18,7 @@ const InvitedUserSchema = new mongoose.Schema({
   invitedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false
   },
   role: {
     type: String,
@@ -42,7 +42,7 @@ InvitedUserSchema.index({ email: 1, organizationId: 1 });
 InvitedUserSchema.index({ status: 1, expiresAt: 1 });
 
 InvitedUserSchema.statics.findByEmail = function (email) {
-  return this.findOne({ 
+  return this.findOne({
     email: email.toLowerCase(),
     status: 'pending'
   }).populate('organizationId', 'name status');
