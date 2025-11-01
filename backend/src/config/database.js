@@ -3,14 +3,7 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
   // Check if MongoDB URI is provided
   if (!process.env.MONGODB_URI) {
-    console.error('❌ MONGODB_URI environment variable is not set');
-    if (process.env.NODE_ENV === 'production') {
-      console.log('⚠️  MONGODB_URI missing in production - continuing with mock data mode');
-      process.env.USE_MOCK_DATA = 'true';
-      return;
-    }
-    console.log('⚠️  Continuing without database connection in development');
-    return;
+    console.error('MONGODB_URI is not defined in environment variables.');
   }
 
   try {
