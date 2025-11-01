@@ -17,19 +17,7 @@ const getCorsOrigins = () => {
 };
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    const allowedOrigins = getCorsOrigins();
-
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-
-    // Check allowed origins
-    // if (allowedOrigins.includes(origin)) {
-    return callback(null, true);
-    // }
-
-    callback(new Error(`CORS: Origin ${origin} not allowed`));
-  },
+  origin: true, // Allow all origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-user-id'],
