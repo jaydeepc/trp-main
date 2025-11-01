@@ -262,7 +262,6 @@ const RFQSchema = new mongoose.Schema({
 
 // Indexes for performance
 RFQSchema.index({ userId: 1, status: 1 });
-RFQSchema.index({ rfqNumber: 1 });
 RFQSchema.index({ createdAt: -1 });
 RFQSchema.index({ 'sourceDocument.analysisType': 1 });
 

@@ -6,8 +6,7 @@ const RFQSchema = new mongoose.Schema({
   rfqId: {
     type: String,
     unique: true,
-    required: true,
-    index: true
+    required: true
   },
   createdBy: {
     type: String,
